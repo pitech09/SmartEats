@@ -93,11 +93,16 @@ class ProductionConfig(Config):
         "basicAuth": {"enabled": False},
         "ignore": ["^/static/.*"]
     }
+    UPLOAD_PATH = os.path.join(basedir, 'static/css/images/profiles')
+    UPLOAD_PRODUCTS = os.path.join(basedir, 'static/css/images/products')
+    UPLOAD_DELIVERY = os.path.join(basedir, 'static/css/images/deliveries')
 
     @staticmethod
     def init_app(app):
-        # Ensure upload directories exist in production if needed
-        pass
+        # Ensure upload directories exist in development
+        os.makedirs(DevelopmentConfig.UPLOAD_PATH, exist_ok=True)
+        os.makedirs(DevelopmentConfig.UPLOAD_PRODUCTS, exist_ok=True)
+        os.makedirs(DevelopmentConfig.UPLOAD_DELIVERY, exist_ok=True)
 
 
 # Dict to map config names
