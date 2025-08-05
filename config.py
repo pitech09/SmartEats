@@ -53,7 +53,7 @@ class DevelopmentConfig(Config):
     UPLOAD_PRODUCTS = os.path.join(basedir, 'static/css/images/products')
     UPLOAD_DELIVERY = os.path.join(basedir, 'static/css/images/deliveries')
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
+    SQLALCHEMY_DATABASE_URI = os.environ.get('MY_DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'data-dev.db')
 
     ENABLE_PROFILER = True
@@ -76,14 +76,14 @@ class ProductionConfig(Config):
     DEBUG = False
 
     MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 465
+    MAIL_PORT = 587
     MAIL_USE_TLS = False
     MAIL_USE_SSL = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
 
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+        'postgresql://smarteats_bq58_user:5HG7yEGkchuzpDtRn4ZWwGnjh1xLyeEb@dpg-d28rir1r0fns73eo8od0-a/smarteats_bq58'
 
     # Disable profiler in production
     ENABLE_PROFILER = False
