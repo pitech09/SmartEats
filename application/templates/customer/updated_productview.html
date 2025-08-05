@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+{% block title %}{{store.name}} Products - MediCart {% endblock %}
+{% block content %}
+<style>
+
+
+        h1, h2, h3 {
+            color: #333;
+        }
+        .product-image {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            display: block;
+        }
+        .product-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .product-description {
+            flex: 2;
+        }
+        .price {
+            font-size: 1.5em;
+            color: #2d72d9;
+        }
+        .add-to-cart-btn {
+            padding: 10px 20px;
+            background-color: #2d72d9;
+            color: white;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .add-to-cart-btn:hover {
+            background-color: #1f56a0;
+        }
+        .shipping-info {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        .related-products {
+            margin-top: 40px;
+        }
+        .related-products a {
+            text-decoration: none;
+            color: #2d72d9;
+        }
+        .related-products a:hover {
+            text-decoration: underline;
+        }
+
+</style>
+
+<div class="container">
+    <h1>{{ product.productname }}</h1>
+     <div class="product-card">
+    <img class="image-top" style="border-radius: 20%;" src="{{ url_for('static', filename='css/images/products/'+ product.pictures) }}" alt="{{ product.name }}">
+
+   
+        <div class="product-description">
+            <h2>Description</h2>
+            <p>{{ product.description }}</p>
+        </div>
+
+        <div class="product-details">
+            <div class="price">
+                Price: M {{ product.price }}
+            </div>
+
+            <form action="{{url_for('main.add_to_cart', item_id=product.id)}}" method="POST">
+                <button value={{product.id}} class= 'btn btn-outline-primary rounded-pill' type="submit">
+                    Add To Cart
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

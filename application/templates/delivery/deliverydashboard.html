@@ -1,0 +1,41 @@
+{% extends "deliverylayout.html" %}
+{% block title %}{{store.name}} Order Details View - MediCart {% endblock %}
+{% block content %}
+
+<!-- Active Orders -->
+<h1>{{store.name}} Ready Orders</h1>
+<table border="1">
+
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Address</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {%if not ready_orders%}
+<p>There are no ready orders</p>
+    {%else%}
+        {% for order in ready_orders %}
+        <tr>
+            <td>{{ order.order_id }}</td>
+            <td>{{ order.user_email }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.location }}</td>
+            <td>
+                <button class="btn btn-outline-primary rounded-pill" onclick="window.location.href='{{url_for('delivery.takeorder', order_id=order.id)}}'">
+                             Take Order
+                </button>
+            </td>
+
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{%endif%}
+
+{% endblock %}

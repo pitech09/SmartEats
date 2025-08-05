@@ -1,0 +1,62 @@
+{% extends "adminlayout.html" %}
+{% block title %}{{store.name}} Pending and Active Orders- MediCart {% endblock %}
+{% block content %}
+
+<section class="orders-section">
+        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline-primary rounded-pill">Ready Orders</button>
+        <button onclick="window.location.href='{{ url_for('store.approved_orders') }}'" class="btn btn-outline-primary rounded-pill">On Delivery</button>
+
+
+
+          <h2>Approved Orders</h2>
+    {%if not readyorders%}
+    <p>There are no approved orders.</p>
+    {%else%}
+            <table class="orders-table" style="width:100%; table-layout:fixed;">
+                <thead>
+                    <tr>
+              <th scope="col">Order-Id</th>
+              <th scope="col">Status</th>
+              <th scope="col">Date</th>
+              <th scope="col">Payment</th>
+              <th scope="col">Payment ID</th>
+              <th scope="col">Order From</th>
+              <th scope="col">Drop Location</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {%for order in readyorders%}
+                   <tr>
+                        <td>{{order.order_id}}</td>
+                      <td>
+                        {{order.status}}
+                     <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
+                       {{ form.hidden_tag() }}
+                      {{form.status(class='form-control')}}
+                      {{form.submit(class='btn')}}
+                    </form>
+                      </td>
+                      <td>
+                        {{order.create_at.strftime('%Y - %m - %d @ %H:%M') }}
+                      </td>
+                        <td>{{order.payment}}</td>
+                        <td>{{order.transactionID}}</td>
+                        <td>
+                          {{order.user.email}}
+                        </td>
+                       <td>{{order.location}}</td>
+                      <td>
+                          <button class="btn" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
+                              View Details
+                          </button>
+                      </td>
+                    </tr>
+                {%endfor%}
+                </tbody>
+            </table>
+    {%endif%}
+
+        </section>
+
+{%endblock%}

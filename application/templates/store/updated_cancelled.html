@@ -1,0 +1,54 @@
+{% extends "adminlayout.html" %}
+{% block title %}{{store.name}} Cancelled Orders - MediCart {% endblock %}
+{% block content %}
+<section class="orders-section">
+    <h2>All Cancelled Orders</h2>
+    {%if not orders%}
+    <p>You have no cancelled orders.</p>
+    {%else%}
+
+            <!-- Orders Table -->
+    <table class="orders-table"  style="width:100%; table-layout:fixed;">
+        <thead>
+        <tr>
+            <th scope="col">Order-Id</th>
+            <th scope="col">Status</th>
+            <th scope="col">Date</th>
+            <th scope="col">Payment</th>
+            <th scope="col">Payment ID</th>
+            <th scope="col">Order From</th>
+            <th scope="col">Drop Location</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {%for order in orders%}
+        <!-- Repeat this block for each order -->
+        <tr>
+            <td>{{order.order_id}}</td>
+            <td>
+                {{order.status}}
+            </td>
+            <td>
+                {{order.create_at.strftime('%Y - %m - %d @ %H:%M') }}
+            </td>
+            <td>{{order.payment}}</td>
+            <td>{{order.transactionID}}</td>
+            <td>
+                {{order.user.email}}
+            </td>
+            <td>{{order.location}}</td>
+            <td>
+                <button class="btn" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
+                    View Details
+                </button>
+
+            </td>
+        </tr>
+        {%endfor%}
+        <!-- Add more rows for additional orders -->
+        </tbody>
+    </table>
+    {%endif%}
+</section>
+{%endblock%}

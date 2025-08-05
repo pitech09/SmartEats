@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+{% block title %}Profile - MediCart {% endblock %}
+{% block content %}
+    <style>
+        .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .profile-section {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+        }
+        .profile-section img {
+            height: 60px;
+            width: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        .nav-item {
+            margin-left: 1rem;
+        }
+    </style>
+<div class="container-xxl flex-grow-1 container-p-y">
+              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">Account Settings /</span> Account</h4>
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="card mb-4">
+                    <h5 class="card-header">Profile Details</h5>
+                    <!-- Account -->
+                    <div class="card-body">
+                    </div>
+                    <hr class="my-0" />
+                    <div class="card-body">
+                      <form id="formAccountSettings" method="POST" action="url_for('main.account')">
+                        <div class="row">
+                          <div class="mb-3 col-md-6">
+                                      {{ form.username.label }}
+                                {{ form.username(class="form-control") }}
+                                {% for error in form.username.errors %}
+                                    <small class="form-text text-danger">{{ error }}</small>
+                                {% endfor %}
+                          </div>
+                        <div class="mb-3 col-md-6">
+                                      {{ form.lastName.label }}
+                                {{ form.lastName(class="form-control") }}
+                                {% for error in form.lastName.errors %}
+                                    <small class="form-text text-danger">{{ error }}</small>
+                                {% endfor %}
+                          </div>
+                          <div class="mb-3 col-md-6">
+                                      {{ form.Email.label }}
+                                {{ form.Email(class="form-control") }}
+                                {% for error in form.Email.errors %}
+                                    <small class="form-text text-danger">{{ error }}</small>
+                                {% endfor %}
+                          </div>
+
+                          <div class="mb-3 col-md-6">
+                    
+                                    {{ form.phonenumber.label }}
+                                {{ form.phonenumber(class="form-control") }}
+                                {% for error in form.phonenumber.errors %}
+                                    <small class="form-text text-danger">{{ error }}</small>
+                                {% endfor %}
+                       
+                          </div>
+                          <div class="mb-3 col-md-6">
+                                {{ form.residence.label }}
+                                {{ form.residence(class="form-control") }}
+                                {% for error in form.residence.errors %}
+                                    <small class="form-text text-danger">{{ error }}</small>
+                                {% endfor %}
+                          </div>
+                        </div>
+                        <div class="mt-2">
+                          <button type="submit" class="btn btn-primary me-2">Save changes</button>
+                          <button type="reset" class="btn btn-outline-secondary">Cancel</button>
+                        </div>
+                      </form>
+                    </div>
+                    <!-- /Account -->
+                  </div>
+                  <div class="card">
+                    <h5 class="card-header">Delete Account</h5>
+                    <div class="card-body">
+                      <div class="mb-3 col-12 mb-0">
+                        <div class="alert alert-warning">
+                          <h6 class="alert-heading fw-bold mb-1">Are you sure you want to delete your account?</h6>
+                          <p class="mb-0">Once you delete your account, there is no going back. Please be certain.</p>
+                        </div>
+                    </div>
+                        <button type="submit" onclick="window.location.href='{{url_for('main.deactivate_Account', user_id=current_user.id)}}'" class="btn btn-danger deactivate-account">Deactivate Account</button>
+                 
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+{% endblock %}

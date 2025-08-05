@@ -1,0 +1,126 @@
+/* Navigation Styles */
+nav a {
+    margin: 0 15px;
+    color: #fff;
+    text-decoration: none;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+/* Main Content Styles */
+main {
+    margin: 20px;
+}
+
+/* Form Styles */
+form {
+    width: 50%;
+    height: 100%;
+    margin: auto;
+    background: transparent;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+form input[type="text"],
+form input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+/* Product Grid Styles */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.product-card {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    text-align: center;
+}
+
+.product-name {
+    font-size: 1.2em;
+    color: #d9534f;
+    margin: 10px 0;
+}
+
+.product-description {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.product-description p {
+    font-size: 1em;
+    color: #555;
+}
+
+.product-price {
+    font-size: 1.2em;
+    color: #d9534f; /* You can change this color to match your design */
+    font-weight: bold;
+}
+
+/* Pagination Styles */
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.pagination a {
+    padding: 10px;
+    margin: 0 5px;
+    text-decoration: none;
+    background-color: #2d72d9;
+    color: white;
+    border-radius: 5px;
+}
+
+.pagination a:hover {
+    background-color: #1f56a0;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 1024px) {
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 items per row on tablets */
+    }
+}
+
+@media (max-width: 600px) {
+    .product-grid {
+        grid-template-columns: 1fr; /* 1 item per row on mobile */
+    }
+    .container {
+        padding: 10px; /* Reduced padding on small screens */
+    }
+    h1 {
+        font-size: 1.5em; /* Adjust heading size for mobile */
+    }
+    .product-name {
+        font-size: 1em; /* Smaller product name font size */
+    }
+    .product-price {
+        font-size: 1.2em; /* Adjust product price font size */
+    }
+    .view-details-btn {
+        padding: 8px 16px; /* Smaller button padding */
+    }
+}
+
+@media (max-width: 300px) {
+    .header {
+        width: 300px;
+        display: grid;
+        grid-template-columns: repeat(2, 0.7fr);
+        gap: 10px;
+    }
+}

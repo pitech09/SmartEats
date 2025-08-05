@@ -1,0 +1,101 @@
+/* General Styles */
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+table th, table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+    font-size: 10px;
+}
+
+table th {
+    background-color: #007bff;
+    color: white;
+}
+
+table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+/* Pagination Styles */
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.pagination a {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    margin: 0 5px;
+    border-radius: 5px;
+}
+
+.pagination a:hover {
+    background-color: #45a049;
+}
+
+.pagination span {
+    font-size: 16px;
+    margin: 0 10px;
+}
+
+/* Action Buttons */
+a {
+    color: #4CAF50;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+a:hover {
+    color: #45a049;
+}
+
+a:active {
+    color: #388e3c;
+}
+
+/* Alerts & Message Styles */
+.alert {
+    padding: 10px;
+    background-color: #f44336;
+    color: white;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* Empty state when no users are found */
+.no-users {
+    text-align: center;
+    font-size: 18px;
+    color: #888;
+    margin-top: 20px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    table {
+        font-size: 12px;
+    }
+
+    table th, table td {
+        padding: 8px;
+    }
+
+    .pagination a {
+        padding: 6px 12px;
+    }
+}

@@ -1,0 +1,28 @@
+{% extends "adminlayout.html" %}
+{% block title %}{{store.name}} update product - MediCart {% endblock %}
+{% block content %}
+
+<div class="container">
+    <!-- Product Add Form -->
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }} <!-- This is for CSRF protection -->
+
+        <!-- Product Name -->
+        <div class="form-group">
+
+            {{form.ecocashcode.label}}
+            {{ form.ecocashcode(class="form-control") }}
+        </div>
+
+        <!-- Product Price -->
+        <div class="form-group">
+            {{form.mpesacode.label}}
+            {{ form.mpesacode(class="form-control") }}
+        </div>
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-outline-primary rounded-pill">Update</button>
+    </form>
+</div>
+{%endblock%}
+
+

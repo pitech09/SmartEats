@@ -1,0 +1,43 @@
+{% extends "adminlayout.html" %}
+{% block title %}{{store.name}} Product List - MediCart {% endblock %}
+{% block content %}
+
+<section class="orders-section">
+    {%if not product%}
+    <p>There are no products. Add them first.</p>
+    {%else%}
+    <table class="orders-table" style="width:100%; table-layout:fixed;">
+  <thead>
+    <tr>
+        <th>Product Name</th>
+        <th>Description</th>
+        <th>Price</th>
+        <th>Action</th>
+    </tr>
+  </thead>
+     {%for product in product%}
+  <tbody>
+
+  <td>{{product.productname}}</td>
+  <td>{{product.description}}</td>
+  <td>{{product.price}}</td>
+
+  <td>
+      <div style="display:grid;">
+
+      <button  class="btn btn-outline-primary rounded-pill" onclick="window.location.href='{{ url_for('store.decrement_product', item_id=product.id) }}'"><i
+      class="fas fa-minus"></i>
+      </button>
+      <button  class="btn btn-outline-primary rounded-pill" onclick="window.location.href='{{ url_for('store.updateproduct', item_id=product.id) }}'">
+          <i class="fas fa-edit"></i>
+      </button>
+</div>
+
+  </td>
+
+  </tbody>
+    {%endfor%}
+</table>
+    {%endif%}
+</section>
+{%endblock%}
