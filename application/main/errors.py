@@ -12,11 +12,11 @@ def page_not_found(e):
 
 @main.app_errorhandler(401)
 def unauthorized(error):
-    formpharm=Set_PharmacyForm()
+    formpharm=Set_StoreForm()
     return render_template('401.html', formpharm=formpharm), 401
 
 
 @main.app_errorhandler(500)
 def internal_server_error(e):
-    formpharm=Set_PharmacyForm()
+    formpharm=Set_StoreForm()
     return render_template('500.html', formpharm=formpharm), 500
