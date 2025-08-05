@@ -1,0 +1,32 @@
+{% extends "adminlayout.html" %}
+{% block title %}{{store.name}} Order Details View - MediCart {% endblock %}
+{% block content %}
+
+ <section class="orders-section">
+
+     <h2>Order Id: {{user_order.order_id}} </h2>
+        <p> Total Cost: M{{ total }} </p>
+        <p>On {{user_order.create_at.strftime('%Y - %m - %d @ %H:%M')}}</p>
+      <img style="width: 50%;height: 200px;object-fit: cover;" src="{{ url_for('static', filename='css/images/products/'+ user_order.screenshot) }}" alt="{{ user_order.user_email }}">
+        <table class="orders-table">
+          <thead>
+            <tr>
+                <th scope="col">Prod. ID</th>
+                <th scope="col">productname</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+          {%for item in user_order.order_items%}
+          <tr>
+              <td>{{item.product.id}}</td>
+              <td>{{item.product.productname}}</td>
+              <td>{{item.quantity}}</td>
+              <td> M{{item.product.price}}</td>
+          </tr>
+          {%endfor%}
+          </tbody>
+        </table>
+ </section>
+{%endblock%}

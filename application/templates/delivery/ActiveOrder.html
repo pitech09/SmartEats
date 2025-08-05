@@ -1,0 +1,47 @@
+{% extends "deliverylayout.html" %}
+{% block title %}{{store.name}} Order Details View - MediCart {% endblock %}
+{% block content %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7054933627312511"
+     crossorigin="anonymous"></script>
+<h1>{{current_user.names}} Deliveries</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Address</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {%if not deliveries%}
+    <p>You have no active deliveries.</p>
+        {%else%}
+            {% for delivery in deliveries %}
+            <tr>
+                <td>{{ delivery.order_id }}</td>
+                <td>{{ delivery.customer_name }}</td>
+                <td>{{ delivery.status }}</td>
+                <td>{{ delivery.address }}</td>
+                <td>
+                <form action="{{url_for('delivery.update_delivery', delivery_id=delivery.id)}}" method="POST">
+
+                    <div class="form-group">
+                        {{ myform.hidden_tag() }}
+                       {{myform.status(class='form-control')}}
+                       {{myform.delivery_prove.label}}
+                       {{myform.delivery_prove(class='form-control')}}
+                       {{myform.submit(class='btn btn-outline-primary rounded-pill')}}
+                        </div>
+                </form>
+
+</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{%endif%}
+
+{%endblock%}
+

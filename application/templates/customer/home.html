@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Home - z {% endblock %}
+{% block content %}
+
+<div>
+  <div class="row my-4">
+    <div class="col-md-6">
+      <div class="card border-primary mb-3">
+        <div class="card-header bg-success text-white">How to Get Started.</div>
+        <div class="card-body">
+          <h5 class="card-title">Getting Started is Easy</h5>
+          
+            <ul>
+              <li> 
+                Choose your favorite restuarant and click <b>Select</b>
+              </li>
+              <li>
+                Browse the menu to view their available meals.
+              </li>
+              <li>
+                Add your favorites to the cart.
+              </li>
+              <li>
+                <b>Checkout</b> - quick and simple!
+              </li>
+            </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-success mb-3">
+        <div class="card-header bg-success text-white">Cart Items</div>
+        <div class="card-body">
+          <h5 class="card-title">{{total_count}} items</h5>
+          <a href="{{ url_for('main.cart') }}" class="btn btn-success">View Cart</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

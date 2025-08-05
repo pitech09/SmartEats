@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block title %}Login Into Account - MediCart{% endblock %}
+{% block content %}
+    <div class="container-xxl">
+      <div class="authentication-wrapper authentication-basic container-p-y">
+        <div class="authentication-inner">
+          <!-- Register -->
+          <div class="card">
+            <div class="card-body">
+            <h4 class="mb-2">Welcome to SmartEats! 👋</h4>
+              <p class="mb-4">Please sign-in to your account and start the adventure</p>
+
+              <form id="formAuthentication" class="mb-3" action="{{ url_for('auth.newlogin') }}" method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+          {{ form.email.label }}
+          {{ form.email(class="form-control") }}
+          {% for error in form.email.errors %}
+            <small class="form-text text-danger">{{ error }}</small>
+          {% endfor %}
+                </div>
+                <div class="mb-3 form-password-toggle">
+                  <div class="d-flex justify-content-between">
+                      {{ form.password.label }}
+                    <a href="{{url_for('auth.forgotpassword')}}">
+                      <small>Forgot Password?</small>
+                    </a>
+                  </div>
+                  <div class="input-group input-group-merge">
+          {{ form.password(class="form-control") }}
+          {% for error in form.password.errors %}
+            <small class="form-text text-danger">{{ error }}</small>
+          {% endfor %}
+                    <span class="input-group-text cursor-pointer"><i class="fas fa-hide"></i></span>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+\
+{%endblock%}

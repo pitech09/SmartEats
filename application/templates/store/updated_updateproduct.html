@@ -1,0 +1,41 @@
+{% extends "adminlayout.html" %}
+{% block title %}{{store.name}} update product - MediCart {% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Updating Product-{{item_id}}</h1>
+    <!-- Product Add Form -->
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }} <!-- This is for CSRF protection -->
+        <!-- Product Name -->
+        <div class="form-group">
+            {{form.newname.label}}
+            {{ form.newname(class="form-control") }}
+        </div>
+
+        <!-- Product Price -->
+        <div class="form-group">
+            {{form.newprice.label}}
+            {{ form.newprice(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{form.newdescription.label}}
+            {{ form.newdescription(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{form.category.label}}
+            {{ form.category(class="form-control") }}
+        </div>
+        <!-- Product Image -->
+        <div class="form-group">
+            {{form.picture.label}}
+            {{ form.picture(class="form-control") }}
+        </div>
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn">Confirm Update</button>
+    </form>
+</div>
+{%endblock%}
+
+

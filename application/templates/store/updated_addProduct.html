@@ -1,0 +1,36 @@
+{% extends "adminlayout.html" %}
+{% block title %} {{store.name}} Add product - MediCart {% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Add New Product</h1>
+    <!-- Product Add Form -->
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }} <!-- This is for CSRF protection -->
+        <div class="form-group">
+            {{form.product_name.label}}
+            {{ form.product_name(class="form-control") }}
+        </div>
+        <!-- Product Price -->
+        <div class="form-group">
+            {{form.product_price.label}}
+            {{ form.product_price(class="form-control") }}
+        </div>
+        <!-- Product Description -->
+        <div class="form-group">
+            {{form.product_description.label}}
+            {{ form.product_description(class="form-control") }}
+        </div>
+        <!-- Product Image -->
+        <div class="form-group">
+            {{form.product_pictures.label}}
+            {{ form.product_pictures(class="form-control") }}
+        </div>
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-outline-primary rounded-pill">Add Product</button>
+    </form>
+    <!-- Back to Products Page -->
+</div>
+
+{%endblock%}
+

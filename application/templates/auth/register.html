@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block title %}Register Account - MediCare{% endblock %}
+{% block content %}
+<section class="containers">
+
+             <div id="login-form">
+        <!-- Registration Form -->
+
+            <h2>Register</h2>
+            <form enctype="multipart/form-data" action="{{url_for('auth.register') }}" method="post">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                  {{ form.username.label }}
+        {{ form.username(class="form-control") }}
+        {% for error in form.username.errors %}
+            <small class="form-text text-danger">{{ error }}</small>
+        {% endfor %}
+                </div>
+                <div class="form-group">
+            {{ form.lastName.label }}
+            {{ form.lastName(class="form-control") }}
+            {% for error in form.lastName.errors %}
+                <small class="form-text text-danger">{{ error }}</small>
+            {% endfor %}
+                </div>
+                    <div class="form-group">
+      {{ form.Email.label }}
+      {{ form.Email(class="form-control") }}
+      {% for error in form.Email.errors %}
+        <small class="form-text text-danger">{{ error }}</small>
+      {% endfor %}
+    </div>
+                <div class="form-group">
+                      {{ form.Password.label }}
+      {{ form.Password(class="form-control") }}
+      {% for error in form.Password.errors %}
+        <small class="form-text text-danger">{{ error }}</small>
+      {% endfor %}
+                </div>
+                <button type="submit" class="btn bg-light rounded-pill">Register</button>
+
+            </form>
+        </div>
+             </div>
+    </section>
+{%endblock%}
+

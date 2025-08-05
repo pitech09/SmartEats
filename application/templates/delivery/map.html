@@ -1,0 +1,36 @@
+<!-- templates/track_order.html -->
+{% extends "deliverylayout.html" %}
+{% block content %}
+<h4>Track Your Order</h4>
+<div id="map" style="height: 400px;"></div>
+<p>Status: <span id="status">Loading...</span></p>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script>
+    const orderId = "{{ order_id }}";
+    const map = L.map('map').setView([-29.3158, 27.4850], 13); // Default Lesotho coords
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const marker = L.marker([-29.3158, 27.4850]).addTo(map);
+
+    async function updateLocation() {
+        const res = await fetch(`/api/delivery/${orderId}`);
+        const data = await res.json();
+        if (data.latitude && data.longitude) {
+            marker.setLatLng([data.latitude, data.longitude]);
+            map.setView([data.latitude, data.longitude], 14);
+            document.getElementById('status').innerText = data.status;
+        } else {
+            document.getElementById('status').innerText = "Location not available.";
+        }
+    }
+
+    setInterval(updateLocation, 5000); // Refresh every 5 seconds
+    updateLocation(); // Initial load
+</script>
+{% endblock %}

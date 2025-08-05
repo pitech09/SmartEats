@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+{% block title %}Cartlist - MediCart {% endblock %}
+{% block content %}
+<div class="containerr">
+
+    {% if not cart.cart_items%}
+    <div class="cart-summary">
+        <p>Cart is Empty</p>
+    {%else%}
+    <div class="cart">
+        <div class="product-card">
+<h4>Payment Codes</h4>
+        <p>Mpesa Till/Number: {{store.mpesa_shortcode}}</p>
+        <p>Ecocash Till/Number: {{store.ecocash_short_code}}</p>
+</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            {%for items in cart.cart_items%}
+            <tbody id="cart-items" style="background-color: aliceblue;">
+                        <td>{{items.product.productname}}</td>
+            <td>M{{items.product.price}}</td>
+            <td>{{items.quantity}}</td>
+            <td>
+            <button onclick="window.location.href='{{ url_for('main.remove_from_cart',item_id=items.id)}}'"
+                        class="btn btn-outline-primary rounded-pill"><i class="fas fa-trash"></i></button>
+            </td>
+            </tbody>
+            {%endfor%}
+        </table>
+    </div>
+
+        <div class="product-card">
+                    <p>Total Price: <b id="total-price">M{{total_amount}}</b> includes Delivery Fees</p>
+
+    <form action="{{url_for('main.addorder',total_amount=total_amount)}}"  method="POST" enctype="multipart/form-data">
+        {{ form3.hidden_tag() }}
+        <div class="form-group">
+            {{form3.payment.label}}
+            {{form3.payment(class='form-control')}}
+        </div>
+        <br>
+        <div class="form-group">
+            {{form3.payment_number.label}}
+            {{form3.payment_number(class='form-control')}}
+        </div>
+        <br>
+        <div class="form-group">
+            {{form3.transid.label}}
+            {{form3.transid(class='form-control')}}
+        </div>
+        <br>
+        <div class="form-group">
+            {{form3.deliverymethod.label}}
+            <br/>
+            {%for subfield in form3.deliverymethod%}
+            {{subfield}}
+            {{subfield.label}}<br>
+            {%endfor%}
+        </div>
+        <br>
+        <div class="form-group">
+            {{form3.drop_address.label}}
+            {{form3.drop_address(class='form-control')}}
+        </div>
+        <br>
+        <div class="form-group">
+            {{form3.payment_screenshot.label}}
+            {{form3.payment_screenshot(class='form-control')}}
+        </div>
+        <br>
+    <div class="button-container" style="align-items:center;">
+        <!-- Shop Button -->
+        <button type="submit" class= 'btn btn-outline-primary rounded-pill'
+            onclick="window.location.href='{{ url_for('main.addorder', total_amount=total_amount)}}'">Add Order
+        </button>
+    </div>
+    </form>
+    </div>
+    {%endif%}
+    </div>
+</div>
+{% endblock %}

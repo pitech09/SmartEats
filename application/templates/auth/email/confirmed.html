@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}Confirm Your Email{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-body text-center">
+            <h2 class="card-title text-success">Email Confirmation</h2>
+            <p class="card-text">
+                Your email confirmation link was processed. If there was an issue, it may be expired or invalid.
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} mt-3" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <a href="{{ url_for('auth.newlogin') }}" class="btn btn-primary mt-4">Go to Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
