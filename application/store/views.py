@@ -601,17 +601,4 @@ def addstaff():
                            store=store,form=form, count=count, unread_notifications=unread_notifications)
 
 
-@store.route('/layout', methods=["POST", "GET"])
-def layout():
-    formpharm = Set_StoreForm()
-    pharmacies = Store.query.all()
-    total_count = 0
-    store = Store.query.get_or_404(session.get('store_id'))
-    count = Notification.query.filter_by(user_id=current_user.id, is_read=False).all().count()
-
-    formpharm.store.choices = [(p.id, p.name) for p in pharmacies]
-    return render_template('layout.html', formpharm=formpharm, count=count, store=store)
-
-
-
 
