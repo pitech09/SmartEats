@@ -82,8 +82,8 @@ class ProductionConfig(Config):
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://smarteats_bq58_user:5HG7yEGkchuzpDtRn4ZWwGnjh1xLyeEb@dpg-d28rir1r0fns73eo8od0-a/smarteats_bq58'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+        
 
     # Disable profiler in production
     ENABLE_PROFILER = False
