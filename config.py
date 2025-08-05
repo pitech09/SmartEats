@@ -41,7 +41,6 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
@@ -56,13 +55,7 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('MY_DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'data-dev.db')
 
-    ENABLE_PROFILER = True
-    FLASK_PROFILER = {
-        "enabled": True,
-        "storage": {"engine": "sqlite"},
-        "basicAuth": {"enabled": False},
-        "ignore": ["^/static/.*"]
-    }
+
 
     @staticmethod
     def init_app(app):
@@ -74,25 +67,18 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
-    MAIL_USE_TLS = False
-    MAIL_USE_SSL = True
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_USE_TLS = True
+    MAIL_USE_SSL = False
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'pitechcorp7@gmail.com'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'rljm azij wply ihrp'
 
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or "postgresql://pitech:GG9IahwNPkHzuns2cdAYUqpMD3HyVyav@dpg-d28teh6r433s73bv0fg0-a.ohio-postgres.render.com/smarteats_nx5v"
         
 
     # Disable profiler in production
-    ENABLE_PROFILER = False
-    FLASK_PROFILER = {
-        "enabled": False,
-        "storage": {"engine": "sqlite"},
-        "basicAuth": {"enabled": False},
-        "ignore": ["^/static/.*"]
-    }
+
     UPLOAD_PATH = os.path.join(basedir, 'static/css/images/profiles')
     UPLOAD_PRODUCTS = os.path.join(basedir, 'static/css/images/products')
     UPLOAD_DELIVERY = os.path.join(basedir, 'static/css/images/deliveries')
@@ -100,9 +86,9 @@ class ProductionConfig(Config):
     @staticmethod
     def init_app(app):
         # Ensure upload directories exist in development
-        os.makedirs(DevelopmentConfig.UPLOAD_PATH, exist_ok=True)
-        os.makedirs(DevelopmentConfig.UPLOAD_PRODUCTS, exist_ok=True)
-        os.makedirs(DevelopmentConfig.UPLOAD_DELIVERY, exist_ok=True)
+        os.makedirs(ProductionConfig.UPLOAD_PATH, exist_ok=True)
+        os.makedirs(ProductionConfig.UPLOAD_PRODUCTS, exist_ok=True)
+        os.makedirs(ProductionConfig.UPLOAD_DELIVERY, exist_ok=True)
 
 
 # Dict to map config names
