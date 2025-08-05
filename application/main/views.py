@@ -6,6 +6,7 @@ from sqlalchemy import desc, or_
 from . import main
 from ..forms import *
 from ..models import *
+from application import cache
 from PIL import Image
 
 
@@ -164,6 +165,7 @@ def landing():
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     return render_template('customer/landingpage.html', formpharm=formpharm)
 
+@cache.memoize(timeout=300)
 @main.route('/cartlist', methods=['GET', 'POST'])
 @login_required
 def cart():
@@ -192,29 +194,6 @@ def cart():
                            cart=cart, user=user,formpharm=formpharm, store=store,
                            total_amount=total_amount, total_count=total_count, pres=pres)
 
-@main.route('/redeempoints/<int:cart_id>', methods=["POST", "GET"])
-@login_required
-def redeempoints(cart_id):
-    cart = Cart.query.get_or_404(cart_id)
-    if cart.redeemed == True:
-        flash('You can not redeem points on this cart again.')
-        return redirect(url_for('main.cart'))
-
-    user = User.query.get_or_404(cart.user_id)
-    total_amount = sum(item.product.price * item.quantity for item in cart.cart_items)
-    if user.loyalty_points >= 300:
-        var = user.loyalty_points - 300
-        user.loyalty_points = var
-        cart.redeemed = True
-        flash(f'You spend 300 points on delivery, You new amount payable, M{total_amount - 13}')
-        db.session.add(user)
-        db.session.add(cart)
-        db.session.commit()
-        flash('Redeemed Points for Delivery')
-        return redirect(url_for('main.cart'))
-    else:
-        flash(f'You do not qualify for point redemption yet. {300 - user.loyalty_points } points remaining. Keep Ordering.')
-        return redirect(url_for('main.cart'))
 
 @main.route('/about', methods=['POST', 'GET'])
 def about():
@@ -229,7 +208,7 @@ def contact():
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]    
     return render_template('customer/contact.html')
 
-
+@cache.memoize(timeout=300)
 @main.route('/viewproduct/<int:product_id>', methods=['POST', 'GET'])
 def viewproduct(product_id):
     formpharm = Set_StoreForm()
@@ -244,6 +223,7 @@ def viewproduct(product_id):
     return render_template('customer/updated_productview.html', product=product, store=store,
                            formpharm=formpharm, form=form, item_picture=item_picture)
 
+@cache.memoize(timeout=300)
 @main.route('/search/<int:page_num>', methods=['POST', 'GET'])
 @login_required
 def search(page_num):
@@ -281,6 +261,7 @@ def search(page_num):
                            page_num=page_num,formpharm=formpharm, form2=form2, store=store)
 
 
+@cache.memoize(timeout=300)
 @main.route('/addorder/<int:total_amount>', methods=['POST', 'GET'])
 @login_required
 def addorder(total_amount):
@@ -338,6 +319,7 @@ def addorder(total_amount):
             print("integrity")
             return redirect(url_for('main.cart'))
         db.session.commit()
+        
         total_amount = 0
         for item in cart.cart_items:
             order_item = OrderItem(order_id=neworder.id, product_id=item.product.id, product_name=item.product.productname,
@@ -355,10 +337,11 @@ def addorder(total_amount):
         CartItem.query.filter_by(cart_id=cart.id).delete()
         cart.redeemed = False
         db.session.commit()
+        cache.clear()
     return redirect(url_for('main.myorders', total_amount=total_amount))
 
 
-
+@cache.memoize(timeout=300)
 @main.route("/menu/<int:page_num>", methods=["POST", "GET"])
 def menu(page_num=1):
     formpharm = Set_StoreForm()
@@ -414,6 +397,7 @@ def add_to_cart(item_id):
     total_amount = sum(item.product.price * item.quantity for item in cart.cart_items)
     try:
         db.session.commit()
+        cache.clear()
         flash(f'{product.productname} added to cart.')
     except IntegrityError:
         return redirect(url_for('main.menu',page_num=1))
@@ -433,6 +417,7 @@ def remove_from_cart(item_id):
         if product.quantity <= 0:
             db.session.delete(product)
     db.session.commit()        #db.session.delete()
+    cache.clear()
     return redirect(url_for('main.cart', user_id=current_user.id))
 
 
@@ -474,6 +459,8 @@ def deactivate_Account(user_id):
     db.session.delete(user)
     try:
         db.session.commit()
+        logout_user()
+        session.pop('store_id', None)
         flash('Account successfully deleted.')
     except IntegrityError:
         flash('Errot deleting account')
