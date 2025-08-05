@@ -33,9 +33,7 @@ def create_app(config_name):
     cache.init_app(app)
     compress.init_app(app)
 
-    # Flask-Profiler (enabled only in development unless needed)
-    if app.config.get("ENABLE_PROFILER", False):
-        Profiler(app)
+
 
     login_manager.init_app(app)
 
