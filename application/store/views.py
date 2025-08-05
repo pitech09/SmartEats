@@ -521,7 +521,7 @@ def remove_from_products(item_id):
         cache.clear()
     return redirect(url_for('store.products'))
 
- @cache.memoize(timeout=300)   
+@cache.memoize(timeout=300)   
 @store.route('/decrement/<int:item_id>', methods=['POST', 'GET'])
 @login_required
 #@role_required('Store')
