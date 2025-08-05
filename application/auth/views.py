@@ -86,7 +86,7 @@ def send_email(form):
     token = s.dumps(form.Email.data)
     msg = Message('Confirm Email', sender='pitechcorp7@gmail.com', recipients=[form.Email.data])
     link = url_for('auth.confirm_email', token=token, _external=True)
-    msg.subject = "Confirm your MediCart email"
+    msg.subject = "Confirm your SmartEats email"
     msg.body = (
         f"Hi {form.username.data},\n\n"
         "We noticed your email was recently used to sign up for Smart. If this wasn't you, feel free to ignore this message.\n\n"
@@ -136,7 +136,6 @@ def registerstore():
                     else:
                         token = send_email_(form)
                         flash('An email was sent to you email account.', 'success')
-
                         return redirect(url_for('auth.unconfirmed', token=token))
                 except IntegrityError:
 

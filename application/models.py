@@ -17,7 +17,7 @@ def get_localTime(self):
     return datetime.now(tz)
 
 def get_orderid():
-    return "ORD-"+ secrets.token_hex(5).upper()
+    return "ORD-"+ secrets.token_hex(4).upper()
 
 
 
@@ -47,6 +47,7 @@ class Store(UserMixin, db.Model):
     users = db.relationship('User', back_populates='store')
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     verified = db.Column(db.Boolean, default=False)
+    
 
     def __init__(self, name, password, email, phone, address, openinghours):
         self.name = name
@@ -92,6 +93,7 @@ class User(UserMixin, db.Model):
     image_file = db.Column(db.String(140), nullable=True, default="account.png")
     password = db.Column(db.String(40), nullable=False, unique=False)
     carts = db.relationship('Cart', backref='user', lazy=True)
+
     orders = db.relationship('Order', backref='user', lazy=True)
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     loyalty_points = db.Column(db.Integer, default=0)
@@ -129,29 +131,36 @@ class CartItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
 
 class Order(db.Model):
-    __searchable__ = ['order_id', 'location', 'user_id', 'status', 'payment', 'user_email']
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.String(10), nullable=False, default=get_orderid)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_userid_order'), nullable=False)
-    create_at = db.Column(db.DateTime, default=get_localTime)
-    location = db.Column(db.String(100), nullable=False)
-    status = db.Column(db.String(40), nullable=False, default='Pending')
-    payment = db.Column(db.String(40), nullable=False, default='None')
-    transactionID = db.Column(db.String(90), default='Cash')
-    user_email = db.Column(db.String(30), nullable=False)
-    order_items = db.relationship('OrderItem', backref='order', lazy=True)
-    store_id = db.Column(db.Integer, db.ForeignKey('store.id', name='fk_store_order'), nullable=False)
-    source_store = db.Column(db.String(120))
-    taken_by = db.Column(db.Integer, db.ForeignKey('deliveryguy.id', name='fk_store_order_deliver'))
-    deliveryguy = db.Column(db.String(50), default="Not Taken")
-    screenshot = db.Column(db.String(120))
-    #prescription = db.Column(db.String(120))
+    __tablename__ = 'order'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Add this ID column
+    order_id = db.Column(db.String(10), default=get_orderid)  # Primary key
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_userid_order'), nullable=False)  # Foreign key to User
+    create_at = db.Column(db.DateTime, default=get_localTime)  # Timestamp for order creation
+    location = db.Column(db.String(100), nullable=False)  # Location address
+    status = db.Column(db.String(40), nullable=False, default='Pending')  # Order status
+    payment = db.Column(db.String(40), nullable=False, default='None')  # Payment method/status
+    transactionID = db.Column(db.String(90), default='Cash')  # Transaction ID
+    user_email = db.Column(db.String(30), nullable=False)  # User email
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id', name='fk_store_order'), nullable=False)  # Foreign key to Store
+    source_store = db.Column(db.String(120))  # Source of the order (e.g., store or platform)
+    taken_by = db.Column(db.Integer, db.ForeignKey('deliveryguy.id', name='fk_store_order_deliver'))  # Foreign key to DeliveryGuy
+    deliveryguy = db.Column(db.String(50), default="Not Taken")  # Delivery guy's name (or status)
+    screenshot = db.Column(db.String(120))  # URL to order screenshot (if any)
+
+    # Relationships
+    user = db.relationship('User', backref='orders')  # User who placed the order
+    store = db.relationship('Store', backref='orders')  # Store fulfilling the order
+    delivery_guy = db.relationship('DeliveryGuy', backref='orders')  # Delivery guy assigned to the order
+    order_items = db.relationship('OrderItem', backref='order', lazy=True)  # Order items linked to this order
 
     def get_localTime(self):
         return self.create_at.astimezone(ZoneInfo("Africa/Johannesburg"))
 
     def getstorename(self, store_id):
-        return Pharmacy.query.get_or_404(store_id)
+        return Store.query.get_or_404(store_id)
+
+    def __repr__(self):
+        return f"<Order {self.order_id} by {self.user_email}>"
 
 
 class Cart(db.Model):
@@ -172,6 +181,7 @@ class OrderItem(db.Model):
     product_name = db.Column(db.String(20), nullable=False)
     product_price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    order = db.relationship('Order', backref=db.backref('order_items', lazy=True))
 
 class DeliveryGuy(db.Model, UserMixin):
     __tablename__ = 'deliveryguy'
@@ -180,30 +190,28 @@ class DeliveryGuy(db.Model, UserMixin):
     email = db.Column(db.String(30), unique=True, nullable=False)
     image_file = db.Column(db.String(140), nullable=True, default="account.png")
     password = db.Column(db.String(40), nullable=False, unique=False)
-    deliveries = db.relationship('Delivery', back_populates='delivery_guy',overlaps='delivery_guy', lazy=True) 
     isfree = db.Column(db.Boolean, default=True)  
+    deliveries = db.relationship('Delivery', backref='deliveryguy', lazy=True)
 
 class Delivery(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    customer_name = db.Column(db.String(120))
-    address = db.Column(db.String(100))
-    status = db.Column(db.String(50), default='Out for delivery')
-    end_time = db.Column(db.DateTime, nullable=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    end_time = db.Column(db.DateTime)
-    order_id = db.Column(db.String(30), db.ForeignKey('order.id', name='fk_delivery_order'))
-    orders = db.relationship('Order', backref='delivery', lazy=True)
-    delivery_guy_id = db.Column(db.Integer, db.ForeignKey('deliveryguy.id', name='fk_delivery_guy'))
-    delivery_guy = db.relationship('DeliveryGuy', back_populates='deliveries', overlaps='deliveries', lazy=True)
+    __tablename__ = 'delivery'
 
-    def to_dict(self):
-        return {
-        "id": self.id,
-        "customer_name": self.customer_name,
-        "address": self.address,
-        "status": self.status,
-        "order_id": self.order_id
-    }
+    id = db.Column(db.Integer, primary_key=True)
+    customer_name = db.Column(db.String(120))  # Customer's name
+    address = db.Column(db.String(100))  # Delivery address
+    status = db.Column(db.String(50))  # Delivery status (e.g., 'Pending', 'Completed')
+    end_time = db.Column(db.DateTime)  # Timestamp when delivery was completed
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Timestamp when delivery was created
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)  # Foreign key to Order
+    delivery_guy_id = db.Column(db.Integer, db.ForeignKey('deliveryguy.id'))  # Foreign key to DeliveryGuy
+    
+    # Relationships
+    order = db.relationship('Order', backref=db.backref('delivery', uselist=False))  # Link to Order (one-to-one)
+    delivery_guy = db.relationship('DeliveryGuy', backref='deliveries')  # Link to DeliveryGuy (one-to-many)
+
+    def __repr__(self):
+        return f'<Delivery {self.id} - Order {self.order_id}>'
+
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
