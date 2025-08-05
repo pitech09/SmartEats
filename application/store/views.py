@@ -18,7 +18,7 @@ from ..models import (User, Product, Sales, DeliveryGuy,
                       Order, Cart, OrderItem, db, Store,
                       Notification, Staff)
 from ..utils.notification import create_notification
-
+from application import cache
 mypharmacy_product = Store.products
 mypharmacy_orders = Store.orders
 bcrypt = Bcrypt()
@@ -266,6 +266,7 @@ def orders_on_delivery():
     return render_template('store/ondelivery.html', form=form, count=count, ondelivery=ondelivery,
                            store=mypharmacy, unread_notifications=unread_notifications)
 
+@cache.memoize(timeout=120)
 @store.route('/ActiveOrders')
 @login_required
 #@role_required('Store')
@@ -290,7 +291,7 @@ def ActiveOrders():
                            unread_notifications=unread_notifications, store=store, count=count, form1=form1)
 
 
-
+@cache.memoize(timeout=300)
 @store.route('/delivered')
 @login_required
 #@role_required('Store')
@@ -382,6 +383,7 @@ def updatestatus(order_id):
 
         try:
             db.session.commit()
+            
 
             # 🔔 Notifications
             message = f"Order #{order.order_id} status changed from {old_status} to {new_status}"
@@ -410,7 +412,7 @@ def logout():
     return redirect(url_for('auth.newlogin'))
 
 
-
+@cache.memoize(timeout=300)
 @store.route('/addproducts', methods=["POST", "GET"])
 @login_required
 #@role_required('Store')
@@ -439,6 +441,7 @@ def addproducts():
                 db.session.add(product)
                 try:
                     db.session.commit()
+                    cache.clear()
                     return redirect(url_for("store.products"))
                 except IntegrityError:
                     flash('intergrity error', 'danger')
@@ -452,7 +455,7 @@ def addproducts():
     return render_template("store/updated_addProduct.html", form=form,
                             unread_notifications=unread_notifications, count=count, store=store)
 
-
+@cache.memoize(timeout=300)
 @store.route('/userorders/<int:order_id>', methods=['post', 'get'])
 @login_required
 #@role_required('Store')
@@ -483,6 +486,7 @@ def userorders(order_id):
                            unread_notifications=unread_notifications,total=total, count=count)
 
 
+@cache.memoize(timeout=300)
 @store.route('/products')
 @login_required
 def products():
@@ -505,7 +509,7 @@ def products():
                            store=store, count=count, form2=form2, unread_notifications=unread_notifications,form3=form3)
 
 
-
+@cache.memoize(timeout=300)
 @store.route('/remove_from_products/<int:item_id>', methods=['POST', 'GET'])
 @login_required
 #@role_required('Store')
@@ -514,9 +518,10 @@ def remove_from_products(item_id):
     if product:
         db.session.delete(product)
         db.session.commit()
+        cache.clear()
     return redirect(url_for('store.products'))
 
-    
+ @cache.memoize(timeout=300)   
 @store.route('/decrement/<int:item_id>', methods=['POST', 'GET'])
 @login_required
 #@role_required('Store')
@@ -535,6 +540,7 @@ def decrement_product(item_id):
             flash('Integrity error.')
             db.session.rollback()
     db.session.commit()
+    cache.clear()
     return redirect(url_for('store.products'))
 
 
