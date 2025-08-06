@@ -117,7 +117,7 @@ def forgotpassword():
 @auth.route("/registerstore", methods=['POST', 'GET'])
 def registerstore():
     formpharm = Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+
     form = PharmacyRegistrationForm()
     if request.method == "POST":
         if form.validate_on_submit():
@@ -155,7 +155,6 @@ def registerstore():
 def register():
     form = RegistrationForm()
     formpharm = Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     if request.method == "POST":
         if form.validate_on_submit():
             token = ""
@@ -188,14 +187,13 @@ def register():
                 return redirect(url_for('auth.register'))
         else:
             flash('Form failed to validate on submit, please try again')
-    return render_template('auth/register.html', form=form)
+    return render_template('auth/register.html', form=form, formpharm=formpharm)
 
 
 @auth.route('/newlogin', methods=['GET', 'POST'])
 def newlogin():
     form = LoginForm()
     formpharm = Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     if form.validate_on_submit():
         if request.method == "POST":
             user = User.query.filter_by(email=form.email.data).first()
@@ -235,7 +233,7 @@ def newlogin():
                 return redirect(url_for('store.adminpage'))
             else:
                 flash("Invalid login credentials", 'danger')
-    return render_template('auth/newlogin.html', form=form, formpharm=formpharma)
+    return render_template('auth/newlogin.html', form=form, formpharm=formpharm)
 
 
 @auth.route('/resend_email', methods=['GET','POST'])
@@ -248,6 +246,7 @@ def resend_email():
             email = form.email.data
             owner = Store.query.filter(Store.email == email).first()
             user = User.query.filter(User.email == email).first()
+            token = ''
 
             if owner:
                 token.send_email(email)
@@ -294,7 +293,7 @@ def reset(token):
         newpassword = form.password.data
         try:
             email = s.loads(token, max_age=5000)
-            owner = Store.query.filter_by(email=email).first()
+            store = Store.query.filter_by(email=email).first()
             user = User.query.filter_by(email=email).first()
 
             if user:
