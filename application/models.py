@@ -154,7 +154,8 @@ class Order(db.Model):
     user = db.relationship('User', back_populates='orders') # User who placed the order
     store = db.relationship("Store", back_populates="orders")  # Store fulfilling the order
     delivery_guy = db.relationship('DeliveryGuy', backref='orders')  # Delivery guy assigned to the order
-    order_items = db.relationship('OrderItem', backref='order', lazy=True)  # Order items linked to this order
+    order_items = db.relationship('OrderItem', back_populates='order')
+  # Order items linked to this order
 
     def get_localTime(self):
         return self.create_at.astimezone(ZoneInfo("Africa/Johannesburg"))
@@ -184,7 +185,8 @@ class OrderItem(db.Model):
     product_name = db.Column(db.String(20), nullable=False)
     product_price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    order = db.relationship('Order', backref=db.backref('order_items', lazy=True))
+    order = db.relationship('Order', back_populates='order_items')
+
 
 class DeliveryGuy(db.Model, UserMixin):
     __tablename__ = 'deliveryguy'
