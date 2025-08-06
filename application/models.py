@@ -42,13 +42,12 @@ class Store(UserMixin, db.Model):
     registered_on = db.Column(db.DateTime, server_default=db.func.now())
     users = db.relationship('User', backref='store', lazy=True)  # a user will be tied to a store store they create
     products = db.relationship('Product', backref='store', lazy=True)
-    
-    orders = db.relationship("Order", back_populates="store")
-    sales = db.relationship('Sales', back_populates='store', lazy=True)
-    users = db.relationship('User', back_populates='store')
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     verified = db.Column(db.Boolean, default=False)
     
+    orders = db.relationship("Order", back_populates="store")
+    users = db.relationship('User', back_populates='store')
+    sales = db.relationship('Sales', back_populates='store')
 
     def __init__(self, name, password, email, phone, address, openinghours):
         self.name = name
@@ -96,12 +95,14 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(40), nullable=False, unique=False)
     carts = db.relationship('Cart', backref='user', lazy=True)
 
-    orders = db.relationship('Order', back_populates='user')
+   
 
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     loyalty_points = db.Column(db.Integer, default=0)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
+
     store = db.relationship('Store', back_populates='users')
+    orders = db.relationship('Order', back_populates='user')
 
     def generate_confirmation_token(self, expiration=4600):
         s = TimedSerializer(current_app.config['SECRET_KEY'], expiration)
@@ -155,6 +156,7 @@ class Order(db.Model):
     store = db.relationship("Store", back_populates="orders")  # Store fulfilling the order
     delivery_guy = db.relationship('DeliveryGuy', backref='orders')  # Delivery guy assigned to the order
     order_items = db.relationship('OrderItem', back_populates='order')
+    
   # Order items linked to this order
 
     def get_localTime(self):
@@ -196,7 +198,7 @@ class DeliveryGuy(db.Model, UserMixin):
     image_file = db.Column(db.String(140), nullable=True, default="account.png")
     password = db.Column(db.String(40), nullable=False, unique=False)
     isfree = db.Column(db.Boolean, default=True)  
-    deliveries = db.relationship('Delivery', backref='deliveryguy', lazy=True)
+    deliveries = db.relationship('Delivery', back_populates='delivery_guy', lazy=True)
 
 class Delivery(db.Model):
     __tablename__ = 'delivery'
@@ -212,8 +214,7 @@ class Delivery(db.Model):
     
     # Relationships
     order = db.relationship('Order', backref=db.backref('delivery', uselist=False))  # Link to Order (one-to-one)
-    delivery_guy = db.relationship('DeliveryGuy', backref='deliveries')  # Link to DeliveryGuy (one-to-many)
-
+    delivery_guy = db.relationship('DeliveryGuy', back_populates='deliveries')
     def __repr__(self):
         return f'<Delivery {self.id} - Order {self.order_id}>'
 
