@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Register Account - MediCare{% endblock %}
 {% block content %}
-<    <div class="container-xxl">
+   <div class="container-xxl">
       <div class="authentication-wrapper authentication-basic container-p-y">
         <div class="authentication-inner">
           <!-- Register -->
@@ -14,37 +14,36 @@
                 {{ form.hidden_tag() }}
 
                 <div class="mb-3">
-          {{ form.username.label }}
-          {{ form.username(class="form-control") }}
-          {% for error in form.username.errors %}
-            <small class="form-text text-danger">{{ error }}</small>
-          {% endfor %}
-                </div>
-           <div class="mb-3">
-          {{ form.lastName.label }}
-          {{ form.lastName(class="form-control") }}
-          {% for error in form.lastName.errors %}
-            <small class="form-text text-danger">{{ error }}</small>
-          {% endfor %}
-                </div>
+                  {{ form.username.label }}
+                  {{ form.username(class="form-control") }}
+                  {% for error in form.username.errors %}
+                    <small class="form-text text-danger">{{ error }}</small>
+                  {% endfor %}
+                        </div>
+                  <div class="mb-3">
+                  {{ form.lastName.label }}
+                  {{ form.lastName(class="form-control") }}
+                  {% for error in form.lastName.errors %}
+                    <small class="form-text text-danger">{{ error }}</small>
+                  {% endfor %}
+                        </div>
 
-                <div class="mb-3">
-          {{ form.Email.label }}
-          {{ form.Email(class="form-control") }}
-          {% for error in form.Email.errors %}
-            <small class="form-text text-danger">{{ error }}</small>
-          {% endfor %}
-                </div>
-                <div class="mb-3 form-password-toggle">
-                  <div class="d-flex justify-content-between">
-                      {{ form.Password.label }}
-                  </div>
-                  <div class="input-group input-group-merge">
-          {{ form.Password(class="form-control") }}
-          {% for error in form.Password.errors %}
-            <small class="form-text text-danger">{{ error }}</small>
-          {% endfor %}
-                    <span class="input-group-text cursor-pointer"><i class="fas fa-hide"></i></span>
+                        <div class="mb-3">
+                  {{ form.Email.label }}
+                  {{ form.Email(class="form-control") }}
+                  {% for error in form.Email.errors %}
+                    <small class="form-text text-danger">{{ error }}</small>
+                  {% endfor %}
+                        </div>
+                        <div class="mb-3 form-password-toggle">
+                          <div class="d-flex justify-content-between">
+                              {{ form.Password.label }}
+                          </div>
+                          <div class="input-group input-group-merge">
+                  {{ form.Password(class="form-control") }}
+                  {% for error in form.Password.errors %}
+                    <small class="form-text text-danger">{{ error }}</small>
+                  {% endfor %}
                   </div>
                 </div>
 
