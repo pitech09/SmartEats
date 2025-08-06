@@ -44,7 +44,6 @@ class Store(UserMixin, db.Model):
     products = db.relationship('Product', backref='store', lazy=True)
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     verified = db.Column(db.Boolean, default=False)
-    
     orders = db.relationship("Order", back_populates="store")
     users = db.relationship('User', back_populates='store')
     sales = db.relationship('Sales', back_populates='store')
@@ -65,7 +64,7 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     pictures = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer)
-    description = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(300), nullable=False)
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
     order_items = db.relationship('OrderItem', backref='product', lazy=True)
     warning = db.Column(db.String(50), default='Quantity Good')
@@ -90,9 +89,9 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(18), nullable=False, unique=True)
     lastname = db.Column(db.String(40), nullable=False)
-    email = db.Column(db.String(30), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     image_file = db.Column(db.String(140), nullable=True, default="account.png")
-    password = db.Column(db.String(40), nullable=False, unique=False)
+    password = db.Column(db.String(200), nullable=False, unique=False)
     carts = db.relationship('Cart', backref='user', lazy=True)
 
    
