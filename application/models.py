@@ -96,7 +96,8 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(40), nullable=False, unique=False)
     carts = db.relationship('Cart', backref='user', lazy=True)
 
-    orders = db.relationship('Order', backref='user', lazy=True)
+    orders = db.relationship('Order', back_populates='user')
+
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     loyalty_points = db.Column(db.Integer, default=0)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
@@ -150,7 +151,7 @@ class Order(db.Model):
     screenshot = db.Column(db.String(120))  # URL to order screenshot (if any)
 
     # Relationships
-    user = db.relationship('User', backref='orders')  # User who placed the order
+    user = db.relationship('User', back_populates='orders') # User who placed the order
     store = db.relationship("Store", back_populates="orders")  # Store fulfilling the order
     delivery_guy = db.relationship('DeliveryGuy', backref='orders')  # Delivery guy assigned to the order
     order_items = db.relationship('OrderItem', backref='order', lazy=True)  # Order items linked to this order
