@@ -42,7 +42,8 @@ class Store(UserMixin, db.Model):
     registered_on = db.Column(db.DateTime, server_default=db.func.now())
     users = db.relationship('User', backref='store', lazy=True)  # a user will be tied to a store store they create
     products = db.relationship('Product', backref='store', lazy=True)
-    orders = db.relationship('Order', backref='store', lazy=True)
+    
+    orders = db.relationship("Order", back_populates="store")
     sales = db.relationship('Sales', back_populates='store', lazy=True)
     users = db.relationship('User', back_populates='store')
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
@@ -149,7 +150,7 @@ class Order(db.Model):
 
     # Relationships
     user = db.relationship('User', backref='orders')  # User who placed the order
-    store = db.relationship('Store', backref='orders')  # Store fulfilling the order
+    store = db.relationship("Store", back_populates="orders")  # Store fulfilling the order
     delivery_guy = db.relationship('DeliveryGuy', backref='orders')  # Delivery guy assigned to the order
     order_items = db.relationship('OrderItem', backref='order', lazy=True)  # Order items linked to this order
 
