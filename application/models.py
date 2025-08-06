@@ -20,8 +20,6 @@ def get_orderid():
     return "ORD-"+ secrets.token_hex(4).upper()
 
 
-
-
 class Store(UserMixin, db.Model):
     __tablename__ = "store"
     __searchable__ = ['name', 'address']
@@ -85,10 +83,10 @@ class Sales(db.Model):
     store = db.relationship("Store", back_populates="sales")
 
 class User(UserMixin, db.Model):
-    __searchable__ = ['username', 'firstname', 'email', 'lastname']
+    __searchable__ = ['username','email', 'lastname']
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(18), nullable=False, unique=True)
-    lastname = db.Column(db.String(40), nullable=False)
+    username = db.Column(db.String(50), nullable=False, unique=True)
+    lastname = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     image_file = db.Column(db.String(140), nullable=True, default="account.png")
     password = db.Column(db.String(200), nullable=False, unique=False)
