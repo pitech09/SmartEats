@@ -84,6 +84,7 @@ class Sales(db.Model):
     price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id', name='fk_store_id'), nullable=False)
+    store = db.relationship("Store", back_populates="sales")
 
 class User(UserMixin, db.Model):
     __searchable__ = ['username', 'firstname', 'email', 'lastname']
