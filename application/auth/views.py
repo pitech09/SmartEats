@@ -152,7 +152,7 @@ def registerstore():
 @auth.route("/register", methods=["POST", "GET"])
 def register():
     form = RegistrationForm()
-    formpharma = Set_StoreForm()
+
     if request.method == "POST":
         if form.validate_on_submit():
             token = ""
@@ -185,7 +185,7 @@ def register():
                 return redirect(url_for('auth.register'))
         else:
             flash('Form failed to validate on submit, please try again')
-    return render_template('auth/register.html', form=form, formpharm=formpharma)
+    return render_template('auth/register.html', form=form)
 
 
 @auth.route('/newlogin', methods=['GET', 'POST'])
