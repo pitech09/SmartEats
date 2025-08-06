@@ -43,7 +43,7 @@ class Store(UserMixin, db.Model):
     users = db.relationship('User', backref='store', lazy=True)  # a user will be tied to a store store they create
     products = db.relationship('Product', backref='store', lazy=True)
     orders = db.relationship('Order', backref='store', lazy=True)
-    sales = db.relationship('Sales', backref='store', lazy=True)
+    sales = db.relationship('Sales', back_populates='store', lazy=True)
     users = db.relationship('User', back_populates='store')
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     verified = db.Column(db.Boolean, default=False)

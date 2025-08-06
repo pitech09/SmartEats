@@ -71,8 +71,8 @@ def send_email_(form):
     try:
         mail.send(msg)
         print("message sent")
+        flash("An email has been sent to your email account for confirmation.")
     except SMTPAuthenticationError as e:
-        print('error 1')
         flash("Failed to send email: Authentication Error. Check your email/password settings.")
         print(e)
     except Exception as e:
@@ -89,7 +89,7 @@ def send_email(form):
     msg.subject = "Confirm your SmartEats email"
     msg.body = (
         f"Hi {form.username.data},\n\n"
-        "We noticed your email was recently used to sign up for Smart. If this wasn't you, feel free to ignore this message.\n\n"
+        "We noticed your email was recently used to sign up for SmartEats. If this wasn't you, feel free to ignore this message.\n\n"
         "If you did sign up, please confirm your email address by clicking the link below:\n\n"
         "{}\n\n"
         "Thanks for choosing SmartEats — we're excited to have you on board!\n\n"
@@ -98,6 +98,7 @@ def send_email(form):
     try:
         mail.send(msg)
         print("message sent")
+        flash("An email has been sent to your email account for confirmation.")
     except SMTPAuthenticationError as e:
         print('error 1')
         flash("Failed to send email: Authentication Error. Check your email/password settings.")
@@ -135,7 +136,6 @@ def registerstore():
                         return redirect(url_for('auth.newlogin'))
                     else:
                         token = send_email_(form)
-                        flash('An email was sent to you email account.', 'success')
                         return redirect(url_for('auth.unconfirmed', token=token))
                 except IntegrityError:
 
@@ -152,6 +152,7 @@ def registerstore():
 @auth.route("/register", methods=["POST", "GET"])
 def register():
     form = RegistrationForm()
+    formpharma = Set_StoreForm()
     if request.method == "POST":
         if form.validate_on_submit():
             token = ""
@@ -164,7 +165,7 @@ def register():
                 db.session.add(users)
                 try:
                     db.session.commit()
-                    user = User.query.filter_by(email=form.Email.data).first()
+                    user = User.query.filter(User.email==form.Email.data).first()
                     if user.confirmed:
                         return redirect(url_for('auth.newlogin'))
                     else:
@@ -176,14 +177,16 @@ def register():
                     flash('Username or email already exist')
                     return redirect(url_for('auth.register'))
                 except TimeoutError:
-                    flash('Timeout Error!')
+                    db.session.rollback()
+                    flash('Timeout Error! Try again later.')
                     return redirect(url_for('auth.register'))
             else:
                 flash('User could not be created successfully')
                 return redirect(url_for('auth.register'))
         else:
             flash('Form failed to validate on submit, please try again')
-    return render_template('auth/register.html', form=form)
+    return render_template('auth/register.html', form=form, formpharm=formpharma)
+
 
 @auth.route('/newlogin', methods=['GET', 'POST'])
 def newlogin():
