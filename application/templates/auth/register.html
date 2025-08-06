@@ -1,47 +1,59 @@
 {% extends "layout.html" %}
 {% block title %}Register Account - MediCare{% endblock %}
 {% block content %}
-<section class="containers">
+<    <div class="container-xxl">
+      <div class="authentication-wrapper authentication-basic container-p-y">
+        <div class="authentication-inner">
+          <!-- Register -->
+          <div class="card">
+            <div class="card-body">
+            <h4 class="mb-2">Sign Up today with SmartEats! 👋</h4>
+              <p class="mb-4">Your time is valuable to us. Do you and let us do us for you.</p>
 
-             <div id="login-form">
-        <!-- Registration Form -->
-
-            <h2>Register</h2>
-            <form enctype="multipart/form-data" action="{{url_for('auth.register') }}" method="post">
+              <form id="formAuthentication" class="mb-3" action="{{ url_for('auth.register') }}" method="POST">
                 {{ form.hidden_tag() }}
-                <div class="form-group">
-                  {{ form.username.label }}
-        {{ form.username(class="form-control") }}
-        {% for error in form.username.errors %}
-            <small class="form-text text-danger">{{ error }}</small>
-        {% endfor %}
-                </div>
-                <div class="form-group">
-            {{ form.lastName.label }}
-            {{ form.lastName(class="form-control") }}
-            {% for error in form.lastName.errors %}
-                <small class="form-text text-danger">{{ error }}</small>
-            {% endfor %}
-                </div>
-                    <div class="form-group">
-      {{ form.Email.label }}
-      {{ form.Email(class="form-control") }}
-      {% for error in form.Email.errors %}
-        <small class="form-text text-danger">{{ error }}</small>
-      {% endfor %}
-    </div>
-                <div class="form-group">
-                      {{ form.Password.label }}
-      {{ form.Password(class="form-control") }}
-      {% for error in form.Password.errors %}
-        <small class="form-text text-danger">{{ error }}</small>
-      {% endfor %}
-                </div>
-                <button type="submit" class="btn bg-light rounded-pill">Register</button>
 
-            </form>
+                <div class="mb-3">
+          {{ form.username.label }}
+          {{ form.username(class="form-control") }}
+          {% for error in form.username.errors %}
+            <small class="form-text text-danger">{{ error }}</small>
+          {% endfor %}
+                </div>
+           <div class="mb-3">
+          {{ form.lastName.label }}
+          {{ form.lastName(class="form-control") }}
+          {% for error in form.lastName.errors %}
+            <small class="form-text text-danger">{{ error }}</small>
+          {% endfor %}
+                </div>
+
+                <div class="mb-3">
+          {{ form.Email.label }}
+          {{ form.Email(class="form-control") }}
+          {% for error in form.Email.errors %}
+            <small class="form-text text-danger">{{ error }}</small>
+          {% endfor %}
+                </div>
+                <div class="mb-3 form-password-toggle">
+                  <div class="d-flex justify-content-between">
+                      {{ form.Password.label }}
+                  </div>
+                  <div class="input-group input-group-merge">
+          {{ form.Password(class="form-control") }}
+          {% for error in form.Password.errors %}
+            <small class="form-text text-danger">{{ error }}</small>
+          {% endfor %}
+                    <span class="input-group-text cursor-pointer"><i class="fas fa-hide"></i></span>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-             </div>
-    </section>
 {%endblock%}
 

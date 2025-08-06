@@ -161,9 +161,7 @@ def home():
 
 @main.route("/", methods=["POST", "GET"])
 def landing():
-    formpharm = Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
-    return render_template('customer/landingpage.html', formpharm=formpharm)
+    return render_template('customer/landingpage.html')
 
 @cache.memoize(timeout=300)
 @main.route('/cartlist', methods=['GET', 'POST'])
