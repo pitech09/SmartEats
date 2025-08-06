@@ -112,10 +112,12 @@ def send_email(form):
 @auth.route('/forgot password')
 def forgotpassword():
     form = emailform()
-    return render_template('auth/fotgot_password.html', form=form)
+    return render_template('auth/fotgot_password.html', form=form, formpharm=formpharm)
 
 @auth.route("/registerstore", methods=['POST', 'GET'])
 def registerstore():
+    formpharm = Set_StoreForm()
+    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     form = PharmacyRegistrationForm()
     if request.method == "POST":
         if form.validate_on_submit():
@@ -145,14 +147,15 @@ def registerstore():
             else:
                 flash('Could not add your store, please try again')
                 return redirect(url_for('auth.registerstore'))
-    return render_template('auth/registerphar.html', form=form)
+    return render_template('auth/registerphar.html', form=form, formpharm=formpharm)
 
     
 
 @auth.route("/register", methods=["POST", "GET"])
 def register():
     form = RegistrationForm()
-
+    formpharm = Set_StoreForm()
+    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     if request.method == "POST":
         if form.validate_on_submit():
             token = ""
@@ -191,7 +194,8 @@ def register():
 @auth.route('/newlogin', methods=['GET', 'POST'])
 def newlogin():
     form = LoginForm()
-    formpharma = Set_StoreForm()
+    formpharm = Set_StoreForm()
+    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     if form.validate_on_submit():
         if request.method == "POST":
             user = User.query.filter_by(email=form.email.data).first()
