@@ -33,7 +33,11 @@ def upload_to_cloudinary(file, folder='delivery_proofs'):
         folder=folder,
         use_filename=True,
         unique_filename=True,
-        resource_type='image'
+        resource_type='image',
+        transformation=[
+            {'width': 300, 'height': 300, 'crop': 'fill'},
+            {'quality': 'auto'}
+        ]
     )
     return result
 

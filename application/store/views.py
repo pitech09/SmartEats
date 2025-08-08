@@ -37,7 +37,7 @@ def upload_to_cloudinary(file, folder='products'):
         unique_filename=True,
         resource_type='image',
         transformation=[
-            {'width': 300, 'height': 300, 'crop': 'fill'}
+            {'width': 200, 'height': 200, 'crop': 'fill'}
             ]
     )
     return result
