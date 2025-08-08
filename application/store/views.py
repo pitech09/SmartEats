@@ -30,7 +30,7 @@ bcrypt = Bcrypt()
 
 
 def upload_to_cloudinary(file, folder='products'):
-    result = cloudinary.upload(
+    result = upload(
         file,
         folder=folder,
         use_filename=True,
