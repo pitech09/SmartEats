@@ -510,22 +510,6 @@ def remove_from_products(item_id):
     return redirect(url_for('store.products'))
 
 
-
-@store.route('/add_products/<int:item_id>', methods=['POST', 'GET'])
-@login_required
-#@role_required('Store')
-def add_products(item_id):
-    product = Product.query.filter_by(id=item_id).first()
-    product.quantity = product.quantity+1
-    if product.quantity > 10:
-        product.warning = "Quantity Good"
-        db.session.add(product)
-        print(f'updated quantity {product.warning}')
-
-    db.session.commit()
-    flash('Product count incremented successfully.')
-    return redirect(url_for('store.products'))
-
 @store.route('/notifications/read/<int:notification_id>', methods=['POST','GET'])
 @login_required
 def mark_notification_read(notification_id):
