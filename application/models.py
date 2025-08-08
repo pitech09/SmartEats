@@ -146,7 +146,7 @@ class Order(db.Model):
     source_store = db.Column(db.String(120))  # Source of the order (e.g., store or platform)
     taken_by = db.Column(db.Integer, db.ForeignKey('deliveryguy.id', name='fk_store_order_deliver'))  # Foreign key to DeliveryGuy
     deliveryguy = db.Column(db.String(50), default="Not Taken")  # Delivery guy's name (or status)
-    screenshot = db.Column(db.String(120))  # URL to order screenshot (if any)
+    screenshot = db.Column(db.String(420))  # URL to order screenshot (if any)
 
     # Relationships
     user = db.relationship('User', back_populates='orders') # User who placed the order
@@ -208,7 +208,7 @@ class Delivery(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Timestamp when delivery was created
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)  # Foreign key to Order
     delivery_guy_id = db.Column(db.Integer, db.ForeignKey('deliveryguy.id'))  # Foreign key to DeliveryGuy
-    
+    customer_pic = db.Column(db.String(200), nullable=True)  # URL to customer's proof of delivery picture
     # Relationships
     order = db.relationship('Order', backref=db.backref('delivery', uselist=False))  # Link to Order (one-to-one)
     delivery_guy = db.relationship('DeliveryGuy', back_populates='deliveries')
