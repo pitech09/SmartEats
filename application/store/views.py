@@ -509,27 +509,6 @@ def remove_from_products(item_id):
         cache.clear()
     return redirect(url_for('store.products'))
 
-@cache.memoize(timeout=300)   
-@store.route('/decrement/<int:item_id>', methods=['POST', 'GET'])
-@login_required
-#@role_required('Store')
-def decrement_product(item_id):
-    product = Product.query.filter_by(id=item_id).first()
-    if product.quantity > 0:
-        product.quantity -= 1
-        if product.quantity <=10:
-            product.warning = "Low on Stock"
-        db.session.add(product)
-    else:
-        try:
-            flash('Product depleted, removing from product list.')
-            db.session.delete(product)
-        except IntegrityError:
-            flash('Integrity error.')
-            db.session.rollback()
-    db.session.commit()
-    cache.clear()
-    return redirect(url_for('store.products'))
 
 
 @store.route('/add_products/<int:item_id>', methods=['POST', 'GET'])
