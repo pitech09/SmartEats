@@ -26,7 +26,7 @@
         {% for product in products %}
         <div class="product-card">
 
-            <img class="image-top" style="border-radius: 20%;" src="{{ url_for('static', filename='css/images/products/'+ product.pictures) }}" alt="{{ product.name }}">
+            <img class="image-top" style="border-radius: 20%;" src="{{product.picture}}" alt="{{ product.name }}">
             <div class="product-name">{{ product.productname }}</div>
             <div class="product-price">M{{ product.price }}</div>
             <div class="product-description"><p>{{ product.description }}</p></div>

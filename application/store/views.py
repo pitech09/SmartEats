@@ -11,7 +11,9 @@ from flask_bcrypt import Bcrypt
 from flask_login import login_required, current_user, logout_user, LoginManager  # type: ignore
 from sqlalchemy import func, extract
 from sqlalchemy.exc import IntegrityError
+import cloudinary
 from cloudinary.uploader import upload
+
 from . import store
 from ..forms import addmore, removefromcart, ProductForm, \
     updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdatePharmacyForm, updateorderpickup
