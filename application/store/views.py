@@ -30,33 +30,10 @@ bcrypt = Bcrypt()
 
 def save_product_picture(file, category=None):
     try:
-        # Generate a random filename
-        random_hex = secrets.token_hex(9)
-        _, file_ext = os.path.splitext(file.filename)
-        filename = random_hex + file_ext
-
-        # Create a Cloudinary folder name based on category
-        folder = f"products/{category.lower().replace(' ', '_')}" if category else "products/uncategorized"
-
-        # Upload the image to Cloudinary
-        upload_result = cloudinary.uploader.upload(
-            file,
-            folder=folder,
-            public_id=filename,
-            overwrite=True,
-            resource_type="image",
-            transformation=[
-                {"width": 300, "height": 300, "crop": "limit"}
-            ]
-        )
-
-        # Return the secure Cloudinary URL to store in your DB
+        upload_result = upload(file)
         return upload_result["secure_url"]
-
-    except Exception as e:
-        print(f"Cloudinary upload failed: {e}")
+    except:
         return None
-
 
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
