@@ -1,16 +1,16 @@
 import os
 from datetime import datetime, timedelta
 from PIL import Image
-from flask import render_template, redirect, url_for, flash, session
+from flask import render_template, redirect, url_for, flash, session # type: ignore
 from flask_login import login_required, current_user, logout_user  # type: ignore
-from sqlalchemy import desc, func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import desc, func #type: ignore
+from sqlalchemy.exc import IntegrityError #type: ignore
 
 from application.utils.notification import create_notification
 from . import delivery
 from ..forms import *
 from ..models import *
-import cloudinary
+import cloudinary #type: ignore
 from cloudinary.uploader import upload  # type: ignore
 
 @login_manager.user_loader
