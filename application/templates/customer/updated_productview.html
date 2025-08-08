@@ -60,9 +60,7 @@
 <div class="container">
     <h1>{{ product.productname }}</h1>
      <div class="product-card">
-    <img class="image-top" style="border-radius: 20%;" src="{{ url_for('static', filename='css/images/products/'+ product.pictures) }}" alt="{{ product.name }}">
-
-   
+    <img class="image-top" style="border-radius: 20%;" src="{{ product.pictures }}" alt="{{ product.name }}">
         <div class="product-description">
             <h2>Description</h2>
             <p>{{ product.description }}</p>

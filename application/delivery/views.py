@@ -10,7 +10,8 @@ from application.utils.notification import create_notification
 from . import delivery
 from ..forms import *
 from ..models import *
-
+import cloudinary
+from cloudinary.uploader import upload  # type: ignore
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -26,38 +27,15 @@ def load_user(user_id):
         return DeliveryGuy.query.get(int(user_id))
 
     return None
-
-def save_delivery_picture(file):
-    # Set the desired size for resizing
-    size = (300, 300)
-
-    # Generate a random hex string for the filename
-    random_hex = secrets.token_hex(9)
-
-    # Get the file extension
-    _, f_ex = os.path.splitext(file.filename)
-
-    # Generate the final filename (random + extension)
-    post_img_fn = random_hex + f_ex
-
-    # Define the path to save the file (UPLOAD_PRODUCTS should be configured in your Flask app)
-    post_image_path = os.path.join(current_app.root_path, current_app.config['UPLOAD_DELIVERY'], post_img_fn)
-
-    try:
-        # Open the image
-        img = Image.open(file)
-
-        # Resize the image to fit within the size (thumbnail)
-        img.thumbnail(size)
-
-        # Save the resized image
-        img.save(post_image_path)
-
-        return post_img_fn  # Return the filename to store in the database
-    except Exception as e:
-        # If an error occurs during image processing, handle it
-        print(f"Error saving image: {e}")
-        return None
+def upload_to_cloudinary(file, folder='products'):
+    result = upload(
+        file,
+        folder=folder,
+        use_filename=True,
+        unique_filename=True,
+        resource_type='image'
+    )
+    return result
 
 
 @delivery.route('/dashboard', methods=["GET", "POST"])
@@ -201,7 +179,7 @@ def update_delivery(delivery_id):
         order.status = form.status.data
         delivery.end_time = datetime.utcnow()
         if form.delivery_prove.data:
-            image_filename = save_delivery_picture(form.delivery_prove.data)
+            image_filename = upload_to_cloudinary(form.delivery_prove.data)
             delivery.customer_pic = image_filename
 
         db.session.add(delivery)
