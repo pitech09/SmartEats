@@ -434,7 +434,7 @@ def addproducts():
                                   description=form.product_description.data
                                   )
                 file = form.product_pictures.data
-                upload_result = cloudinary.uploader.upload(file, public_id="product_images/")
+                upload_result = cloudinary.upload(file, public_id="product_images")
                 image_url = upload_result['secure_url'] 
               
                 product.store_id = mypharmacy.id
