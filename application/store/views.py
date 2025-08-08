@@ -28,12 +28,17 @@ bcrypt = Bcrypt()
 
 
 
-def save_product_picture(file, category=None):
-    try:
-        upload_result = upload(file)
-        return upload_result["secure_url"]
-    except:
-        return None
+
+def upload_to_cloudinary(file, folder='products'):
+    result = cloudinary.upload(
+        file,
+        folder=folder,
+        use_filename=True,
+        unique_filename=True,
+        resource_type='image'
+    )
+    return result
+
 
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
@@ -411,7 +416,7 @@ def addproducts():
                                   )
                 file = form.product_pictures.data
                 
-                upload_result = save_product_picture(file)
+                upload_result = upload_to_cloudinary(file)
                 image_url = upload_result['secure_url'] 
               
                 product.store_id = mypharmacy.id
