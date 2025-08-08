@@ -60,7 +60,7 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     productname = db.Column(db.String(10), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    pictures = db.Column(db.String(100), nullable=False)
+    pictures = db.Column(db.String(300), nullable=False)
     quantity = db.Column(db.Integer)
     description = db.Column(db.String(300), nullable=False)
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
