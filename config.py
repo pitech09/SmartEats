@@ -1,5 +1,9 @@
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
 
 
 class Config:
@@ -75,7 +79,14 @@ class ProductionConfig(Config):
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'rljm azij wply ihrp'
 
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or "postgresql://pitech:GG9IahwNPkHzuns2cdAYUqpMD3HyVyav@dpg-d28teh6r433s73bv0fg0-a.ohio-postgres.render.com/smarteats_nx5v"
-        
+    # Configuration
+    cloudinary.config(
+        cloud_name = 'di9fnjxk5',
+        api_key = '218793494492183',
+        api_secret = 's4FgdXdoys3aBFWh_ZnXJHgye2U',
+        secure = True
+)
+
 
     # Disable profiler in production
 

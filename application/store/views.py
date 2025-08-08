@@ -11,6 +11,7 @@ from flask_bcrypt import Bcrypt
 from flask_login import login_required, current_user, logout_user, LoginManager  # type: ignore
 from sqlalchemy import func, extract
 from sqlalchemy.exc import IntegrityError
+from cloudinary.uploader import uploader as upload
 from . import store
 from ..forms import addmore, removefromcart, ProductForm, \
     updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdatePharmacyForm, updateorderpickup
@@ -433,10 +434,12 @@ def addproducts():
                                   description=form.product_description.data
                                   )
                 file = form.product_pictures.data
+                upload_result = cloudinary.uploader.upload(file)
+                image_url = upload_result['secure_url'] 
               
                 product.store_id = mypharmacy.id
-                _image = save_product_picture(file)
-                product.pictures = _image
+                
+                product.pictures = image_url
 
                 db.session.add(product)
                 try:

@@ -27,8 +27,6 @@
                    <tr>
                         <td>{{order.order_id}}</td>
                                   <td>
-                
-
                 {{order.status}}
                 {%if order.location != 'pickup'%}
                 <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
