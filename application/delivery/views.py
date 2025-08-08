@@ -27,7 +27,7 @@ def load_user(user_id):
         return DeliveryGuy.query.get(int(user_id))
 
     return None
-def upload_to_cloudinary(file, folder='products'):
+def upload_to_cloudinary(file, folder='delivery_proofs'):
     result = upload(
         file,
         folder=folder,
@@ -180,8 +180,8 @@ def update_delivery(delivery_id):
         delivery.end_time = datetime.utcnow()
         if form.delivery_prove.data:
             image_filename = upload_to_cloudinary(form.delivery_prove.data)
-            delivery.customer_pic = image_filename
-
+            image_url = image_filename['secure_url'] 
+            delivery.customer_pic = image_url
         db.session.add(delivery)
         db.session.add(order)
         try:

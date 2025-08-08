@@ -8,7 +8,8 @@ from ..forms import *
 from ..models import *
 from application import cache
 from PIL import Image
-
+import cloudinary #type: ignore
+from cloudinary.uploader import upload  # type: ignore
 
 PRODUCTS_PER_PAGE = 9
 
@@ -44,6 +45,16 @@ def calculate_loyalty_points(user, sale_amount):
 
     db.session.commit()
     return points_earned
+
+def upload_to_cloudinary(file, folder='delivery_proofs'):
+    result = upload(
+        file,
+        folder=folder,
+        use_filename=True,
+        unique_filename=True,
+        resource_type='image'
+    )
+    return result
 
 def save_product_picture(file):
     # Set the desired size for resizing
@@ -294,8 +305,9 @@ def addorder(total_amount):
             if not form.payment_screenshot.data:
                 flash("your are missing payment proof")
                 return redirect(url_for('main.cart'))
-            pics = save_product_picture(file)
-            neworder.screenshot = pics
+            pics = upload_to_cloudinary(file)
+            image_url = pics['secure_url'] 
+            neworder.screenshot = image_url
         else:
             return redirect(url_for('main.cart'))
         
