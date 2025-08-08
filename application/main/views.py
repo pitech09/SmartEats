@@ -46,7 +46,7 @@ def calculate_loyalty_points(user, sale_amount):
     db.session.commit()
     return points_earned
 
-def upload_to_cloudinary(file, folder='delivery_proofs'):
+def upload_to_cloudinary(file, folder='payment_proofs'):
     result = upload(
         file,
         folder=folder,
