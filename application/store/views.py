@@ -28,36 +28,33 @@ bcrypt = Bcrypt()
 
 
 
-def save_product_picture(file):
-    # Set the desired size for resizing
-    size = (300, 300)
-
-    # Generate a random hex string for the filename
-    random_hex = secrets.token_hex(9)
-
-    # Get the file extension
-    _, f_ex = os.path.splitext(file.filename)
-
-    # Generate the final filename (random + extension)
-    post_img_fn = random_hex + f_ex
-
-    # Define the path to save the file (UPLOAD_PRODUCTS should be configured in your Flask app)
-    post_image_path = os.path.join(current_app.root_path, current_app.config['UPLOAD_PRODUCTS'], post_img_fn)
-
+def save_product_picture(file, category=None):
     try:
-        # Open the image
-        img = Image.open(file)
+        # Generate a random filename
+        random_hex = secrets.token_hex(9)
+        _, file_ext = os.path.splitext(file.filename)
+        filename = random_hex + file_ext
 
-        # Resize the image to fit within the size (thumbnail)
-        img.thumbnail(size)
+        # Create a Cloudinary folder name based on category
+        folder = f"products/{category.lower().replace(' ', '_')}" if category else "products/uncategorized"
 
-        # Save the resized image
-        img.save(post_image_path)
+        # Upload the image to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder=folder,
+            public_id=filename,
+            overwrite=True,
+            resource_type="image",
+            transformation=[
+                {"width": 300, "height": 300, "crop": "limit"}
+            ]
+        )
 
-        return post_img_fn  # Return the filename to store in the database
+        # Return the secure Cloudinary URL to store in your DB
+        return upload_result["secure_url"]
+
     except Exception as e:
-        # If an error occurs during image processing, handle it
-        print(f"Error saving image: {e}")
+        print(f"Cloudinary upload failed: {e}")
         return None
 
 
@@ -436,7 +433,8 @@ def addproducts():
                                   description=form.product_description.data
                                   )
                 file = form.product_pictures.data
-                upload_result = upload(file, public_id="product_images")
+                
+                upload_result = save_product_picture(file)
                 image_url = upload_result['secure_url'] 
               
                 product.store_id = mypharmacy.id
