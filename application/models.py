@@ -134,7 +134,7 @@ class CartItem(db.Model):
 class Order(db.Model):
     __tablename__ = 'order'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Add this ID column
-    order_id = db.Column(db.String(10), default=get_orderid)  # Primary key
+    order_id = db.Column(db.String(200), default=get_orderid)  # Primary key
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_userid_order'), nullable=False)  # Foreign key to User
     create_at = db.Column(db.DateTime, default=get_localTime)  # Timestamp for order creation
     location = db.Column(db.String(100), nullable=False)  # Location address
