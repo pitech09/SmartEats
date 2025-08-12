@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm # type: ignore
 from flask_wtf.file import FileField, FileAllowed # type: ignore
-from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField, IntegerField,SelectField, RadioField# type: ignore
+from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField, 
+IntegerField,SelectField, RadioField, EmailField# type: ignore
 from wtforms.validators import DataRequired, Length, Email # type: ignore
 
 class PharmacyRegistrationForm(FlaskForm):
@@ -149,3 +150,18 @@ class UpdatePharmacyForm(FlaskForm):
     mpesacode = StringField("Mpesa Till No.", validators=[DataRequired()])
     ecocashcode = StringField("Ecocash Till No.", validators=[DataRequired()])
     submit = SubmitField('Save')
+
+class deliveryregistrationform(FlaskForm):
+    names = StringField('Fullnames', validators=[DataRequired()])
+    email = StringField('Email Address', validators=[DataRequired()])
+    phone = StringField('Phone Number', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=16)])
+    submit = SubmitField('Register Delivery Agent')
+
+
+class update_password(FlaskForm):
+    old_password = PasswordField('Old Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired()])
+    confirm = SubmitField('Confirm')
+
+
