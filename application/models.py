@@ -193,7 +193,7 @@ class DeliveryGuy(db.Model, UserMixin):
     names = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(30), unique=True, nullable=False)
     image_file = db.Column(db.String(140), nullable=True, default="account.png")
-    password = db.Column(db.String(40), nullable=False, unique=False)
+    password = db.Column(db.String(100), nullable=False, unique=False)
     isfree = db.Column(db.Boolean, default=True)  
     deliveries = db.relationship('Delivery', back_populates='delivery_guy', lazy=True)
 
