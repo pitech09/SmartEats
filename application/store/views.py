@@ -94,9 +94,10 @@ def adminpage():
             func.date(Sales.date_)).all()
 
     daily_data = {
-            "dates": [datetime.strptime(row.date, "%Y-%m-%d").strftime("%b %d") for row in daily_sales],
-            "totals": [float(row.total) for row in daily_sales]
-        }
+        "dates": [row.date.strftime("%b %d") for row in daily_sales],
+        "totals": [float(row.total) for row in daily_sales]
+    }
+
 
     line = go.Scatter(x=daily_data["dates"], y=daily_data["totals"], mode='lines+markers', name='Daily Sales')
     line_layout = go.Layout(title="Daily Sales Trend")
