@@ -575,7 +575,7 @@ def register_delivery():
                 return redirect(url_for('store.register_delivery'))
 
             return redirect(url_for('store.adminpage'))
-
+        flash('form failed to submit')
     return render_template('store/add_delivery.html', form=form)
 
 
