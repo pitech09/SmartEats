@@ -500,14 +500,18 @@ def products():
 @cache.memoize(timeout=300)
 @store.route('/remove_from_products/<int:item_id>', methods=['POST', 'GET'])
 @login_required
-#@role_required('Store')
-def remove_from_products(item_id):
-    product = Product.query.filter_by(id=item_id).first()
-    if product:
+def remove_product(item_id):
+    product = Product.query.get_or_404(item_id)
+    try:
         db.session.delete(product)
         db.session.commit()
-        cache.clear()
+        flash('Product deleted successfully.', 'success')
+    except IntegrityError as e:
+        db.session.rollback()
+        flash('Cannot delete product: it is referenced in existing orders.', 'danger')
+
     return redirect(url_for('store.products'))
+
 
 
 @store.route('/notifications/read/<int:notification_id>', methods=['POST','GET'])
