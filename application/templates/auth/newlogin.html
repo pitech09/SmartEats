@@ -9,7 +9,6 @@
             <div class="card-body">
             <h4 class="mb-2">Welcome to SmartEats! 👋</h4>
               <p class="mb-4">Please sign-in to your account and start the adventure</p>
-
               <form id="formAuthentication" class="mb-3" action="{{ url_for('auth.newlogin') }}" method="POST">
                 {{ form.hidden_tag() }}
                 <div class="mb-3">
