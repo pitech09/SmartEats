@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from PIL import Image
-from flask import render_template, redirect, url_for, flash, session # type: ignore
+from flask import render_template, redirect, url_for, flash, session, request # type: ignore
 from flask_login import login_required, current_user, logout_user  # type: ignore
 from sqlalchemy import desc, func #type: ignore
 from sqlalchemy.exc import IntegrityError #type: ignore
@@ -10,6 +10,7 @@ from application.utils.notification import create_notification
 from . import delivery
 from ..forms import *
 from ..models import *
+import flask_bcrypt
 import cloudinary #type: ignore
 from cloudinary.uploader import upload  # type: ignore
 
@@ -263,5 +264,5 @@ def update_password():
                 return redirect(url_for('delivery.dashboard'))
         else:
             return redirect(url_for('delivery.dashboard'))
-    return render_template('delivery/update.html')
+    return render_template('delivery/update.html', form=form)
 
