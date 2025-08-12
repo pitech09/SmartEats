@@ -16,7 +16,7 @@ from cloudinary.uploader import upload
 
 from . import store
 from ..forms import addmore, removefromcart, ProductForm, \
-    updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdatePharmacyForm, updateorderpickup
+    updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdatePharmacyForm, updateorderpickup, deliveryregistrationform
 from ..models import (User, Product, Sales, DeliveryGuy,
                       Order, Cart, OrderItem, db, Store,
                       Notification, Staff)
@@ -554,6 +554,29 @@ def addstaff():
             flash('Could not add stuff member')
     return render_template('store/addstaff.html',
                            store=store,form=form, count=count, unread_notifications=unread_notifications)
+
+@store.route('/register delivery', methods=["POST", "GET"])
+@login_required
+def register_delivery():
+    form = deliveryregistrationform()
+    if request.method == "POST":
+        if form.validate_on_submit():
+            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            new_delivery = DeliveryGuy(names=form.names.data, email=form.email.data, phone=form.phone.data,
+                                    password=hashed_password)
+            db.session.add(new_delivery)
+            try:
+                db.session.commit()
+                flash('Delivery agent registered successfully.')
+            except IntegrityError:
+                db.session.rollback()
+                flash('An integrity error occurred.')
+                return redirect(url_for('store.register_delivery'))
+
+            return redirect(url_for('store.adminpage'))
+
+    return render_template('store/add_delivery.html')
+
 
 
 
