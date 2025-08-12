@@ -1,7 +1,6 @@
 from flask_wtf import FlaskForm # type: ignore
 from flask_wtf.file import FileField, FileAllowed # type: ignore
-from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField, 
-IntegerField,SelectField, RadioField, EmailField# type: ignore
+from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField,IntegerField,SelectField, RadioField, EmailField# type: ignore
 from wtforms.validators import DataRequired, Length, Email # type: ignore
 
 class PharmacyRegistrationForm(FlaskForm):
