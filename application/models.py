@@ -62,7 +62,7 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     pictures = db.Column(db.Text, nullable=False)
     quantity = db.Column(db.Integer)
-    description = db.Column(db.String(300), nullable=False)
+    description = db.Column(db.Text, nullable=False)
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
     order_items = db.relationship('OrderItem', backref='product', lazy=True)
     warning = db.Column(db.String(50), default='Quantity Good')
