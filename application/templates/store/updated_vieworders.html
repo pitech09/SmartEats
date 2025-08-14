@@ -7,7 +7,7 @@
      <h2>Order Id: {{user_order.order_id}} </h2>
         <p> Total Cost: M{{ total }} </p>
         <p>On {{user_order.create_at.strftime('%Y - %m - %d @ %H:%M')}}</p>
-      <img style="width: 50%;height: 200px;object-fit: cover;" src="{{ order.screenshot }}" alt="{{ user_order.user_email }}">
+      <img style="width: 50%;height: 200px;object-fit: cover;" src="{{ user_order.screenshot }}" alt="{{ user_order.user_email }}">
         <table class="orders-table">
           <thead>
             <tr>
