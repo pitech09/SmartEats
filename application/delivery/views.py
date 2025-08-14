@@ -239,7 +239,7 @@ def set_pharmacy():
         return redirect(url_for('delivery.dashboard'))
 
 
-@delivery.route('/update details', methods=["POST", "GET"])
+@delivery.route('/updatedetails', methods=["POST", "GET"])
 @login_required
 def update_password():
     form = update_password()
@@ -251,14 +251,15 @@ def update_password():
                 new_password = form.new_password.data
                 user = User.query.get_or_404(current_user)
                 user.password = flask_bcrypt.generate_password_hash(new_password)
-            
                 try:
                     db.session.commit()
                     flash('Successfully updated password')
-                    return redirect(url_for('delivery.dashboard'))
+                    
                 except IntegrityError:
                     db.session.rollback()
                     flash('There was an error updating password')
+                    return redirect(url_for('delivery.update_password'))
+                return redirect(url_for('delivery.dashboard'))
             else:
                 flash('Old password does not match current users.')
                 return redirect(url_for('delivery.dashboard'))

@@ -1,30 +1,32 @@
 {% extends "adminlayout.html" %}
-{% block title %} Register Delivery Personnel - SmartEats {% endblock %}
+{% block title %}  Add New Delivery Personnel - SmartEats {% endblock %}
 {% block content %}
+
 <div class="container">
-    <h1>Register Delivery Personnel</h1>
+    <h1>Add Staff Member</h1>
     <!-- Product Add Form -->
-    <form method="POST" enctype="multipart/form-data" action="">
+    <form method="POST" enctype="multipart/form-data">
         {{ form.hidden_tag() }} <!-- This is for CSRF protection -->
         <div class="form-group">
             {{form.names.label}}
             {{ form.names(class="form-control") }}
         </div>
-        <!-- Email -->
+        <!-- Product Price -->
         <div class="form-group">
             {{form.email.label}}
             {{ form.email(class="form-control") }}
         </div>
-
-        <!-- Product Image -->
-        <div class="form-group">
+      <div class="form-group">
             {{form.password.label}}
             {{ form.password(class="form-control") }}
         </div>
         <!-- Submit Button -->
         <button type="submit" class="btn btn-outline-primary rounded-pill">Submit</button>
     </form>
+
     <!-- Back to Products Page -->
+
 </div>
+
 {%endblock%}
 

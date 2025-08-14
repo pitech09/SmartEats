@@ -539,7 +539,6 @@ def addstaff():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         newstuff = Staff(names=form.names.data, email=form.email.data, role=form.role.data, password=hashed_password,
                          store=store)
-
         if newstuff:
             try:
                 db.session.add(newstuff)
@@ -550,7 +549,6 @@ def addstaff():
                 flash('There were some conflicts.')
                 db.session.rollback()
                 return redirect(url_for('store.addstaff'))
-
         else:
             flash('Could not add stuff member')
     return render_template('store/addstaff.html',
@@ -559,23 +557,20 @@ def addstaff():
 @store.route('/register delivery', methods=["POST", "GET"])
 @login_required
 def register_delivery():
-    form = deliveryregistrationform()
+    form = deliveryregistrationform()  
     if request.method == "POST":
-        if form.validate_on_submit():
-            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-            new_delivery = DeliveryGuy(names=form.names.data, email=form.email.data,
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        new_delivery = DeliveryGuy(names=form.names.data, email=form.email.data,
                                     password=hashed_password)
-            db.session.add(new_delivery)
-            try:
-                db.session.commit()
-                flash('Delivery agent registered successfully.')
-            except IntegrityError:
-                db.session.rollback()
-                flash('An integrity error occurred.')
-                return redirect(url_for('store.register_delivery'))
-
+        db.session.add(new_delivery)
+        try:
+            db.session.commit()
+            flash('Delivery agent registered successfully.')
             return redirect(url_for('store.adminpage'))
-        flash('form failed to submit')
+        except IntegrityError:
+            db.session.rollback()
+            flash('An integrity error occurred.')
+            return redirect(url_for('store.register_delivery'))   
     return render_template('store/add_delivery.html', form=form)
 
 
