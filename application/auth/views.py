@@ -202,7 +202,9 @@ def newlogin():
             staff = Staff.query.filter_by(email=form.email.data).first()
 
             if user and bcrypt.check_password_hash(user.password, form.password.data):
-
+                if not user.confirmed:
+                    flash('You need to activate your email address before login.')
+                    return redirect(url_for('auth.newlogin'))
                 login_user(user)
                 session["email"] = form.email.data
                 session['user_type'] = 'customer'
@@ -210,6 +212,9 @@ def newlogin():
                 return redirect(url_for('main.home'))
 
             elif store and bcrypt.check_password_hash(store.password, form.password.data):
+                if not user.confirmed:
+                    flash('You need to activate your email address before login.')
+                    return redirect(url_for('auth.newlogin'))
                 login_user(store)
                 session['user_type'] = 'store'
                 session['store_id'] = store.id
@@ -218,6 +223,9 @@ def newlogin():
                 return redirect(url_for('store.adminpage'))
 
             elif delivery_guy and bcrypt.check_password_hash(delivery_guy.password, form.password.data):
+                if not user.confirmed:
+                    flash('You need to activate your email address before login.')
+                    return redirect(url_for('auth.newlogin'))                
                 login_user(delivery_guy)
                 session['user_type'] = 'delivery_guy'
                 session['delivery_guy_id'] = delivery_guy.id
@@ -225,6 +233,9 @@ def newlogin():
                 flash(f'Login Successful, welcome {delivery_guy.names}', 'success')
                 return redirect(url_for('delivery.dashboard'))  # <-- create this route for delivery guy dashboard
             elif staff and bcrypt.check_password_hash(staff.password, form.password.data):
+                if not user.confirmed:
+                    flash('You need to activate your email address before login.')
+                    return redirect(url_for('auth.newlogin'))
                 login_user(staff)
                 session['user_type'] = 'store'
                 session['store_id'] = staff.store_id

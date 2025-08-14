@@ -1,23 +1,134 @@
 {% extends "layout.html" %}
-{% block title %}SmartEats{% endblock %}
+
+{% block title %}Welcome to {{ store.name }}{% endblock %}
+
 {% block content %}
-
-  <style>
+<style>
     .hero-section {
-      background: linear-gradient(to right, #1d8cf8, #3358f4);
-      color: white;
-      padding: 60px 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: 60px 20px;
+        background: linear-gradient(135deg, #f8f9fa 30%, #eaf6f6 100%);
+        border-radius: 12px;
     }
-    .features-section {
-      background-color: #f8f9fa;
-      padding: 60px 0;
-    }
-    .feature-icon {
-      font-size: 3rem;
-      color: #1d8cf8;
-    }
-  </style>
-<main>
 
-  </main>
+    .hero-text {
+        max-width: 500px;
+    }
+
+    .hero-text h1 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        color: #343a40;
+    }
+
+    .hero-text p {
+        font-size: 1.2rem;
+        margin-top: 15px;
+        color: #555;
+    }
+
+    .hero-image img {
+        width: 100%;
+        max-width: 500px;
+        border-radius: 12px;
+    }
+
+    .cta-button {
+        margin-top: 25px;
+        padding: 12px 28px;
+        font-size: 1rem;
+        background-color: #087191;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        transition: background-color 0.3s;
+    }
+
+    .cta-button:hover {
+        background-color: #055a74;
+    }
+
+    .features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        justify-content: space-between;
+        margin-top: 60px;
+    }
+
+    .feature-card {
+        flex: 1;
+        min-width: 250px;
+        padding: 25px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        text-align: center;
+    }
+
+    .feature-card i {
+        font-size: 2rem;
+        color: #087191;
+        margin-bottom: 10px;
+    }
+
+    .feature-card h4 {
+        margin-top: 10px;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .feature-card p {
+        color: #666;
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .hero-image img {
+            margin-top: 30px;
+        }
+
+        .features {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="hero-section">
+    <div class="hero-text">
+        <h1>Welcome to {{ store.name }}</h1>
+        <p>Your favorite meals, delivered hot and fresh to your doorstep.</p>
+        <a href="{{ url_for('main.menu', page_num=1) }}">
+            <button class="cta-button">Start Ordering</button>
+        </a>
+    </div>
+    <div class="hero-image">
+        <img src="https://source.unsplash.com/600x400/?food,delivery" alt="Food Delivery">
+    </div>
+</div>
+
+<div class="features mt-5">
+    <div class="feature-card">
+        <i class="fas fa-utensils"></i>
+        <h4>Top Restaurants</h4>
+        <p>Choose from a wide range of top-rated restaurants near you.</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-bolt"></i>
+        <h4>Fast Delivery</h4>
+        <p>We deliver your food quickly so it’s always hot and fresh.</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-credit-card"></i>
+        <h4>Secure Payments</h4>
+        <p>Pay easily with credit cards, mobile wallets, or cash on delivery.</p>
+    </div>
+</div>
 {% endblock %}
