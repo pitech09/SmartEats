@@ -16,8 +16,6 @@
         <th scope="col">Order-Id</th>
         <th scope="col">Status</th>
         <th scope="col">Date</th>
-        <th scope="col">Payment</th>
-        <th scope="col">Payment ID</th>
         <th scope="col">Order From</th>
         <th scope="col">Drop Location</th>
         <th>Actions</th>
@@ -42,8 +40,6 @@
           </form>
         </td>
         <td>{{ order.create_at.strftime('%Y - %m - %d @ %H:%M') }}</td>
-        <td>{{ order.payment }}</td>
-        <td>{{ order.transactionID }}</td>
         <td>{{ order.user.email | e }}</td>
         <td>{{ order.location }}</td>
         <td>

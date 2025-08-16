@@ -1,7 +1,69 @@
 {% extends "adminlayout.html" %}
 {% block title %}{{ store.name }} - Order #{{ user_order.order_id }} Details | SmartEats{% endblock %}
-
 {% block content %}
+
+<style>
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .orders-table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 600px;
+    }
+    .orders-table th, .orders-table td {
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+    .orders-table th {
+        background-color: #f4f4f4;
+    }
+
+    /* Mobile-friendly stacked table */
+    @media (max-width: 600px) {
+        .orders-table, 
+        .orders-table thead, 
+        .orders-table tbody, 
+        .orders-table th, 
+        .orders-table td, 
+        .orders-table tr {
+            display: block;
+            width: 100%;
+        }
+        .orders-table thead {
+            display: none; /* Hide headers */
+        }
+        .orders-table tr {
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .orders-table td {
+            text-align: right;
+            padding-left: 50%;
+            position: relative;
+            border: none;
+            border-bottom: 1px solid #eee;
+        }
+        .orders-table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 10px;
+            width: 45%;
+            text-align: left;
+            font-weight: bold;
+            color: #555;
+        }
+        .orders-table td:last-child {
+            border-bottom: none;
+        }
+    }
+</style>
 <section class="orders-section">
     <h2>Order #{{ user_order.order_id }}</h2>
     <p><strong>Total Cost:</strong> M{{ total }}</p>

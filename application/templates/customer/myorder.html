@@ -2,9 +2,9 @@
 {% block title %}My Orders - SmartEats{% endblock %}
 {% block content %}
 <div class="order-list">
-        <button type="submit" style="background-color: antiquewhite;" class="btn btn-outline-secondary rounded-pill" onclick="window.location.href='{{ url_for('main.myorders')}}'">Active/Pending Orders</button>
-        <button style="background-color: antiquewhite;" onclick="window.location.href='{{ url_for('main.completed_order') }}'" class="btn btn-outline-secondary rounded-pill">Order History</button>
-        <button style="background-color: antiquewhite;" class="btn btn-outline-secondary rounded-pill" onclick="window.location.href='{{ url_for('main.cancelled_orders')}}'">Cancelled Order</button>
+        <button type="submit" class="btn btn-outline-secondary rounded-pill" onclick="window.location.href='{{ url_for('main.myorders')}}'">Active/Pending Orders</button>
+        <button onclick="window.location.href='{{ url_for('main.completed_order') }}'" class="btn btn-outline-secondary rounded-pill">Order History</button>
+        <button  class="btn btn-outline-secondary rounded-pill" onclick="window.location.href='{{ url_for('main.cancelled_orders')}}'">Cancelled Order</button>
  </div>
         <!-- Active Orders -->
 <section class="order-list" id="active-orders">
