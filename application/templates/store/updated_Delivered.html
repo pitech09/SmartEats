@@ -8,13 +8,11 @@
         <thead>
         <tr>
             <th scope="col">Order-Id</th>
-            <th scope="col">Status</th>
             <th scope="col">Date</th>
             <th scope="col">Payment</th>
-            <th scope="col">Payment ID</th>
             <th scope="col">Order From</th>
-            <th scope="col">Drop Location</th>
-            <th scope="col">Delivery Proof</th>
+            <th scope="col">Location</th>
+            
             <th>Actions</th>
         </tr>
         </thead>
@@ -23,9 +21,6 @@
                     <!-- Repeat this block for each order -->
         <tr>
             <td>{{order.order_id}}</td>
-            <td>
-                {{order.status}}
-            </td>
             <td>
                 {{order.create_at.strftime('%Y - %m - %d @ %H:%M') }}
             </td>
