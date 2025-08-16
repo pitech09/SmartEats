@@ -222,8 +222,12 @@ def newlogin():
                 flash(f'Login Successful, welcome {store.name}')
                 return redirect(url_for('store.adminpage'))
 
+<<<<<<< HEAD
             elif delivery_guy and bcrypt.check_password_hash(delivery_guy.password, form.password.data):
                
+=======
+            elif delivery_guy and bcrypt.check_password_hash(delivery_guy.password, form.password.data):                
+>>>>>>> dbf960800cb46e0e101dfb9df5e4778c89091b53
                 login_user(delivery_guy)
                 session['user_type'] = 'delivery_guy'
                 session['delivery_guy_id'] = delivery_guy.id
