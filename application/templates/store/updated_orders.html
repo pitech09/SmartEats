@@ -1,110 +1,170 @@
 {% extends "adminlayout.html" %}
-{% block title %}{{store.name}} Pending and Approved Orders- SmartEats {% endblock %}
+{% block title %}{{store.name}} Pending and Approved Orders - SmartEats{% endblock %}
 {% block content %}
+<style>
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .orders-table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 600px;
+    }
+    .orders-table th, .orders-table td {
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+    .orders-table th {
+        background-color: #f4f4f4;
+    }
+
+    /* Mobile-friendly stacked table */
+    @media (max-width: 600px) {
+        .orders-table, 
+        .orders-table thead, 
+        .orders-table tbody, 
+        .orders-table th, 
+        .orders-table td, 
+        .orders-table tr {
+            display: block;
+            width: 100%;
+        }
+        .orders-table thead {
+            display: none; /* Hide headers */
+        }
+        .orders-table tr {
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .orders-table td {
+            text-align: right;
+            padding-left: 50%;
+            position: relative;
+            border: none;
+            border-bottom: 1px solid #eee;
+        }
+        .orders-table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 10px;
+            width: 45%;
+            text-align: left;
+            font-weight: bold;
+            color: #555;
+        }
+        .orders-table td:last-child {
+            border-bottom: none;
+        }
+    }
+</style>
+
 <section class="orders-section">
     <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline-primary rounded-pill">Ready Orders</button>
     <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline-primary rounded-pill">On Delivery</button>
+
     <h2>Pending Orders</h2>
-    {%if not orders%}
-    <h3>There are no pending orders</h3>
-    {%else%}
-    <table class="orders-table"  style="width:100%; table-layout:fixed;">
-        <thead>
-        <tr>
-            <th scope="col">Order-Id</th>
-            <th scope="col">Status</th>
-            <th scope="col">Date</th>
-            <th scope="col">Orderer</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        {%for order in orders%}
-        <tr>
-            <td>{{order.order_id}}</td>
-            <td>
-                {{order.status}}
-                {%if order.location != 'pickup'%}
-                <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
-                    {{ form.hidden_tag() }}
-                    {{form.status(class='form-control')}}
-                    {{form.submit(class='btn')}}
-                </form>
-                {%else%}
-                <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
-                    {{ form1.hidden_tag() }}
-                    {{form1.status(class='form-control')}}
-                    {{form1.submit(class='btn')}}
-                </form>
-                {%endif%}
+    {% if not orders %}
+        <h3>There are no pending orders</h3>
+    {% else %}
+    <div class="table-responsive">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Order-Id</th>
+                    <th>Status</th>
+                    <th>Date</th>
+        
+                    <th>Location</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td data-label="Order-Id">{{order.order_id}}</td>
+                    <td data-label="Status">
+                        {{order.status}}
+                        {% if order.location != 'pickup' %}
+                        <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
+                            {{ form.hidden_tag() }}
+                            {{ form.status(class='form-control') }}
+                            {{ form.submit(class='btn btn-sm btn-success mt-1') }}
+                        </form>
+                        {% else %}
+                        <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
+                            {{ form1.hidden_tag() }}
+                            {{ form1.status(class='form-control') }}
+                            {{ form1.submit(class='btn btn-sm btn-success mt-1') }}
+                        </form>
+                        {% endif %}
+                    </td>
+                    <td data-label="Date">{{order.create_at.strftime('%Y-%m-%d @ %H:%M')}}</td>
+                  
+                    <td data-label="Location">{{order.location}}</td>
+                    <td data-label="Actions">
+                        <button class="btn btn-primary btn-sm" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-            </td>
-            <td>
-                {{order.create_at.strftime('%Y - %m - %d @ %H:%M') }}
-            </td>
-            <td>
-                {{order.user.email}}
-            </td>
-            <td>
-                {{order.location}}</td>
-            <td>
-                <button class="btn" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
-                    View Details
-                </button>
-            </td>
-        </tr>
-        {%endfor%}
-        </tbody>
-    </table>
-    {%endif%}
     <h2>Approved User Orders</h2>
-    {%if not approved_order%}
-    <h3>There are no approved orders</h3>
-    {%else%}
-    <table class="orders-table">
-        <thead>
-        <tr>
-            <th scope="col">Order-Id</th>
-            <th scope="col">Status</th>
-            <th scope="col">Date</th>
-
-            <th scope="col">Drop Location</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        {%for order in approved_order%}
-        <tr>
-            <td>{{order.order_id}}</td>
-            <td>
-                {{order.status}}
-                {%if order.location != 'pickup'%}
-                <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
-                    {{ form.hidden_tag() }}
-                    {{form.status(class='form-control')}}
-                    {{form.submit(class='btn')}}
-                </form>
-                {%else%}
-                <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
-                    {{ form1.hidden_tag() }}
-                    {{form1.status(class='form-control')}}
-                    {{form1.submit(class='btn')}}
-                </form>
-                {%endif%}
-
-            </td>
-            <td>
-                {{order.create_at.strftime('%Y - %m - %d @ %H:%M') }}
-            </td>
-            <td>{{order.location}}</td>
-            <td>
-                <button class="btn" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
-                              View Details
-                </button>
-            </td>
-        </tr>
-        {%endfor%}
-        </tbody>
-    </table>{%endif%}
+    {% if not approved_order %}
+        <h3>There are no approved orders</h3>
+    {% else %}
+    <div class="table-responsive">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Order-Id</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Location</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in approved_order %}
+                <tr>
+                    <td data-label="Order-Id">{{order.order_id}}</td>
+                    <td data-label="Status">
+                        {{order.status}}
+                        {% if order.location != 'pickup' %}
+                        <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
+                            {{ form.hidden_tag() }}
+                            {{ form.status(class='form-control') }}
+                            {{ form.submit(class='btn btn-sm btn-success mt-1') }}
+                        </form>
+                        {% else %}
+                        <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
+                            {{ form1.hidden_tag() }}
+                            {{ form1.status(class='form-control') }}
+                            {{ form1.submit(class='btn btn-sm btn-success mt-1') }}
+                        </form>
+                        {% endif %}
+                    </td>
+                    <td data-label="Date">{{order.create_at.strftime('%Y-%m-%d @ %H:%M')}}</td>
+                    <td data-label="Drop Location">{{order.location}}</td>
+                    <td data-label="Actions">
+                        <button class="btn btn-primary btn-sm" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 </section>
-{%endblock%}
+{% endblock %}
