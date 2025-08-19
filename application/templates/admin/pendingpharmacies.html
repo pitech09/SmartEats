@@ -1,0 +1,53 @@
+{% extends "adminslayout.html" %}
+{% block title %} Stores pending Verification- MediCart {% endblock %}
+{% block content %}
+
+    
+
+<section class="orders-section">
+
+
+          <h2>Stores pending verification</h2>
+    {%if not stores%}
+    <p>There are no Stores needing Verification.</p>
+    {%else%}
+            <table class="orders-table" style="width:100%; table-layout:auto;">
+                <thead>
+                    <tr>
+              <th scope="col">name</th>
+              <th scope="col">email</th>
+              <th scope="col">Date</th>
+              <th scope="col">Address</th>
+              <th scope="col">Phone</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {%for store in stores%}
+                   <tr>
+                        <td>{{store.name}}</td>
+                      <td>
+                        {{store.email}}
+                      </td>
+                      <td>
+                        {{store.registered_on.strftime('%Y - %m - %d @ %H:%M') }}
+                      </td>
+                        
+                    
+                        <td>
+                          {{store.address}}
+                        </td>
+                       <td>{{store.phone}}</td>
+                      <td>
+                          <button onclick="window.location.href='{{ url_for('admin.verifypharmacy', pharmacy_id=store.id) }}'" class="btn btn-outline-success bg-success rounded-pill">Verify</button>
+                          <button onclick="window.location.href='{{ url_for('admin.cancel_pharmacy', pharmacy_id=store.id) }}'" class="btn btn-outline rounded-pill" style="background-color:red;">Cancel</button>
+                      </td>
+                    </tr>
+                {%endfor%}
+                </tbody>
+            </table>
+    {%endif%}
+
+        </section>
+
+{%endblock%}

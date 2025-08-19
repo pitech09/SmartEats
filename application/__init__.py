@@ -50,4 +50,7 @@ def create_app(config_name):
     from .delivery import delivery as delivery_blueprint
     app.register_blueprint(delivery_blueprint, url_prefix='/delivery')
 
+    from .admin import admin as admin_blueprint
+    app.register_blueprint(admin_blueprint, url_prefix='/admin')
+
     return app

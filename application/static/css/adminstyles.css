@@ -15,7 +15,7 @@ table th, table td {
 }
 
 table th {
-    background-color: #007bff;
+    background-color: #2da350;
     color: white;
 }
 
@@ -65,7 +65,7 @@ a:active {
 /* Alerts & Message Styles */
 .alert {
     padding: 10px;
-    background-color: #f44336;
+    background-color: #2aeb8a;
     color: white;
     margin-bottom: 15px;
     border-radius: 5px;

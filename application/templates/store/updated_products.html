@@ -25,10 +25,10 @@
   <td>
       <div style="display:grid;">
 
-      <button  class="btn btn-outline-primary rounded-pill" onclick="window.location.href='{{ url_for('store.remove_product', item_id=product.id) }}'"><i
+      <button  class="btn btn-outline-success bg-success rounded-pill" onclick="window.location.href='{{ url_for('store.remove_product', item_id=product.id) }}'"><i
       class="fas fa-minus"></i>
       </button>
-      <button  class="btn btn-outline-primary rounded-pill" onclick="window.location.href='{{ url_for('store.updateproduct', item_id=product.id) }}'">
+      <button  class="btn btn-outline-success bg-success rounded-pill" onclick="window.location.href='{{ url_for('store.updateproduct', item_id=product.id) }}'">
           <i class="fas fa-edit"></i>
       </button>
 </div>

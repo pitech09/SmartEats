@@ -2,9 +2,9 @@
 {% block title %}{{store.name}} Cancelled Orders - SmartEats {% endblock %}
 {% block content %}
 <section class="orders-section">
-    <h2>All Cancelled Orders</h2>
+    <h2 style="text-align: center;">All Cancelled Orders</h2>
     {%if not orders%}
-    <p>You have no cancelled orders.</p>
+    <small>You have no cancelled orders.</small>
     {%else%}
 
             <!-- Orders Table -->
