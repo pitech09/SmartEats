@@ -310,9 +310,13 @@ def addorder(total_amount):
             if not form.payment_screenshot.data:
                 flash("your are missing payment proof")
                 return redirect(url_for('main.cart'))
-            pics = upload_to_cloudinary(file)
-            image_url = pics['secure_url'] 
-            neworder.screenshot = image_url
+            if current_app.config['USE_CLOUDINARY']:
+                pics = upload_to_cloudinary(file)
+                image_url = pics['secure_url'] 
+                neworder.screenshot = image_url
+            else:
+                pics = save_product_picture(file)
+                neworder.screenshot = pics
         else:
             return redirect(url_for('main.cart'))
         
