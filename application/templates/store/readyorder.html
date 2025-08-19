@@ -2,12 +2,12 @@
 {% block title %}{{store.name}} Pending and Active Orders- SmartEats {% endblock %}
 {% block content %}
         <section class="orders-section">
-        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline-primary rounded-pill">Ready Orders</button>
-        <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline-primary rounded-pill">On Delivery</button>
+        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline bg-success rounded-pill" style="color:white;">Ready Orders</button>
+        <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline bg-success rounded-pill" style="color:white;">On Delivery</button>
 
- <h2>Ready Orders </h2>
+ <h2 style="text-align: center;">Ready Orders </h2>
             {%if not readyorders%}
-            <p>There are ready orders</p>
+            <small>There are ready orders</small>
             {%else%}
             <div style="overflow-x: auto;">
   <table class="orders-table" style="min-width: 800px; width: 100%;">
@@ -52,9 +52,6 @@
     </tbody>
   </table>
 </div>
-
-            {%endif%}
-
-        </section>
-
+{%endif%}
+</section>
 {%endblock%}

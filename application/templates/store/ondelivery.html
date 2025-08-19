@@ -2,19 +2,13 @@
 {% block title %}{{store.name}} Pending and Active Orders- SmartEats {% endblock title %}
 {% block content %}
         <section class="orders-section">
-        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline-primary rounded-pill">Ready Orders</button>
-        <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline-primary rounded-pill">On Delivery</button>
-
- <h2>Orders on Delivery</h2>
-            {%if not ondelivery%}
-            <p>There are no orders on Delivery</p>
-            {%else%}
-           
+        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline bg-success rounded-pill" style="color:white;">Ready Orders</button>
+        <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline bg-success rounded-pill" style="color:white;">On Delivery</button>
 <div class="order-list">
-          <h2>Approved Orders</h2>
-    {%if not readyorders%}
-    <p>There are no orders on delivery.</p>
-    {%else%}
+      <h4 style="text-align: center;">Orders on Delivery</h2>
+            {%if not ondelivery%}
+            <small>There are no orders on Delivery</small>
+            {%else%}
      
                 {%for order in ondelivery%}
                    <div class="order-card">
@@ -38,8 +32,34 @@
                           </button>
                    </div>
                 {%endfor%}
-        
-    {%endif%}
+                  </div>
+            {%endif%}
+           
+<div class="order-list">
+   <h4 style="text-align: center;">On Delivery</h4>
+            {%if not readyorders%}
+         <small>There are no orders on delivery.</small>
+            {%else%}
+                {%for order in ondelivery%}
+                   <div class="order-card">
+                        {{order.order_id}}
+                        {{order.status}}
+                     <form action="{{url_for('store.updatestatus', order_id=order.id)}}" method="POST">
+                       {{ form.hidden_tag() }}
+                      {{form.status(class='form-control')}}
+                      {{form.submit(class='btn')}}
+                    </form>
+                        {{order.create_at.strftime('%Y - %m - %d @ %H:%M') }}
+                        {{order.user.email}}
+                        
+                        {{order.location}}
+                      
+                          <button class="btn" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
+                              View Details
+                          </button>
+                   </div>
+                {%endfor%}
+            {%endif%}
 </div>
         </section>
 {%endblock%}

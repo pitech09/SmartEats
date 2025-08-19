@@ -25,7 +25,8 @@ def load_user(user_id):
         return User.query.get(int(user_id))
     elif user_type == 'delivery_guy':
         return DeliveryGuy.query.get(int(user_id))
-
+    elif user_type == 'administrator':
+        return Administrator.query.get(int(user_id))
     return None
 
 def update_product_status(Product):

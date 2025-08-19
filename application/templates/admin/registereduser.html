@@ -1,0 +1,51 @@
+{% extends "adminslayout.html" %}
+{% block title %} Pharmacies Registered - MediCart {% endblock %}
+{% block content %}
+
+<section class="orders-section">
+
+
+          <h2 style="text-align:right;">Stores Registered</h2>
+    {%if not pharmacies%}
+    <p>There are 0 registered Stores.</p>
+    {%else%}
+            <table class="orders-table" style="width:100%; table-layout:auto;">
+                <thead>
+                    <tr>
+              <th scope="col">name</th>
+              <th scope="col">email</th>
+              <th scope="col">Registered On</th>
+              <th scope="col">Address</th>
+              <th scope="col">Phone</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {%for pharmacy in pharmacies%}
+                   <tr>
+                        <td>{{pharmacy.name}}</td>
+                      <td>
+                        {{pharmacy.email}}
+                      </td>
+                      <td>
+                        {{pharmacy.registered_on.strftime('%Y - %m - %d @ %H:%M') }}
+                      </td>
+                        
+
+                        <td>
+                          {{pharmacy.address}}
+                        </td>
+                       <td>{{pharmacy.phone}}</td>
+                      <td>
+                          <button onclick="window.location.href='{{ url_for('admin.cancel_pharmacy') }}'" class="btn btn-outline-primary rounded-pill">Delete</button>
+
+                      </td>
+                    </tr>
+                {%endfor%}
+                </tbody>
+            </table>
+    {%endif%}
+
+        </section>
+
+{%endblock%}

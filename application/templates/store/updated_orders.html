@@ -65,12 +65,12 @@
 </style>
 
 <section class="orders-section">
-    <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline-primary rounded-pill">Ready Orders</button>
-    <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline-primary rounded-pill">On Delivery</button>
+    <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline bg-success rounded-pill" style="color:#fff;"> Ready Orders</button>
+    <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline bg-success rounded-pill" style="color:#fff;" >On Delivery</button>
 
-    <h2>Pending Orders</h2>
+    <h2 style="text-align: center;">Pending Orders</h2>
     {% if not orders %}
-        <h3>There are no pending orders</h3>
+        <small>There are no pending orders</small>
     {% else %}
     <div class="table-responsive">
         <table class="orders-table">
@@ -119,9 +119,9 @@
     </div>
     {% endif %}
 
-    <h2>Approved User Orders</h2>
+    <h2 style="text-align: center;">Approved User Orders</h2>
     {% if not approved_order %}
-        <h3>There are no approved orders</h3>
+        <small>There are no approved orders</small>
     {% else %}
     <div class="table-responsive">
         <table class="orders-table">

@@ -1,5 +1,5 @@
-{% extends "layout.html" %}
-{% block title %}Register your Store - SmartEats{% endblock %}
+{% extends "adminslayout.html" %}
+{% block title %}Register Store - SmartEats{% endblock %}
 
 {% block content %}
 
@@ -15,8 +15,7 @@
               <!-- Logo -->
               
               <!-- /Logo -->
-              <h4 class="mb-2">This is a good start.</h4>
-              <p class="mb-4">Reach more customers today. Increase sales hussle free.</p>
+             
               <form id="formAuthentication" class="mb-3" action="{{url_for('auth.registerstore')}}" method="POST">
                 <div class="mb-3">
                 {{ form.hidden_tag() }}

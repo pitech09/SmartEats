@@ -7,11 +7,11 @@ import cloudinary.api
 
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-should-change-this'
+    SECRET_KEY = '19fe4df09e28188141de802f9ae70a02'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     ALLOWED_EXTENSIONS = {'png', 'jpeg', 'jpg', 'gif'}
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_NAME = 'smarteats_session'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
@@ -49,9 +49,10 @@ class DevelopmentConfig(Config):
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USE_SSL = False
+
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'pitechcorp7@gmail.com'
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'rljm azij wply ihrp'
-
+    USE_CLOUDINARY = False
     UPLOAD_PATH = os.path.join(basedir, 'static/css/images/profiles')
     UPLOAD_PRODUCTS = os.path.join(basedir, 'static/css/images/products')
     UPLOAD_DELIVERY = os.path.join(basedir, 'static/css/images/deliveries')
@@ -75,6 +76,7 @@ class ProductionConfig(Config):
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USE_SSL = False
+    USE_CLOUDINARY = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'pitechcorp7@gmail.com'
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'rljm azij wply ihrp'
 
@@ -92,5 +94,5 @@ class ProductionConfig(Config):
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'default': ProductionConfig
+    'default': DevelopmentConfig
 }

@@ -92,8 +92,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False, unique=False)
     carts = db.relationship('Cart', backref='user', lazy=True)
 
-   
-
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     loyalty_points = db.Column(db.Integer, default=0)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
@@ -124,6 +122,12 @@ class User(UserMixin, db.Model):
         self.email = email
         self.password = password
 
+class Administrator(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    
 
 class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)

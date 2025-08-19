@@ -19,7 +19,7 @@ from ..forms import addmore, removefromcart, ProductForm, \
     updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdatePharmacyForm, updateorderpickup, deliveryregistrationform
 from ..models import (User, Product, Sales, DeliveryGuy,
                       Order, Cart, OrderItem, db, Store,
-                      Notification, Staff)
+                      Notification, Staff, Administrator)
 from ..utils.notification import create_notification
 from application import cache
 mypharmacy_product = Store.products
@@ -27,7 +27,37 @@ mypharmacy_orders = Store.orders
 bcrypt = Bcrypt()
 
 
+def save_product_picture(file):
+    # Set the desired size for resizing
+    size = (300, 300)
 
+    # Generate a random hex string for the filename
+    random_hex = secrets.token_hex(9)
+
+    # Get the file extension
+    _, f_ex = os.path.splitext(file.filename)
+
+    # Generate the final filename (random + extension)
+    post_img_fn = random_hex + f_ex
+
+    # Define the path to save the file (UPLOAD_PRODUCTS should be configured in your Flask app)
+    post_image_path = os.path.join(current_app.root_path, current_app.config['UPLOAD_PRODUCTS'], post_img_fn)
+
+    try:
+        # Open the image
+        img = Image.open(file)
+
+        # Resize the image to fit within the size (thumbnail)
+        img.thumbnail(size)
+
+        # Save the resized image
+        img.save(post_image_path)
+
+        return post_img_fn  # Return the filename to store in the database
+    except Exception as e:
+        # If an error occurs during image processing, handle it
+        print(f"Error saving image: {e}")
+        return None
 
 def upload_to_cloudinary(file, folder='products'):
     result = upload(
@@ -48,6 +78,7 @@ login_manager.session_protection = 'strong'
 login_manager.login_view = 'auth.newlogin'
 
 
+
 @login_manager.user_loader
 def load_user(user_id):
     user_type = session.get('user_type')
@@ -60,13 +91,18 @@ def load_user(user_id):
         return User.query.get(int(user_id))
     elif user_type == 'delivery_guy':
         return DeliveryGuy.query.get(int(user_id))
-
+    elif user_type == 'administrator':
+        return Administrator.query.get(int(user_id))
     return None
 
 
 @store.route('/adminpage', methods=["POST", "GET"])
 @login_required
 def adminpage():
+    if not current_user.email == session['email']:
+        flash('you are not authorised to see contents on this page.')
+        logout_user()
+        return redirect(url_for('main.newlogin')) 
     mypharmacy = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
         user_type='store', user_id=mypharmacy.id, is_read=False
@@ -419,14 +455,14 @@ def addproducts():
                                   description=form.product_description.data
                                   )
                 file = form.product_pictures.data
-                
-                upload_result = upload_to_cloudinary(file)
-                image_url = upload_result['secure_url'] 
+                if current_app.config['USE_CLOUDINARY']:
+                    upload_result = upload_to_cloudinary(file)
+                    image_url = upload_result['secure_url'] 
+                    product.pictures = image_url
+                else:
+                    product.pictures = save_product_picture(file)
               
                 product.store_id = mypharmacy.id
-                
-                product.pictures = image_url
-
                 db.session.add(product)
                 try:
                     db.session.commit()

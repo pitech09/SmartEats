@@ -12,7 +12,7 @@ from werkzeug.exceptions import InternalServerError
 from . import auth
 from .. import (login_manager, db)
 from ..forms import RegistrationForm, PharmacyRegistrationForm, emailform, resetpassword
-from ..models import User, Store, DeliveryGuy, Staff
+from ..models import User, Store, DeliveryGuy, Staff, Administrator
 
 s = URLSafeTimedSerializer('ad40898f84d46bd1d109970e23c0360e')
 
@@ -171,9 +171,10 @@ def register():
                     if user.confirmed:
                         return redirect(url_for('auth.newlogin'))
                     else:
-                        token = send_email(form)
-                        flash('An email was sent to you email account.', 'success')
-                        return redirect(url_for('auth.unconfirmed', token=token))
+                        #token = send_email(form)
+                        #flash('An email was sent to you email account.', 'success')
+                        #return redirect(url_for('auth.unconfirmed', token=token))
+                        return redirect(url_for('auth.newlogin'))
                 except IntegrityError:
                     db.session.rollback()
                     flash('Username or email already exist')
@@ -200,16 +201,25 @@ def newlogin():
             store = Store.query.filter_by(email=form.email.data).first()
             delivery_guy = DeliveryGuy.query.filter_by(email=form.email.data).first()
             staff = Staff.query.filter_by(email=form.email.data).first()
+            administrator = Administrator.query.filter_by(email=form.email.data).first()
 
             if user and bcrypt.check_password_hash(user.password, form.password.data):
-                if not user.confirmed:
-                    flash('You need to activate your email address before login.')
-                    return redirect(url_for('auth.newlogin'))
+            
+                #if not user.confirmed:
+                #    flash('You need to activate your email address before login.')
+                #    return redirect(url_for('auth.newlogin'))
                 login_user(user)
                 session["email"] = form.email.data
                 session['user_type'] = 'customer'
                 flash(f'Login Successful, welcome {user.username}', 'success')
                 return redirect(url_for('main.home'))
+
+            elif administrator and bcrypt.check_password_hash(administrator.password, form.password.data):
+                login_user(administrator)
+                session['user_type'] = 'administrator'
+                session['admin_id'] = administrator.id
+                session['email'] = administrator.email
+                return redirect(url_for('admin.admindash'))
 
             elif store and bcrypt.check_password_hash(store.password, form.password.data):
                 if not store.confirmed:
