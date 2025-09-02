@@ -58,15 +58,15 @@ class Store(UserMixin, db.Model):
 class Product(db.Model):
     __searchable__ = ['productname', 'description', 'category']
     id = db.Column(db.Integer, primary_key=True)
-    productname = db.Column(db.String(10), nullable=False)
+    productname = db.Column(db.String(150), nullable=False)   # Increased size
     price = db.Column(db.Float, nullable=False)
-    pictures = db.Column(db.Text, nullable=False)
+    pictures = db.Column(db.Text, nullable=False)             # For long URLs
     quantity = db.Column(db.Integer)
-    description = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=False)          # Long text
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
     order_items = db.relationship('OrderItem', backref='product', lazy=True)
-    warning = db.Column(db.String(50), default='Quantity Good')
-    category = db.Column(db.String(50), nullable=True, default='Uncategorized')
+    warning = db.Column(db.String(100), default='Quantity Good')  # Increased size a bit
+    category = db.Column(db.String(100), nullable=True, default='Uncategorized') # More room
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
 
 class Sales(db.Model):
@@ -122,7 +122,7 @@ class User(UserMixin, db.Model):
         self.email = email
         self.password = password
 
-class Administrator(UserMixin, db.Model):
+class Administrater(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(50), nullable=False)

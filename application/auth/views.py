@@ -12,7 +12,7 @@ from werkzeug.exceptions import InternalServerError
 from . import auth
 from .. import (login_manager, db)
 from ..forms import RegistrationForm, PharmacyRegistrationForm, emailform, resetpassword
-from ..models import User, Store, DeliveryGuy, Staff, Administrator
+from ..models import User, Store, DeliveryGuy, Staff, Administrater
 
 s = URLSafeTimedSerializer('ad40898f84d46bd1d109970e23c0360e')
 
@@ -171,10 +171,9 @@ def register():
                     if user.confirmed:
                         return redirect(url_for('auth.newlogin'))
                     else:
-                        #token = send_email(form)
-                        #flash('An email was sent to you email account.', 'success')
-                        #return redirect(url_for('auth.unconfirmed', token=token))
-                        return redirect(url_for('auth.newlogin'))
+                        token = send_email(form)
+                        flash('An email was sent to you email account.', 'success')
+                        return redirect(url_for('auth.unconfirmed', token=token))
                 except IntegrityError:
                     db.session.rollback()
                     flash('Username or email already exist')
@@ -201,7 +200,7 @@ def newlogin():
             store = Store.query.filter_by(email=form.email.data).first()
             delivery_guy = DeliveryGuy.query.filter_by(email=form.email.data).first()
             staff = Staff.query.filter_by(email=form.email.data).first()
-            administrator = Administrator.query.filter_by(email=form.email.data).first()
+            administrator = Administrater.query.filter_by(email=form.email.data).first()
 
             if user and bcrypt.check_password_hash(user.password, form.password.data):
             
