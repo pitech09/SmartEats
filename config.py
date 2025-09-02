@@ -17,10 +17,6 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = 1800  # seconds
 
-    # Flask-Caching config
-    CACHE_TYPE = 'SimpleCache'  # or "RedisCache"
-    CACHE_DEFAULT_TIMEOUT = 300
-
     # Flask-Compress config
     COMPRESS_ALGORITHM = 'gzip'
     COMPRESS_LEVEL = 6

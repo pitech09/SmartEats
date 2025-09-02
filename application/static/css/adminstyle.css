@@ -38,7 +38,7 @@
 }
 
 .orders-table .btn {
- background-color:  #4e73df;
+
     padding: 8px 15px;
     font-size: 14px;
     color: white;
@@ -48,21 +48,6 @@
     transition: background-color 0.3s;
 }
 
-.orders-table .view-btn {
-    background-color:  #4e73df;
-}
-
-.orders-table .view-btn:hover {
-    background-color: #0056b3;
-}
-
-.orders-table .update-btn {
-    background-color: #FFC107;
-}
-
-.orders-table .update-btn:hover {
-    background-color: #e0a800;
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
