@@ -19,7 +19,7 @@ from ..forms import addmore, removefromcart, ProductForm, \
     updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdatePharmacyForm, updateorderpickup, deliveryregistrationform
 from ..models import (User, Product, Sales, DeliveryGuy,
                       Order, Cart, OrderItem, db, Store,
-                      Notification, Staff, Administrator)
+                      Notification, Staff, Administrater)
 from ..utils.notification import create_notification
 from application import cache
 mypharmacy_product = Store.products
@@ -92,7 +92,7 @@ def load_user(user_id):
     elif user_type == 'delivery_guy':
         return DeliveryGuy.query.get(int(user_id))
     elif user_type == 'administrator':
-        return Administrator.query.get(int(user_id))
+        return Administrater.query.get(int(user_id))
     return None
 
 
