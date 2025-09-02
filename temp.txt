@@ -1,52 +1,4 @@
-{% extends "adminlayout.html" %}
-{% block title %}{{ store.name }} Orders - SmartEats{% endblock %}
-{% block content %}
-
-<style>
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Orders table styling */
-.orders-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 30px;
-    background: #fff;
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.orders-table th, .orders-table td {
-    padding: 12px;
-    text-align: center;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-.orders-table th {
-    background-color: #2da350;
-    color: #fff;
-    font-weight: bold;
-}
-
-.orders-table tr:nth-child(even) {
-    background-color: #f8fdf9;
-}
-
-@media (max-width: 768px) {
-    .orders-table {
-        font-size: 12px;
-    }
-    .orders-table th, .orders-table td {
-        padding: 8px;
-    }
-}
-</style>
-
-<section class="orders-section">
+section class="orders-section">
     <!-- Navigation buttons -->
     <div class="mb-3 text-center">
         <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" 
@@ -61,14 +13,14 @@
         <p class="text-center text-muted">There are no pending orders</p>
     {% else %}
     <div class="table-responsive">
-        <table class="orders-table" style="table-layout: fixed;">
+        <table class="orders-table">
             <thead>
                 <tr>
-                    <th scope="col">Order-Id</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Location</th>
-                    <th scope="col">Actions</th>
+                    <th>Order-Id</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Location</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -81,18 +33,18 @@
                             {% if order.location != 'pickup' %}
                                 {{ form.hidden_tag() }}
                                 {{ form.status(class='form-control form-control-sm') }}
-                                {{ form.submit(class="btn btn-success btn-sm rounded-pill mt-1") }}
+                                {{ form.submit(class='btn btn-success btn-sm mt-1') }}
                             {% else %}
                                 {{ form1.hidden_tag() }}
                                 {{ form1.status(class='form-control form-control-sm') }}
-                                {{ form1.submit(class="btn btn-success btn-sm rounded-pill mt-1") }}
+                                {{ form1.submit(class='btn btn-success btn-sm mt-1') }}
                             {% endif %}
                         </form>
                     </td>
                     <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
                     <td>{{ order.location }}</td>
                     <td>
-                        <button class="btn btn-success btn-sm rounded-pill" 
+                        <button class="btn btn-primary btn-sm" 
                                 onclick="window.location.href='{{ url_for('store.userorders', order_id=order.id) }}'">
                             View Details
                         </button>
@@ -109,7 +61,7 @@
     {% if not approved_order %}
         <p class="text-center text-muted">There are no approved orders</p>
     {% else %}
-    <div class="table-responsive">
+
         <table class="orders-table">
             <thead>
                 <tr>
@@ -130,18 +82,18 @@
                             {% if order.location != 'pickup' %}
                                 {{ form.hidden_tag() }}
                                 {{ form.status(class='form-control form-control-sm') }}
-                                {{ form.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                                {{ form.submit(class='btn btn-success btn-sm mt-1') }}
                             {% else %}
                                 {{ form1.hidden_tag() }}
                                 {{ form1.status(class='form-control form-control-sm') }}
-                                {{ form1.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                                {{ form1.submit(class='btn btn-success btn-sm mt-1') }}
                             {% endif %}
                         </form>
                     </td>
                     <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
                     <td>{{ order.location }}</td>
                     <td>
-                        <button class="btn btn-success btn-sm rounded-pill" 
+                        <button class="btn btn-primary btn-sm" 
                                 onclick="window.location.href='{{ url_for('store.userorders', order_id=order.id) }}'">
                             View Details
                         </button>
@@ -153,4 +105,3 @@
     </div>
     {% endif %}
 </section>
-{% endblock %}

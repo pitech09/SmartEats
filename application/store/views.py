@@ -304,7 +304,7 @@ def ActiveOrders():
     form = updatestatusform()
     form1 = updateorderpickup()
     orders = Order.query.filter(Order.status=="Pending", Order.store_id == current_user.id).all()
-    approved_order = Order.query.filter(Order.status=="Approved", Order.store_id == current_user.id).all()
+    approved_order = Order.query.filter(Order.status=="Appproved", Order.store_id == current_user.id).all()
     store_id = session.get('store_id')
     readyorder = Order.query.filter(Order.status=="Ready ", Order.store_id == current_user.id).all()
 
@@ -313,26 +313,40 @@ def ActiveOrders():
                            unread_notifications=unread_notifications, store=store, count=count, form1=form1)
 
 
-@cache.memoize(timeout=300)
+
 @store.route('/delivered')
 @login_required
-#@role_required('Store')
 def delivered_orders():
     mypharmacy = Store.query.get_or_404(current_user.id)
+
+    # Notifications
     unread_notifications = Notification.query.filter_by(
         user_type='store', user_id=mypharmacy.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
+    
     count = Notification.query.filter_by(
         user_type='store', user_id=mypharmacy.id, is_read=False
-    ).order_by(Notification.timestamp.desc()).count()
+    ).count()
 
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)    
+
     form = updatestatusform()
-    orders = Order.query.filter(Order.status=="Delivered", Order.store_id == current_user.id).all()
-    #total = sum(item.product.price * item.quantity for item in orders.order_items)
-    return render_template("store/updated_Delivered.html", form=form, orders=orders,
-                           unread_notifications=unread_notifications,store=store, count=count)
+
+    # Fetch Delivered or Collected orders
+    orders = Order.query.filter(
+        Order.status.in_(["Delivered", "Collected"]),
+        Order.store_id == current_user.id
+    ).order_by(Order.create_at.desc()).all()
+
+    return render_template(
+        "store/updated_Delivered.html",
+        form=form,
+        orders=orders,
+        unread_notifications=unread_notifications,
+        store=store,
+        count=count
+    )
 
 @store.route('/cancelled')
 @login_required

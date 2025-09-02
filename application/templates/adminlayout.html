@@ -1,261 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
 
-    <title>{% block title %}{{current_user.name}} {% endblock %}</title>
+    <title>{% block title %}{{ current_user.name }}{% endblock %}</title>
+
+    <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sb-admin-2.min.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyle.css') }}">
-    <link href="{{url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css')}}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,900" rel="stylesheet">
+
+    <style>
+    /* Sidebar custom green */
+    .bg-success {
+        background-color: #2da350 !important;
+    }
+
+    .sidebar .nav-link {
+        font-size: 14px;
+        padding: 10px 15px;
+    }
+
+    .sidebar .nav-link:hover {
+        background-color: #259443;
+    }
+
+    .sidebar .sidebar-heading {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #d1e7dd;
+        margin: 10px 0;
+    }
+    /* Mobile toggle button (green) */
+.custom-toggle {
+    background-color: #2da350;
+    border: none;
+    color: white;
+}
+
+.custom-toggle:hover {
+    background-color: #259443;
+    color: #fff;
+}
+
+.custom-toggle i {
+    font-size: 18px;
+}
+
+    </style>
 </head>
 
 <body id="page-top">
     <!-- Page Wrapper -->
     <div id="wrapper">
+
         <!-- Sidebar -->
-    <ul class="navbar-nav bg-success sidebar sidebar-dark accordion" id="accordionSidebar">
+        <ul class="navbar-nav bg-success sidebar sidebar-dark accordion" id="accordionSidebar">
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
-                <div class="sidebar-brand-icon rotate-n-15">
-
-                </div>
-                <div class="sidebar-brand-text mx-3">{{current_user.name}}</div>
+                <div class="sidebar-brand-text mx-3">{{ current_user.name }}</div>
             </a>
 
-            <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
-                       <!-- Nav Item - Dashboard -->
+            <!-- Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="{{url_for('store.adminpage')}}">
+                <a class="nav-link" href="{{ url_for('store.adminpage') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
 
-            <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Order Management
-            </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
+            <!-- Order Management -->
+            <div class="sidebar-heading">Order Management</div>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.ActiveOrders')}}">
+                <a class="nav-link" href="{{ url_for('store.ActiveOrders') }}">
                     <i class="fas fa-spinner"></i>
                     <span>Active Orders</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.delivered_orders')}}" >
-                     <i class="fa fa-check"></i>
+                <a class="nav-link" href="{{ url_for('store.delivered_orders') }}">
+                    <i class="fa fa-check"></i>
                     <span>Complete Orders</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.cancelled_orders')}}" >
+                <a class="nav-link" href="{{ url_for('store.cancelled_orders') }}">
                     <i class="fas fa-times-circle"></i>
                     <span>Cancelled Orders</span>
                 </a>
             </li>
 
-            <!-- Divider -->
-                                    <!-- Heading -->
-            <div class="sidebar-heading">
-                 Inventory Management
-            </div>
+            <hr class="sidebar-divider">
+
+            <!-- Inventory -->
+            <div class="sidebar-heading">Inventory Management</div>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.products')}}" >
+                <a class="nav-link" href="{{ url_for('store.products') }}">
                     <i class="fas fa-th-list"></i>
                     <span>View Products</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.addproducts')}}" >
+                <a class="nav-link" href="{{ url_for('store.addproducts') }}">
                     <i class="fas fa-plus-circle"></i>
                     <span>Add Products</span>
                 </a>
-
             </li>
 
             <hr class="sidebar-divider">
 
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                User and Profile Management
-            </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
+            <!-- Users -->
+            <div class="sidebar-heading">User & Profile</div>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.addstaff')}}" >
+                <a class="nav-link" href="{{ url_for('store.addstaff') }}">
                     <i class="fas fa-user-plus"></i>
-                    <span>Add Stuff</span>
+                    <span>Add Staff</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.register_delivery')}}" >
+                <a class="nav-link" href="{{ url_for('store.register_delivery') }}">
                     <i class="fas fa-truck"></i>
-                    <span>Register Delivery Personnel </span>
+                    <span>Register Delivery</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('store.updatestore')}}" >
+                <a class="nav-link" href="{{ url_for('store.updatestore') }}">
                     <i class="fas fa-plus"></i>
                     <span>Update Payment Options</span>
                 </a>
-
             </li>
 
-            <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 
+            <!-- Logout -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="{{url_for('main.logout')}}" >
-                <i class="fas fa-sign-out-alt"></i>
+                <a class="nav-link" href="{{ url_for('main.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
             </li>
         </ul>
-        <!-- End of Sidebar -->
+        <!-- End Sidebar -->
 
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
-            <!-- Main Content -->
             <div id="content">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
-                        <i class="fa fa-bars"></i>
-                    </button>
+
+                <!-- Mobile Sidebar Toggle -->
+                <button id="sidebarToggleTop" class="btn btn-success d-md-none rounded-circle mr-3 custom-toggle">
+                    <i class="fa fa-bars"></i>
+                </button>
+
+
                 <!-- Topbar -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
                    <ul class="navbar-nav ml-auto">
-                        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
 
-
-                        <!-- Nav Item - Alerts -->
+                        <!-- Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
-                                <!-- Counter - Alerts -->
-                                <span class="badge badge-danger badge-counter">{{count}}</span>
+                                <span class="badge badge-danger badge-counter">{{ count }}</span>
                             </a>
-                            <!-- Dropdown - Alerts -->
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="alertsDropdown">
-                                <h6 class="dropdown-header">
-                                    Notification Center
-                                </h6>
-                                  {% for note in unread_notifications %}
-                                 {%if note%}
-                                <a class="dropdown-item d-flex align-items-center" href="{{url_for('store.mark_notification_read', notification_id=note.id)}}">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
+                                <h6 class="dropdown-header">Notification Center</h6>
+                                {% if unread_notifications %}
+                                    {% for note in unread_notifications %}
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ url_for('store.mark_notification_read', notification_id=note.id) }}">
+                                        <div class="mr-3">
+                                            <div class="icon-circle bg-primary">
+                                                <i class="fas fa-file-alt text-white"></i>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div>
-
-                                        <div class="small text-gray-500">{{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
-                                        <span class="font-weight-bold"> {{ note.message }}</span>
-
-                                    </div>
-                                </a>
-                                {%else%}
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
+                                        <div>
+                                            <div class="small text-gray-500">{{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+                                            <span class="font-weight-bold">{{ note.message }}</span>
                                         </div>
-                                    </div>
-                                    <div>
-                                    </div>
-                                    <span class="font-weight-bold">No new notifications</span>
-                                </a>
-                                {%endif%}
-                                {%endfor%}
-
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Notifications</a>
+                                    </a>
+                                    {% endfor %}
+                                {% else %}
+                                    <a class="dropdown-item text-center small text-gray-500" href="#">
+                                        No new notifications
+                                    </a>
+                                {% endif %}
                             </div>
                         </li>
 
-
-
                         <div class="topbar-divider d-none d-sm-block"></div>
 
-                        <!-- Nav Item - User Information -->
+                        <!-- User -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{current_user.name}}</span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ current_user.name }}</span>
                                 <img class="img-profile rounded-circle"
-                                    src="{{url_for('static', filename='css/images/undraw_profile_1.svg')}}">
+                                    src="{{ url_for('static', filename='css/images/undraw_profile_1.svg') }}">
                             </a>
                         </li>
                     </ul>
                 </nav>
-                    <div class="row">
-                        <!-- Content Column -->
-                        {% with messages = get_flashed_messages() %}
+
+                <!-- Flash Messages -->
+                <div class="row">
+                    {% with messages = get_flashed_messages() %}
                         {% if messages %}
-                          <div class="alert alert-success" role="alert">
-                            {{ messages[0] }}
-                          </div>
+                            <div class="alert alert-success w-100" role="alert">
+                                {{ messages[0] }}
+                            </div>
                         {% endif %}
-                      {% endwith %}
+                    {% endwith %}
 
-{%block content%}
-
-{%endblock%}
-                        </div>
-
-                    </div>
-
+                    {% block content %}{% endblock %}
                 </div>
-                <!-- /.container-fluid -->
-
             </div>
-            <!-- End of Main Content -->
 
             <!-- Footer -->
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
-                    <div class="copyright text-center my-auto">
+                    <div class="text-center my-auto">
                         <span>Copyright &copy; SmartEats 2025</span>
                     </div>
                 </div>
             </footer>
-            <!-- End of Footer -->
-
         </div>
-        <!-- End of Content Wrapper -->
-
     </div>
-    <!-- End of Page Wrapper -->
 
-    <!-- Scroll to Top Button-->
+    <!-- Scroll to Top -->
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='/lib/jquery/dist/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
 </body>
-
-
-<script src="{{url_for('static', filename='/lib/jquery/dist/jquery.min.js')}}"></script>
-<script src="{{url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
-<!-- Core plugin JavaScript-->
-<script src="{{url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js')}}"></script>
-<!-- Custom scripts for all pages-->
-<script src="{{url_for('static', filename='js/sb-admin-2.min.js')}}"></script>
-
-
 </html>
