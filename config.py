@@ -76,7 +76,7 @@ class ProductionConfig(Config):
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'pitechcorp7@gmail.com'
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'rljm azij wply ihrp'
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or "postgresql://pitech:GG9IahwNPkHzuns2cdAYUqpMD3HyVyav@dpg-d28teh6r433s73bv0fg0-a.ohio-postgres.render.com/smarteats_nx5v"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or "postgresql://postgres.lqqhcvfotzowyitgnfgf:Boity%202003@aws-1-sa-east-1.pooler.supabase.com:6543/postgres"
     # Configuration
     cloudinary.config(
         cloud_name = 'di9fnjxk5',
