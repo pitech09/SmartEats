@@ -10,6 +10,7 @@ from application import cache
 from PIL import Image
 import cloudinary #type: ignore
 from cloudinary.uploader import upload  # type: ignore
+from dateutil.relativedelta import relativedelta
 
 PRODUCTS_PER_PAGE = 9
 
@@ -61,6 +62,32 @@ def upload_to_cloudinary(file, folder='payment_proofs'):
     )
     return result
 
+
+def human_duration(start_date, end_date=None):
+    """Return duration between two dates in years, months, weeks, days, hours, or minutes."""
+    if not start_date:
+        return "Unknown"
+    if end_date is None:
+        end_date = datetime.utcnow()
+
+    delta = relativedelta(end_date, start_date)
+    total_seconds = (end_date - start_date).total_seconds()
+
+    if delta.years >= 1:
+        return f"{delta.years} year{'s' if delta.years > 1 else ''}"
+    elif delta.months >= 1:
+        return f"{delta.months} month{'s' if delta.months > 1 else ''}"
+    elif delta.days >= 7:
+        weeks = delta.days // 7
+        return f"{weeks} week{'s' if weeks > 1 else ''}"
+    elif delta.days >= 1:
+        return f"{delta.days} day{'s' if delta.days > 1 else ''}"
+    elif total_seconds >= 3600:  # more than 1 hour
+        hours = int(total_seconds // 3600)
+        return f"{hours} hour{'s' if hours > 1 else ''}"
+    else:
+        minutes = int(total_seconds // 60)
+        return f"{minutes} minute{'s' if minutes != 1 else ''}"
 def save_product_picture(file):
     # Set the desired size for resizing
     size = (300, 300)
@@ -102,6 +129,17 @@ def save_update_profile_picture(form_picture):
     return post_img_Fn
 
 
+
+@main.route('/store/<int:store_id>')
+@login_required
+def details(store_id):
+    store = Store.query.get_or_404(store_id)
+    registered_for = human_duration(store.registered_on)
+    return render_template(
+        'customer/restuarantdetails.html',
+        restaurant=store,
+        registered_for=registered_for
+    )
 
 @main.route('/order_history')
 @login_required
@@ -484,7 +522,7 @@ def deactivate_Account(user_id):
     except IntegrityError:
         flash('Errot deleting account')
         db.session.rollback() 
-
+        return redirect(url_for('main.account'))
     return redirect(url_for('auth.newlogin'))   
 
 
@@ -501,8 +539,23 @@ def set_store():
     else:
         flash(f'{current_user.id} had a problem selecting your store, please try again later')
         return redirect(url_for('main.home'))
+    
+@main.route('/set_store/<int:store_id>', methods=['POST', 'GET'])
+def set_storee(store_id):
+    store = Store.query.get_or_404(store_id)
+    if store:
+        session['store_id'] = store.id
+        flash(f'You are now viewing {store.name}', 'success')
+        return redirect(url_for('main.home', store_id=store.id))
+    else:
+        flash('Store not found', 'danger')
+        return redirect(url_for('main.home'))
 
-
-
+@main.route('/restuarants', methods=['POST', 'GET'])
+def restuarants():
+    formpharm = Set_StoreForm()
+    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+    stores = Store.query.all()
+    return render_template('customer/restuarants.html', stores=stores, formpharm=formpharm)
 
     
