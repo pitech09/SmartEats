@@ -2,10 +2,10 @@ import os
 import secrets
 from datetime import datetime, timedelta
 
-import plotly.graph_objs as go
-import plotly.offline as plot
+import plotly.graph_objs as go # type: ignore
+import plotly.offline as plot #type: ignore
 from PIL import Image
-from flask import current_app
+from flask import current_app # type: ignore
 from flask import render_template, redirect, url_for, session, request, flash
 from flask_bcrypt import Bcrypt
 from flask_login import login_required, current_user, logout_user, LoginManager  # type: ignore
