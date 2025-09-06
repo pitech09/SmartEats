@@ -22,9 +22,13 @@ from ..models import (User, Product, Sales, DeliveryGuy,
                       Notification, Staff, Administrater)
 from ..utils.notification import create_notification
 from application import cache
+from datetime import datetime
+
+
 mypharmacy_product = Store.products
 mypharmacy_orders = Store.orders
 bcrypt = Bcrypt()
+
 
 
 def save_product_picture(file):

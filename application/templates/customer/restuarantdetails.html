@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body">
+            <h2 class="text-success">{{ restaurant.name }}</h2>
+            
+            {% if restaurant.image_url %}
+                <img src="{{ restaurant.image_url }}" 
+                     alt="{{ restaurant.name }}" 
+                     class="img-fluid rounded my-3">
+            {% endif %}
+
+            <ul class="list-group mb-3">
+                <li class="list-group-item">
+                    <strong>Location:</strong> {{ restaurant.address or "Not specified" }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Contact:</strong> {{ restaurant.phone or "N/A" }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Email:</strong> {{ restaurant.email or "N/A" }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Opening Hours:</strong> {{ restaurant.openinghours or "Not available" }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Registered:</strong> {{ registered_for }} ago
+                </li>
+            </ul>
+
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('main.restuarants') }}" 
+                   class="btn btn-outline-success">
+                    Back to Stores
+                </a>
+                <a href="{{ url_for('main.set_storee', store_id=restaurant.id) }}" 
+                   class="btn btn-success">
+                    Choose Store
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

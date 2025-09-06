@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %} {{store.name}} {% endblock %}</title>
+<title>
+    {% block title %}
+        {% if store is defined and store.name is defined %}
+            {{ store.name }}
+        {% else %}
+            SmartEats
+        {% endif %}
+    {% endblock %}
+</title>
 
     <link href="{{url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
@@ -11,59 +19,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css')}}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css')}}"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css')}}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css')}}"/>
 
-<style>
-  .dropdown {
-    position: relative;
-    display: inline-block;
-  }
-  .dropbtn {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px;
-    border: none;
-    cursor: pointer;
-  }
-  header{
-
-    margin:20px auto;
-    padding:20px;
-    backdrop-filter: blur(8px); 
-  }
-  .dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: transparent;
-    min-width: 160px;
-    z-index: 1;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  }
-  .dropdown-content a {
-    color: black;
-    padding: 10px 2px;
-    text-decoration: none;
-    display: block;
-  }
-  .dropdown a:hover {
-    background: #087191;
-  }
-  .show {
-    display: block;
-  }
-</style>
+<style> .dropdown { position: relative; display: inline-block; } .dropbtn { background-color: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; } header{ margin:20px auto; padding:20px; backdrop-filter: blur(8px); } .dropdown-content { display: none; position: absolute; background-color: transparent; min-width: 160px; z-index: 1; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); } .dropdown-content a { color: black; padding: 10px 2px; text-decoration: none; display: block; } .dropdown a:hover { background: #087191; } .show { display: block; } </style>
 
  <body>
-
-<script type="text/javascript">
-	atOptions = {
-		'key' : 'f2e52be72d826197ed9a2cc7c1405500',
-		'format' : 'iframe',
-		'height' : 200,
-		'width' : 260,
-		'params' : {}
-	};
-</script>
 <header style="background-color: none;">
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light border-bottom box-shadow mb-3">
             <div class="container">
@@ -87,6 +47,14 @@
                            Menu
                             </a>
                       </li>
+
+                      <!-- ✅ View Stores button -->
+                      <li class="nav-item">
+                          <a href="{{ url_for('main.restuarants') }}" class="btn bg-light rounded-pill">
+                               View Stores
+                          </a>
+                      </li>
+
                         {% if total_count %}
                       <li class="nav-item">
                           <a href="{{ url_for('main.cart') }}" class="btn bg-light rounded-pill">
@@ -138,6 +106,13 @@
                       <li class="nav-item">
                           <a href="{{url_for('auth.registerstore')}}" class="btn btn-outline-secondary bg-light rounded-pill"> Register Store</a>
                       </li>
+
+                      <!-- ✅ View Stores also visible to guests -->
+                      <li class="nav-item">
+                          <a href="{{ url_for('main.restuarants') }}" class="btn btn-outline-secondary bg-light rounded-pill">
+                               View Stores
+                          </a>
+                      </li>
                             {% endif %}
                   </ul>
               </div>
@@ -168,13 +143,7 @@
         </div>
 </footer>
 
-
-<script type="text/javascript" src="//www.highperformanceformat.com/f2e52be72d826197ed9a2cc7c1405500/invoke.js"></script>
-
     <script src="{{url_for('static', filename='lib/jquery/dist/jquery.min.js')}}"></script>
     <script src="{{url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js')}}"></script>
-
-<script async="async" data-cfasync="false" src="//pl27344455.profitableratecpm.com/aac90f1c677da175dfa6a3a99139a089/invoke.js"></script>
-<div id="container-aac90f1c677da175dfa6a3a99139a089"></div>
 </body>
 </html>
