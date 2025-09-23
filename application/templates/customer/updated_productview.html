@@ -67,12 +67,12 @@
         </div>
 
         <div class="product-details">
-            <div class="price">
+            <div class="product-price">
                 Price: M {{ product.price }}
             </div>
 
             <form action="{{url_for('main.add_to_cart', item_id=product.id)}}" method="POST">
-                <button value={{product.id}} class= 'btn btn-outline-primary rounded-pill' type="submit">
+                <button value={{product.id}} class= 'btn btn-outline-success rounded-pill' type="submit">
                     Add To Cart
                 </button>
             </form>

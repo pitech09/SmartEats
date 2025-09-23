@@ -134,7 +134,7 @@ def adminpage():
             func.date(Sales.date_)).all()
 
     daily_data = {
-        "dates": [row.date.strftime("%b %d") for row in daily_sales],
+        "dates": [row.date for row in daily_sales],
         "totals": [float(row.total) for row in daily_sales]
     }
 
@@ -308,7 +308,7 @@ def ActiveOrders():
     form = updatestatusform()
     form1 = updateorderpickup()
     orders = Order.query.filter(Order.status=="Pending", Order.store_id == current_user.id).all()
-    approved_order = Order.query.filter(Order.status=="Appproved", Order.store_id == current_user.id).all()
+    approved_order = Order.query.filter(Order.status=="Approved", Order.store_id == current_user.id).all()
     store_id = session.get('store_id')
     readyorder = Order.query.filter(Order.status=="Ready ", Order.store_id == current_user.id).all()
 

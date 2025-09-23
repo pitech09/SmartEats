@@ -224,7 +224,7 @@ def cart():
     form = CartlistForm()
     form2 = removefromcart()
     form3 = confirmpurchase()
-    pres = upload_prescription()
+ 
     formpharm = Set_StoreForm()
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     store_id = session.get('store_id')
@@ -244,7 +244,7 @@ def cart():
 
     return render_template('customer/updated_cartlist.html', form=form, form3=form3, form2=form2,
                            cart=cart, user=user,formpharm=formpharm, store=store,
-                           total_amount=total_amount, total_count=total_count, pres=pres)
+                           total_amount=total_amount, total_count=total_count)
 
 
 @main.route('/about', methods=['POST', 'GET'])
@@ -322,7 +322,7 @@ def addorder(total_amount):
     pres =upload_prescription()
     store_id = session.get('store_id')
     pharm = Store.query.get_or_404(store_id)
-    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
     tyt = total_amount
 
     user = User.query.filter_by(id = current_user.id).first()
@@ -401,8 +401,13 @@ def addorder(total_amount):
 @cache.memoize(timeout=300)
 @main.route("/menu/<int:page_num>", methods=["POST", "GET"])
 def menu(page_num=1):
+    mystore = Store.query.get_or_404(session.get('store_id'))
+    if not mystore:
+        flash('You need to have selected one store to view menu.')
+        return redirect(url_for('main.home'))
     formpharm = Set_StoreForm()
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]    
+
     form = CartlistForm()
     form2 = Search()
     products = Product.query.filter(Product.store_id == session.get('store_id')).all()
@@ -420,7 +425,7 @@ def menu(page_num=1):
     for post in products:
         if post.pictures is not None:
             item_picture = url_for('static', filename=('css/images/products/' + post.pictures))
-    mystore = Store.query.get_or_404(session.get('store_id'))
+    
 
     return render_template('customer/updated_menu.html', form=form, item_picture=item_picture,
                            total_count=total_count, form2=form2, formpharm=formpharm, products=current_products, 
@@ -484,11 +489,14 @@ def account():
     form = UpdateForm()
     formpharm = Set_StoreForm()
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()] 
-    
     user = User.query.filter_by(id=current_user.id).first()
-
     if form.validate_on_submit():
-        image_file = save_update_profile_picture(form.picture.data)
+        if form.picture.data:
+            image_file = save_product_picture(form.picture.data)
+        current_user.email = form.Email.data
+        current_user.phonenumber = form.phonenumber.data
+        current_user.lastname = form.lastName.data
+        current_user.username = form.username.data 
         current_user.image_file = image_file
         db.session.commit()
         flash("Account Details Updated Successfully.", "success")
@@ -520,13 +528,14 @@ def deactivate_Account(user_id):
         session.pop('store_id', None)
         flash('Account successfully deleted.')
     except IntegrityError:
-        flash('Errot deleting account')
+        flash('Error deleting account')
         db.session.rollback() 
         return redirect(url_for('main.account'))
     return redirect(url_for('auth.newlogin'))   
 
 
 @main.route('/set_store', methods=['POST', 'GET'])
+@login_required
 def set_store():
     formpharm = Set_StoreForm()
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
@@ -541,6 +550,7 @@ def set_store():
         return redirect(url_for('main.home'))
     
 @main.route('/set_store/<int:store_id>', methods=['POST', 'GET'])
+@login_required
 def set_storee(store_id):
     store = Store.query.get_or_404(store_id)
     if store:

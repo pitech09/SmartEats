@@ -11,7 +11,7 @@ from werkzeug.exceptions import InternalServerError
 
 from . import auth
 from .. import (login_manager, db)
-from ..forms import RegistrationForm, PharmacyRegistrationForm, emailform, resetpassword
+from ..forms import RegistrationForm, PharmacyRegistrationForm, emailform, resetpassword, update_password
 from ..models import User, Store, DeliveryGuy, Staff, Administrater
 
 s = URLSafeTimedSerializer('ad40898f84d46bd1d109970e23c0360e')
@@ -117,7 +117,6 @@ def forgotpassword():
 @auth.route("/registerstore", methods=['POST', 'GET'])
 def registerstore():
     formpharm = Set_StoreForm()
-
     form = PharmacyRegistrationForm()
     if request.method == "POST":
         if form.validate_on_submit():
@@ -149,7 +148,6 @@ def registerstore():
                 return redirect(url_for('auth.registerstore'))
     return render_template('auth/registerphar.html', form=form, formpharm=formpharm)
 
-    
 
 @auth.route("/register", methods=["POST", "GET"])
 def register():
