@@ -21,7 +21,6 @@ Supabase Database – Orders, users, deliveries, notifications
 Cloudinary Storage – Food images, logos, and proof-of-delivery uploads
 
 📂 Project Structure
-
 application/
 │── admin/              # Admin blueprint
 │── auth/               # Authentication (login, register, roles)
@@ -39,6 +38,7 @@ application/
 │   └── models.py       # Database models (Supabase)
 │── migrations/         # DB migrations / schema references
 │── config.py           # Flask app configuration
+
 
 📊 Database (Supabase)
 
