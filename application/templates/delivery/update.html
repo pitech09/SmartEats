@@ -1,5 +1,5 @@
-{% extends "layout.html" %}
-{% block title %}Login Into Account - MediCart{% endblock %}
+{% extends "deliverylayout.html" %}
+{% block title %}Update Password - SmartEats{% endblock %}
 {% block content %}
 <div class="card">
             <div class="card-body">
@@ -8,7 +8,7 @@
               <!-- /Logo -->
               <h4 class="mb-2">Update password 🔒</h4>
               <p class="mb-4">Enter your email and we'll send you instructions to reset your password</p>
-              <form id="formAuthentication" class="mb-3" action="{{url_for('auth.update_password')}}" method="POST">
+              <form id="formAuthentication" class="mb-3" action="{{url_for('delivery.updatepassword')}}" method="POST">
                 <div class="mb-3">
                   <label for="password" class="form-label"> Old Password</label>
                   <input
@@ -31,7 +31,7 @@
                     autofocus
                   />
                 </div>
-                <button class="btn btn-primary d-grid w-100">Confirm Changes</button>
+                <button class="btn btn-success d-grid w-100">Confirm Changes</button>
               </form>
 
             </div>

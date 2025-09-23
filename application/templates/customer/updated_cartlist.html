@@ -3,10 +3,7 @@
 {% block content %}
 <div class="containerr">
 
-    {% if not cart.cart_items%}
-    <div class="cart-summary">
-        <p>Cart is Empty</p>
-    {%else%}
+
     <div class="cart">
         <div class="product-card">
 <h4>Payment Codes</h4>
@@ -85,7 +82,7 @@
     </div>
     </form>
     </div>
-    {%endif%}
+ 
     </div>
 </div>
 {% endblock %}

@@ -19,7 +19,7 @@
         border: 1px solid #ddd;
     }
     .orders-table th {
-        background-color: #f4f4f4;
+        background-color: #16af37;
     }
 
     /* Mobile-friendly stacked table */
@@ -84,7 +84,6 @@
     <table class="orders-table">
         <thead>
             <tr>
-                <th scope="col">Prod. ID</th>
                 <th scope="col">Product Name</th>
                 <th scope="col">Quantity</th>
                 <th scope="col">Unit Price (M)</th>
@@ -93,7 +92,6 @@
         <tbody>
             {% for item in user_order.order_items %}
             <tr>
-                <td>{{ item.product.id }}</td>
                 <td>{{ item.product.productname }}</td>
                 <td>{{ item.quantity }}</td>
                 <td>M{{ item.product.price }}</td>

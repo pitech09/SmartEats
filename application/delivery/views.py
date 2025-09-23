@@ -264,8 +264,8 @@ def deliverylayout():
     return render_template('deliverylayout.html', formpharm=formpharm, total_count=total_count,
                            store=store)
 
-@delivery.route('/set_pharmacy', methods=['POST', 'GET'])
-def set_pharmacy():
+@delivery.route('/set_store', methods=['POST', 'GET'])
+def set_store():
     formpharm = Set_StoreForm()
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     if formpharm.validate_on_submit():
@@ -281,8 +281,9 @@ def set_pharmacy():
 
 @delivery.route('/updatedetails', methods=["POST", "GET"])
 @login_required
-def update_password():
+def updatepassword():
     form = update_password()
+    formpharma = Set_StoreForm()
     if request.method == "POST":
         if form.validate_on_submit():
             old_password = form.old_password.data
@@ -305,5 +306,5 @@ def update_password():
                 return redirect(url_for('delivery.dashboard'))
         else:
             return redirect(url_for('delivery.dashboard'))
-    return render_template('delivery/update.html', form=form)
+    return render_template('delivery/update.html', form=form, formpharm=formpharma)
 

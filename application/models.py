@@ -91,6 +91,7 @@ class User(UserMixin, db.Model):
     image_file = db.Column(db.Text, nullable=True, default="account.png")
     password = db.Column(db.String(200), nullable=False, unique=False)
     carts = db.relationship('Cart', backref='user', lazy=True)
+    #residence = db.Column(db.String(100), nullable=False, default="Unknown")
 
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     loyalty_points = db.Column(db.Integer, default=0)

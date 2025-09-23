@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %} {{store.name}} {% endblock %}</title>
+  <title>    {% block title %}
+        {% if store is defined and store.name is defined %}
+            {{ store.name }}
+        {% else %}
+            SmartEats
+        {% endif %}
+    {% endblock %}</title>
     <link href="{{url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css')}}"/>
@@ -71,16 +77,14 @@
                         <li class ="nav-item" >
                             <a href = "{{ url_for('delivery.ready_orders') }}" class ="btn bg-light rounded-pill"> Orders <sup> {{total_count}} </sup> </a>
                         </li >
-                        <li class ="nav-item" >
-                            <a href = "{{ url_for('delivery.update_password') }}" class ="btn bg-light rounded-pill"> Update Password </a>
-                        </li>
+
                         <li class ="nav-item" >
                             <a href = "{{ url_for('main.logout') }}" class ="btn bg-light rounded-pill"> Logout </a>
                         </li>    
                         <li class ="nav-item">
                             <div class ="dropdown" >
 
-                                <form action = "{{url_for('delivery.set_pharmacy')}}" method = "POST" >
+                                <form action = "{{url_for('delivery.set_store')}}" method = "POST" >
                                     {{formpharm.hidden_tag()}}
                                     <div class ="input-group" >
                                     {{formpharm.store(class ='form-control bg-light border-0 small')}}
@@ -126,7 +130,7 @@
     </div>
 <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - MediCart by Pi Technologies
+            &copy; 2025 - SmartEats by Pi Technologies
         </div>
 </footer>
 

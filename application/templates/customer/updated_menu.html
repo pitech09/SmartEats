@@ -1,27 +1,30 @@
 {% extends "layout.html" %}
 {% block title %} {{store.name}} Menu at- SmartEats {% endblock %}
 {% block content %}
-        <div class="search-bar">
-            <form id='searchForm' action="{{ url_for('main.search', page_num=1) }}" method="post">
-            {{ form2.hidden_tag() }}
+<nav  class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+         <ul class="navbar-nav flex-grow-1">
+            <h4 style="text-align: center; padding-left: 15%;" > Now viewing {{store.name}}</h4>
+         </ul>
+    </div>
+</nav>
 
-            <div class="input-group">
-                {{form2.keyword(class='form-control bg-light border-0 small')}}
-                <div class="input-group-append">
-                  <button class="btn btn-primary" type="submit">
-                  <i class="fas fa-search fa-sm"></i>
+<div class="search-bar">
+    <form id='searchForm' action="{{ url_for('main.search', page_num=1) }}" method="post">
+        {{ form2.hidden_tag() }}
+
+        <div class="input-group">
+            {{form2.keyword(class='form-control bg-light border-0 small')}}
+            <div class="input-group-append">
+              <button class="btn btn-success" type="submit">
+                <i class="fas fa-search fa-sm"></i>
               </button>
             </div>
         </div>
     </form>
-        </div>
-<nav  class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
-    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-         <ul class="navbar-nav flex-grow-1">
+</div>
 
-         </ul>
-    </div>
-</nav>
+
     <div class="product-grid">
         {% for product in products %}
         <div class="product-card">
@@ -32,7 +35,7 @@
             <div class="product-description"><p>{{ product.description }}</p></div>
             <a href="{{url_for('main.viewproduct', product_id=product.id)}}">More...</a>
             <div class="actions">
-                <button value={{product.id}} onclick="window.location.href='{{ url_for('main.add_to_cart', item_id=product.id)}}'" class='btn btn-outline-primary rounded-pill' type="submit">Add To Cart
+                <button value={{product.id}} onclick="window.location.href='{{ url_for('main.add_to_cart', item_id=product.id)}}'" class='btn btn-outline-success rounded-pill' type="submit">Add To Cart
               </button>
 
             </div>
