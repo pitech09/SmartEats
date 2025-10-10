@@ -250,6 +250,9 @@ def cart():
                            cart=cart, user=user,formpharm=formpharm, store=store,
                            total_amount=total_amount, total_count=total_count)
 
+@main.route('/ping')
+def ping():
+    return 'OK', 200
 
 @main.route('/about', methods=['POST', 'GET'])
 def about():
