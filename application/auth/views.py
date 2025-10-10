@@ -8,7 +8,7 @@ from flask_mail import Message, Mail
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import InternalServerError
-
+from flask import current_app
 from . import auth
 from .. import db, login_manager
 from ..forms import (
@@ -26,7 +26,7 @@ s = URLSafeTimedSerializer('ad40898f84d46bd1d109970e23c0360e')
 
 def send_async_email(app, msg):
     """Send email asynchronously."""
-    from flask import current_app
+    
     with app.app_context():
         try:
             mail.send(msg)
@@ -63,7 +63,7 @@ def send_confirmation_email(form, is_store=False):
             "SmartEats Team"
         )
 
-    Thread(target=send_async_email, args=(auth.current_app._get_current_object(), msg)).start()
+    Thread(target=send_async_email, args=(current_app._get_current_object(), msg)).start()
     flash("A confirmation email has been sent. Please check your inbox.", "success")
     return token
 
