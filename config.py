@@ -9,7 +9,7 @@ import cloudinary.api
 class Config:
     SECRET_KEY = '19fe4df09e28188141de802f9ae70a02'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_TRACK_MODIFICATIONS = True
     ALLOWED_EXTENSIONS = {'png', 'jpeg', 'jpg', 'gif'}
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_NAME = 'smarteats_session'
@@ -36,6 +36,7 @@ class Config:
 
     @staticmethod
     def init_app(app):
+        
         pass
 
 

@@ -17,7 +17,57 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,900" rel="stylesheet">
 
+    <!-- ✅ Pace.js Loader Integration -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
+    <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
+
     <style>
+    /* Pace.js custom loader (SmartEats green) */
+    .pace {
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .pace.pace-active {
+        background: rgba(255, 255, 255, 0.85);
+        position: fixed;
+        z-index: 9999;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .pace .pace-progress {
+        background: #00b37e; /* SmartEats green progress bar */
+        position: fixed;
+        z-index: 2000;
+        top: 0;
+        right: 100%;
+        width: 100%;
+        height: 3px;
+    }
+
+    .pace .pace-activity {
+        display: block;
+        position: fixed;
+        z-index: 2001;
+        top: 50%;
+        left: 50%;
+        width: 45px;
+        height: 45px;
+        border: 4px solid #00b37e;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: pace-spinner 0.8s linear infinite;
+        transform: translate(-50%, -50%);
+    }
+
+    @keyframes pace-spinner {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
     /* Sidebar custom green */
     .bg-success {
         background-color: #2da350 !important;
@@ -38,22 +88,22 @@
         color: #d1e7dd;
         margin: 10px 0;
     }
+
     /* Mobile toggle button (green) */
-.custom-toggle {
-    background-color: #2da350;
-    border: none;
-    color: white;
-}
+    .custom-toggle {
+        background-color: #2da350;
+        border: none;
+        color: white;
+    }
 
-.custom-toggle:hover {
-    background-color: #259443;
-    color: #fff;
-}
+    .custom-toggle:hover {
+        background-color: #259443;
+        color: #fff;
+    }
 
-.custom-toggle i {
-    font-size: 18px;
-}
-
+    .custom-toggle i {
+        font-size: 18px;
+    }
     </style>
 </head>
 
@@ -162,7 +212,6 @@
                     <i class="fa fa-bars"></i>
                 </button>
 
-
                 <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
                    <ul class="navbar-nav ml-auto">
@@ -248,5 +297,10 @@
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+
+    <!-- Optional: Restart Pace on AJAX -->
+    <script>
+        $(document).on('ajaxStart', function() { Pace.restart(); });
+    </script>
 </body>
 </html>

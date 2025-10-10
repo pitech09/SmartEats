@@ -9,7 +9,6 @@
             <tr>
                 <th>Order ID</th>
                 <th>Customer</th>
-                <th>Status</th>
                 <th>Address</th>
                 <th>Action</th>
             </tr>
@@ -22,7 +21,7 @@
             <tr>
                 <td>{{ delivery.order_id }}</td>
                 <td>{{ delivery.customer_name }}</td>
-                <td>{{ delivery.status }}</td>
+             
                 <td>{{ delivery.address }}</td>
                 <td>
                 <form action="{{url_for('delivery.update_delivery', delivery_id=delivery.id)}}" method="POST">
@@ -32,7 +31,7 @@
                        {{myform.status(class='form-control')}}
                        {{myform.delivery_prove.label}}
                        {{myform.delivery_prove(class='form-control')}}
-                       {{myform.submit(class='btn btn-outline-primary rounded-pill')}}
+                       {{myform.submit(class='btn btn-outline-success rounded-pill')}}
                         </div>
                 </form>
 

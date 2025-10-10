@@ -1,12 +1,12 @@
 {% extends "adminslayout.html" %}
-{% block title %} Pharmacies Registered - MediCart {% endblock %}
+{% block title %} Vendors Registered - SmartEats {% endblock %}
 {% block content %}
 
 <section class="orders-section">
 
 
-          <h2 style="text-align:right;">Stores Registered</h2>
-    {%if not pharmacies%}
+          <h2 style="text-align:center;">Stores Registered</h2>
+    {%if not stores%}
     <p>There are 0 registered Stores.</p>
     {%else%}
             <table class="orders-table" style="width:100%; table-layout:auto;">
@@ -21,7 +21,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {%for pharmacy in pharmacies%}
+                {%for pharmacy in stores%}
                    <tr>
                         <td>{{pharmacy.name}}</td>
                       <td>
@@ -37,7 +37,7 @@
                         </td>
                        <td>{{pharmacy.phone}}</td>
                       <td>
-                          <button onclick="window.location.href='{{ url_for('admin.cancel_pharmacy') }}'" class="btn btn-outline-primary rounded-pill">Delete</button>
+                          <button onclick="window.location.href='{{ url_for('admin.cancel_pharmacy', pharmacy_id=pharmacy.id) }}'" class="btn btn-outline-primary rounded-pill" style="background-color:red;">Delete</button>
 
                       </td>
                     </tr>

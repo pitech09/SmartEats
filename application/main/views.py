@@ -161,7 +161,7 @@ def myorders():
     user = User.query.get_or_404(user_id)
     0.00
     total = 0.00
-    orders = Order.query.filter(Order.user_id==current_user.id, or_(Order.status=="Pending", Order.status=="Approved", Order.status=="Out for Delivery")).order_by(desc(Order.create_at)).all()
+    orders = Order.query.filter(Order.user_id==current_user.id, or_(Order.status=="Pending", Order.status=="Approved", Order.status=="Out for Delivery", Order.status=="Ready ")).order_by(desc(Order.create_at)).all()
 
     for o in orders:
         total_amount = sum(item.product.price * item.quantity for item in o.order_items)
@@ -183,7 +183,7 @@ def completed_order():
     store = Store.query.get_or_404(session.get('store_id'))
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     user = User.query.get_or_404(user_id)
-    orders_completed = Order.query.filter(Order.user_id==current_user.id, Order.status=="Delivered").order_by(desc(Order.create_at)).all()
+    orders_completed = Order.query.filter(Order.user_id==current_user.id, or_(Order.status=="Delivered",Order.status=="Ready")).order_by(desc(Order.create_at)).all()
     return render_template('customer/updated_complete.html', user=user, formpharm=formpharm, store=store, orders_completed = orders_completed)
 
 
@@ -221,6 +221,10 @@ def landing():
 @main.route('/cartlist', methods=['GET', 'POST'])
 @login_required
 def cart():
+    if not session['store_id']:
+        flash('Please select a store first.')
+        return redirect(url_for('main.home'))
+
     form = CartlistForm()
     form2 = removefromcart()
     form3 = confirmpurchase()
@@ -359,12 +363,8 @@ def addorder(total_amount):
             return redirect(url_for('main.cart'))
         
         #hashed_order = flask_bcrypt.generate_password_hash(neworder.id)
-        if form.transid.data:
-            print("form id found")
-            neworder.transactionID = form.transid.data
-        else:
-            print("no id")
-            neworder.transactionID ='None'
+
+        neworder.transactionID ='None'
         db.session.add(neworder)
         try:
             print('committing...')

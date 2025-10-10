@@ -68,7 +68,7 @@ def load_user(user_id):
     elif user_type == 'delivery_guy':
         return DeliveryGuy.query.get(int(user_id))
     elif user_type == 'administrator':
-        return Administrator.query.get(int(user_id))
+        return Administrater.query.get(int(user_id))
     return None
 
 
@@ -136,21 +136,25 @@ def view_details(pharmacy_id):
 def cancel_pharmacy(pharmacy_id):
     store = Store.query.get_or_404(pharmacy_id)
     if store:
-        db.session.delete(store)
-        db.session.commit()
-        return redirect(url_for('admin.pending_verification'))
+        try:
+            db.session.delete(store)
+            db.session.commit()
+            return redirect(url_for('admin.pending_verification'))
+        except IntegrityError:
+            flash('The Store has orders that have not been fulfiled.')
+            return redirect(url_for('admin.pending_verification'))
     else:
         flash('Store could not be found')
         return redirect(url_for('admin.pending_verification'))
 
 @admin.route('/registered stores')
-def registered_pharmacies():
+def registered_stores():
     stores = Store.query.all()
     
     return render_template('admin/registereduser.html', stores=stores)
 
-@admin.route('/register_pharmacy')
-def register_pharmacy():
+@admin.route('/register store')
+def register_store():
     form = PharmacyRegistrationForm()
     return render_template('admin/registerstore.html', form=form)
 
