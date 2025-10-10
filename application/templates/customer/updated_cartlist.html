@@ -34,8 +34,8 @@
     </div>
 
         <div class="product-card">
-                    <p>Total Price: <b id="total-price">M{{total_amount}}</b> includes Delivery Fees</p>
-
+                    <p>Total Price: <b id="total-price">M{{total_amount}}</b></p>
+                    <p class="alert" style="color:red;"> If you need to use delivery agent, add M6.00 extra to the amount payable as to avoid your order from being delayed. </p>
     <form action="{{url_for('main.addorder',total_amount=total_amount)}}"  method="POST" enctype="multipart/form-data">
         {{ form3.hidden_tag() }}
         <div class="form-group">
@@ -45,20 +45,17 @@
         <br>
         <div class="form-group">
             {{form3.payment_number.label}}
-            {{form3.payment_number(class='form-control')}}
+            {{form3.payment_number(class='form-control ')}}
         </div>
         <br>
-        <div class="form-group">
-            {{form3.transid.label}}
-            {{form3.transid(class='form-control')}}
-        </div>
-        <br>
+
+
         <div class="form-group">
             {{ form3.deliverymethod.label }}
             {% for subfield in form3.deliverymethod %}
                 <div class="form-check">
                     {{ subfield(class="form-check-input") }}
-                    {{ subfield.label(class="form-check-label") }}
+                    {{ subfield.label(class="form-control outline-success") }}
                 </div>
             {% endfor %}
         </div>

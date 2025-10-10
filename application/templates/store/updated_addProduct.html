@@ -5,7 +5,7 @@
 <div class="container">
     <h1>Add New Product</h1>
     <!-- Product Add Form -->
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" style="padding:20px;">
         {{ form.hidden_tag() }} <!-- This is for CSRF protection -->
         <div class="form-group">
             {{form.product_name.label}}

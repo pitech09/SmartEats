@@ -99,7 +99,7 @@ class confirmpurchase(FlaskForm):
     payment_number = StringField('Phone Number Used for payment', render_kw={'placeholder':'+266 5123 4456'})
     payment_screenshot = FileField('Upload Proof of Payment', validators=[FileAllowed(['jpg', 'jpeg', 'png'])])
     deliverymethod = RadioField('Choose Delivery Method', choices=[('agent', 'Use Delivery agent'), ('pickup', 'Customer pickup')])
-    drop_address = StringField('Deliveries oncampus, and main gate only',render_kw={'placeholder': "Library/Res Gate/Masenate room X block YY"})
+    drop_address = StringField('Drop Location:',render_kw={'placeholder': "Library, Metlakaseng Sefalana Crossong etc"})
     submit = SubmitField("Buy Cart")
 
 class upload_prescription(FlaskForm):

@@ -27,7 +27,7 @@ def load_user(user_id):
     elif user_type == 'delivery_guy':
         return DeliveryGuy.query.get(int(user_id))
     elif user_type == 'administrator':
-        return Administrator.query.get(int(user_id))
+        return Administrater.query.get(int(user_id))
     return None
 
 def upload_to_cloudinary(file, folder='delivery_proofs'):
@@ -192,6 +192,9 @@ def mydeliveries():
 @login_required
 def ready_orders():
     store = Store.query.get_or_404(session.get('store_id'))
+    if not store:
+        flash('Please select a store before proceeding to this page.')
+        return redirect(url_for('delivery.dashboard'))
     myform = updatedeliveryform()
     delivery_update = updatedeliveryform()
     formpharm=Set_StoreForm()
@@ -231,7 +234,9 @@ def update_delivery(delivery_id):
         db.session.add(order)
         try:
             db.session.commit()
-            flash(f" End time{delivery.end_time}, Start time{delivery.timestamp}")
+            difference = delivery.end_time - delivery.timestamp
+            flash(f"Delivery took {difference} minutes")
+            flash(f" End time {delivery.end_time.strftime('%H:%M')}, Start time{delivery.timestamp.strftime('%H:%M')}")
             # 🔔 Message
             message = f"Delivery #{delivery.id} status changed from {old_status} to {new_status}"
 
