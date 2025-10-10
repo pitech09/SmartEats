@@ -26,6 +26,16 @@
     <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
 
     <style>
+        .logo {
+    max-height: 80px;
+    height: auto;
+    width: auto;
+}
+@media (max-width: 768px) {
+    .logo {
+        max-height: 60px; /* smaller on mobile */
+    }
+}
         /* SmartEats Spinner & Loader Styles */
         .pace {
           pointer-events: none;
