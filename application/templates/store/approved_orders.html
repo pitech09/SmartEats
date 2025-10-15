@@ -4,9 +4,8 @@
 
 <section class="orders-section">
         <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline-primary rounded-pill">Ready Orders</button>
-        <button onclick="window.location.href='{{ url_for('store.approved_orders') }}'" class="btn btn-outline-primary rounded-pill">On Delivery</button>
-
-
+        <button onclick="window.location.href='{{ url_for('store.approved_orders')}}'" class="btn btn-outline-primary rounded-pill">On Delivery</button>
+        
 <div class="order-list">
           <h2>Approved Orders</h2>
     {%if not readyorders%}
