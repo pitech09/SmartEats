@@ -11,6 +11,11 @@ from flask_bcrypt import Bcrypt
 from flask_login import login_required, current_user, logout_user, LoginManager  # type: ignore
 from sqlalchemy import func, extract
 from sqlalchemy.exc import IntegrityError
+
+from datetime import datetime, timedelta
+import plotly.graph_objs as go
+import plotly.io as pio
+
 import cloudinary
 from cloudinary.uploader import upload
 
@@ -138,11 +143,6 @@ def adminpage():
         "totals": [float(row.total) for row in daily_sales]
     }
 
-
-    line = go.Scatter(x=daily_data["dates"], y=daily_data["totals"], mode='lines+markers', name='Daily Sales')
-    line_layout = go.Layout(title="Daily Sales Trend")
-    line_chart = plot.plot(go.Figure(data=[line], layout=line_layout), include_plotlyjs=True, output_type='div')
-
         # Total sales
     total_monthly_sales = db.session.query(func.sum(Sales.price * Sales.quantity)).filter(
             Sales.date_ >= start_of_month, Sales.date_ <= end_of_month,
@@ -159,25 +159,6 @@ def adminpage():
             Sales.store_id == store_id
         ).scalar() or 0.0
 
-        # Top 10 products
-    top_products = db.session.query(
-            Product.productname,
-            func.sum(OrderItem.quantity * OrderItem.product_price).label('revenue')
-        ).join(OrderItem, Product.id == OrderItem.product_id
-               ).filter(Product.store_id == store_id
-                        ).group_by(Product.productname
-                                   ).order_by(func.sum(OrderItem.quantity * OrderItem.product_price).desc()
-                                              ).limit(10).all()
-
-    top_bar = go.Bar(
-            x=[p[0] for p in top_products],
-            y=[float(p[1]) for p in top_products],
-            text=[f"{float(p[1]):.2f}" for p in top_products],
-            textposition='auto'
-        )
-    top_layout = go.Layout(title="Top 10 Selling Products")
-    top_chart = plot.plot(go.Figure(data=[top_bar], layout=top_layout), include_plotlyjs=True, output_type='div')
-
     pending_orders = len(Order.query.filter(
         extract('month', Order.create_at) == current_month,
         extract('year', Order.create_at) == current_year,
@@ -187,8 +168,6 @@ def adminpage():
 
     return render_template(
             'store/updated_dashboard.html',
-            chart1=line_chart,
-            chart2=top_chart,
             total_sales=total_monthly_sales,
             total_annual_sales=total_annual_sales,
             total_daily_sales=today_sales,
@@ -295,7 +274,6 @@ def orders_on_delivery():
 @cache.memoize(timeout=120)
 @store.route('/ActiveOrders')
 @login_required
-#@role_required('Store')
 def ActiveOrders():
     mypharmacy = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
@@ -322,7 +300,6 @@ def ActiveOrders():
 @login_required
 def delivered_orders():
     mypharmacy = Store.query.get_or_404(current_user.id)
-
     # Notifications
     unread_notifications = Notification.query.filter_by(
         user_type='store', user_id=mypharmacy.id, is_read=False
@@ -423,8 +400,6 @@ def updatestatus(order_id):
 
         try:
             db.session.commit()
-            
-
             # 🔔 Notifications
             message = f"Order #{order.order_id} status changed from {old_status} to {new_status}"
             # Notify customer
@@ -627,6 +602,224 @@ def register_delivery():
             return redirect(url_for('store.register_delivery'))   
     return render_template('store/add_delivery.html', form=form)
 
+
+@store.route('/vendor/analytics')
+@login_required
+def vendor_analytics():
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+    if store.id != current_user.id:
+        return "Unauthorized", 403
+
+    # Date filters (defaults to last 7 days)
+    end_date = request.args.get('end_date', datetime.utcnow().date())
+    start_date = request.args.get('start_date', (datetime.utcnow() - timedelta(days=7)).date())
+    
+    if isinstance(start_date, str):
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    if isinstance(end_date, str):
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+    # Previous period (for comparison)
+    period_length = (end_date - start_date).days or 1
+    prev_start = start_date - timedelta(days=period_length)
+    prev_end = start_date
+
+    # Helper: Filtered query
+    def sales_query(start, end):
+        return db.session.query(func.sum(Sales.price * Sales.quantity))\
+            .filter(Sales.store_id == store_id)\
+            .filter(func.date(Sales.date_).between(start, end))\
+            .scalar() or 0
+
+    # Current vs previous period totals
+    total_sales = sales_query(start_date, end_date)
+    prev_sales = sales_query(prev_start, prev_end)
+    sales_change = round(((total_sales - prev_sales) / prev_sales * 100), 2) if prev_sales else 100
+
+    # Average Order Value (AOV)
+    total_orders = db.session.query(func.count(Sales.order_id.distinct()))\
+        .filter(Sales.store_id == store_id)\
+        .filter(func.date(Sales.date_).between(start_date, end_date))\
+        .scalar() or 1
+    avg_order_value = total_sales / total_orders
+
+    prev_orders = db.session.query(func.count(Sales.order_id.distinct()))\
+        .filter(Sales.store_id == store_id)\
+        .filter(func.date(Sales.date_).between(prev_start, prev_end))\
+        .scalar() or 1
+    prev_aov = (prev_sales / prev_orders) if prev_orders else 0
+    aov_change = round(((avg_order_value - prev_aov) / prev_aov * 100), 2) if prev_aov else 100
+
+    # Sales over time
+    sales_trend = (
+        db.session.query(func.date(Sales.date_), func.sum(Sales.price * Sales.quantity))
+        .filter(Sales.store_id == store_id)
+        .filter(func.date(Sales.date_).between(start_date, end_date))
+        .group_by(func.date(Sales.date_))
+        .order_by(func.date(Sales.date_))
+        .all()
+    )
+    dates, revenues = zip(*sales_trend) if sales_trend else ([], [])
+
+    # Product and category analysis
+    product_sales = (
+        db.session.query(Product.productname, func.sum(Sales.price * Sales.quantity))
+        .join(Sales, Sales.product_id == Product.id)
+        .filter(Sales.store_id == store_id)
+        .filter(func.date(Sales.date_).between(start_date, end_date))
+        .group_by(Product.productname)
+        .order_by(func.sum(Sales.price * Sales.quantity).desc())
+        .limit(5)
+        .all()
+    )
+    prod_names, prod_revenues = zip(*product_sales) if product_sales else ([], [])
+
+    category_sales = (
+        db.session.query(Product.category, func.sum(Sales.price * Sales.quantity))
+        .join(Sales, Sales.product_id == Product.id)
+        .filter(Sales.store_id == store_id)
+        .filter(func.date(Sales.date_).between(start_date, end_date))
+        .group_by(Product.category)
+        .all()
+    )
+    categories, cat_revenue = zip(*category_sales) if category_sales else ([], [])
+
+    # Top customers
+    top_customers = (
+        db.session.query(User.username, func.sum(Sales.price * Sales.quantity).label('spent'))
+        .join(Sales, Sales.user_id == User.id)
+        .filter(Sales.store_id == store_id)
+        .filter(func.date(Sales.date_).between(start_date, end_date))
+        .group_by(User.username)
+        .order_by(func.sum(Sales.price * Sales.quantity).desc())
+        .limit(5)
+        .all()
+    )
+
+    # Plotly Charts
+    trend_fig = go.Figure([go.Scatter(x=dates, y=revenues, mode='lines+markers', name='Revenue')])
+    trend_fig.update_layout(title='Sales Over Time', xaxis_title='Date', yaxis_title='Revenue (M)', template='plotly_white')
+
+    prod_fig = go.Figure([go.Bar(x=prod_names, y=prod_revenues)])
+    prod_fig.update_layout(title='Top 5 Products by Revenue', xaxis_title='Product', yaxis_title='Revenue (M)', template='plotly_white')
+
+    cat_fig = go.Figure([go.Pie(labels=categories, values=cat_revenue)])
+    cat_fig.update_layout(title='Sales by Category', template='plotly_white')
+
+    # 🕒 1️⃣ Hourly & Weekday Sales Trends
+    hourly_sales = (
+        db.session.query(func.extract('hour', Sales.date_), func.sum(Sales.price * Sales.quantity))
+        .filter(Sales.store_id == store_id)
+        .filter(func.date(Sales.date_).between(start_date, end_date))
+        .group_by(func.extract('hour', Sales.date_))
+        .order_by(func.extract('hour', Sales.date_))
+        .all()
+    )
+
+    weekday_sales = (
+        db.session.query(func.extract('dow', Sales.date_), func.sum(Sales.price * Sales.quantity))
+        .filter(Sales.store_id == store_id)
+        .filter(func.date(Sales.date_).between(start_date, end_date))
+        .group_by(func.extract('dow', Sales.date_))
+        .order_by(func.extract('dow', Sales.date_))
+        .all()
+    )
+
+    # 📅 Monthly Sales Trend
+    monthly_sales = (
+        db.session.query(func.extract('month', Sales.date_), func.sum(Sales.price * Sales.quantity))
+        .filter(Sales.store_id == store_id)
+        .group_by(func.extract('month', Sales.date_))
+        .order_by(func.extract('month', Sales.date_))
+        .all()
+    )
+
+    # 👥 2️⃣ Customer Behavior Analytics
+    repeat_customers = (
+        db.session.query(User.username, func.count(Sales.order_id.distinct()).label('orders'))
+        .join(Sales, Sales.user_id == User.id)
+        .filter(Sales.store_id == store_id)
+        .group_by(User.username)
+        .having(func.count(Sales.order_id.distinct()) > 1)
+        .order_by(func.count(Sales.order_id.distinct()).desc())
+        .all()
+    )
+
+    total_customers = db.session.query(func.count(User.id.distinct()))\
+        .join(Sales, Sales.user_id == User.id)\
+        .filter(Sales.store_id == store_id)\
+        .scalar() or 1
+
+    repeat_customer_count = len(repeat_customers)
+    repeat_rate = round((repeat_customer_count / total_customers) * 100, 2)
+
+    # 💰 3️⃣ Product Performance Analytics
+    product_contribution = (
+        db.session.query(Product.productname, func.sum(Sales.price * Sales.quantity))
+        .join(Sales, Sales.product_id == Product.id)
+        .filter(Sales.store_id == store_id)
+        .group_by(Product.productname)
+        .order_by(func.sum(Sales.price * Sales.quantity).desc())
+        .all()
+    )
+
+    # 📦 4️⃣ Inventory Analytics
+    # Stock turnover rate = total quantity sold / total current stock
+    total_sold = db.session.query(func.sum(Sales.quantity))\
+        .filter(Sales.store_id == store_id)\
+        .scalar() or 0
+    total_stock = db.session.query(func.sum(Product.quantity))\
+        .filter(Product.store_id == store_id)\
+        .scalar() or 1
+    stock_turnover_rate = round(total_sold / total_stock, 2)
+
+    # Estimate days of inventory left (based on avg daily sales)
+    days = max(1, (end_date - start_date).days)
+    avg_daily_sales = total_sold / days
+    days_left = round(total_stock / avg_daily_sales, 1) if avg_daily_sales > 0 else "N/A"
+
+    # 🎨 Charts
+    hourly_fig = go.Figure([go.Bar(x=[int(h) for h, _ in hourly_sales], y=[r for _, r in hourly_sales])])
+    hourly_fig.update_layout(title='Hourly Sales Distribution', xaxis_title='Hour', yaxis_title='Revenue', template='plotly_white')
+
+    weekday_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    weekday_fig = go.Figure([go.Bar(
+        x=[weekday_names[int(w)] for w, _ in weekday_sales],
+        y=[r for _, r in weekday_sales]
+    )])
+    weekday_fig.update_layout(title='Sales by Weekday', xaxis_title='Day', yaxis_title='Revenue', template='plotly_white')
+
+    monthly_fig = go.Figure([go.Scatter(
+        x=[int(m) for m, _ in monthly_sales],
+        y=[r for _, r in monthly_sales],
+        mode='lines+markers'
+    )])
+    monthly_fig.update_layout(title='Monthly Sales Trend', xaxis_title='Month', yaxis_title='Revenue', template='plotly_white')
+
+
+    return render_template(
+        'store/vendor_analystics.html',
+        store=store,
+        trend_graph=pio.to_html(trend_fig, full_html=False),
+        product_graph=pio.to_html(prod_fig, full_html=False),
+        category_graph=pio.to_html(cat_fig, full_html=False),
+        hourly_graph=pio.to_html(hourly_fig, full_html=False),
+        weekday_graph=pio.to_html(weekday_fig, full_html=False),
+        monthly_graph=pio.to_html(monthly_fig, full_html=False),
+        total_sales=total_sales,
+        avg_order_value=round(avg_order_value, 2),
+        sales_change=sales_change,
+        aov_change=aov_change,
+        repeat_rate=repeat_rate,
+        repeat_customers=repeat_customers,
+        product_contribution=product_contribution,
+        stock_turnover_rate=stock_turnover_rate,
+        days_left=days_left,
+        start_date=start_date,
+        end_date=end_date,
+        top_customers=top_customers
+    )
 
 
 
