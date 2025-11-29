@@ -1,63 +1,96 @@
 {% extends "layout.html" %}
 {% block title %} {{store.name}} Menu at- SmartEats {% endblock %}
 {% block content %}
-<nav  class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+<nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-         <ul class="navbar-nav flex-grow-1">
-            <h4 style="text-align: center; padding-left: 15%;" > Now viewing {{store.name}}</h4>
-         </ul>
+        <ul class="navbar-nav flex-grow-1">
+            <h4 style="text-align: center; padding-left: 15%;"> Now viewing {{store.name}}</h4>
+        </ul>
     </div>
 </nav>
 
 <div class="search-bar">
     <form id='searchForm' action="{{ url_for('main.search', page_num=1) }}" method="post">
         {{ form2.hidden_tag() }}
-
         <div class="input-group">
-            {{form2.keyword(class='form-control bg-light border-0 small')}}
+            {{ form2.keyword(class='form-control bg-light border-0 small') }}
             <div class="input-group-append">
-              <button class="btn btn-success" type="submit">
-                <i class="fas fa-search fa-sm"></i>
-              </button>
+                <button class="btn btn-success" type="submit">
+                    <i class="fas fa-search fa-sm"></i>
+                </button>
             </div>
         </div>
     </form>
 </div>
 
+<div class="product-grid">
+    {% for product in products %}
+    <div class="product-card">
 
-    <div class="product-grid">
-        {% for product in products %}
-        <div class="product-card">
-            <!-- for development image view-->
-            <!--<img class="image-top" style="border-radius: 20%;" src="{{url_for('static', filename='css/images/products/'+ product.pictures ) }}" alt="{{ product.name }}">
-        -->
-            <!-- production using cloudinary-->
-            <img class="image-top" style="border-radius: 20%;" src="{{ product.pictures }}" alt="{{ product.name }}">
-            <div class="product-name">{{ product.productname }}</div>
-            <div class="product-price">M{{ product.price }}</div>
-            <div class="product-description"><p>{{ product.description }}</p></div>
-            <a href="{{url_for('main.viewproduct', product_id=product.id)}}">More...</a>
-            <div class="actions">
-                <button value={{product.id}} onclick="window.location.href='{{ url_for('main.add_to_cart', item_id=product.id)}}'" class='btn btn-outline-success rounded-pill' type="submit">Add To Cart
-              </button>
+        <img class="image-top" style="border-radius: 20%;" src="{{ product.pictures }}" alt="{{ product.name }}">
 
-            </div>
+        <div class="product-name">{{ product.productname }}</div>
+        <div class="product-price">M{{ product.price }}</div>
+        <div class="product-description"><p>{{ product.description }}</p></div>
 
+        <a href="{{ url_for('main.viewproduct', product_id=product.id) }}">More...</a>
+
+        <div class="actions">
+            <!-- NEW AJAX BUTTON -->
+            <button 
+                class="btn btn-outline-success rounded-pill add-to-cart-btn"
+                data-id="{{ product.id }}"
+            >
+                Add To Cart
+            </button>
         </div>
-        {% endfor %}
+
     </div>
+    {% endfor %}
+</div>
 
-    <div class="pagination">
-        {% if page_num > 1 %}
-        <a href="{{ url_for('main.menu', page_num=page_num - 1) }}">Previous</a>
-        {% endif %}
+<div class="pagination">
+    {% if page_num > 1 %}
+    <a href="{{ url_for('main.menu', page_num=page_num - 1) }}">Previous</a>
+    {% endif %}
 
-        <span>Page {{ page_num }} of {{ total_pages }}</span>
+    <span>Page {{ page_num }} of {{ total_pages }}</span>
 
-        {% if page_num < total_pages %}
-        <a href="{{ url_for('main.menu', page_num=page_num + 1) }}">Next</a>
-        {% endif %}
-    </div>
+    {% if page_num < total_pages %}
+    <a href="{{ url_for('main.menu', page_num=page_num + 1) }}">Next</a>
+    {% endif %}
+</div>
 
+<!-- AJAX SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            let productId = btn.dataset.id;
+
+            fetch("/add_to_cart_ajax", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ product_id: productId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update cart number
+                    const cartCount = document.getElementById("cart-count");
+                    if (cartCount) {
+                        cartCount.textContent = data.cart_count;
+                    }
+
+                    // Optional: Play sound
+                    // document.getElementById("new_order").play();
+                }
+            });
+        });
+    });
+});
+</script>
 
 {% endblock %}

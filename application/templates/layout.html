@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="current-user-id" content="{{ current_user.id if current_user.is_authenticated else '' }}">
 <title>
     {% block title %}
         {% if store is defined and store.name is defined %}
@@ -142,5 +142,18 @@
 <script>
     $(document).on('ajaxStart', function() { Pace.restart(); });
 </script>
+<script>
+var socket = io();
+
+socket.on("cart_updated", function(data) {
+    const el = document.getElementById("cart-count");
+    if (el) el.textContent = data.cart_count;
+
+    // OPTIONAL — play sound when item added
+    let sound = document.getElementById("new_order");
+    if (sound) sound.play();
+});
+</script>
+
 </body>
 </html>

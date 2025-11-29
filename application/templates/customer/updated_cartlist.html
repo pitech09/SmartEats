@@ -1,85 +1,128 @@
 {% extends "layout.html" %}
-{% block title %}Cartlist - SmartEats {% endblock %}
+{% block title %}Cartlist - SmartEats{% endblock %}
+
 {% block content %}
 <div class="containerr">
-
-
-    <div class="cart">
-        <div class="product-card">
-<h4>Payment Codes</h4>
-        <p>Mpesa Till/Number: {{store.mpesa_shortcode}}</p>
-        <p>Ecocash Till/Number: {{store.ecocash_short_code}}</p>
-</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Remove</th>
-                </tr>
-            </thead>
-            {%for items in cart.cart_items%}
-            <tbody id="cart-items" style="background-color: aliceblue;">
-                        <td>{{items.product.productname}}</td>
-            <td>M{{items.product.price}}</td>
-            <td>{{items.quantity}}</td>
-            <td>
-            <button onclick="window.location.href='{{ url_for('main.remove_from_cart',item_id=items.id)}}'"
-                        class="btn btn-outline-secondary rounded-pill"><i class="fas fa-trash"></i></button>
-            </td>
-            </tbody>
-            {%endfor%}
-        </table>
+  <div class="cart">
+    <div class="product-card">
+      <h4>Payment Codes</h4>
+      <p>Mpesa Till/Number: {{ store.mpesa_shortcode }}</p>
+      <p>Ecocash Till/Number: {{ store.ecocash_short_code }}</p>
     </div>
 
-        <div class="product-card">
-                    <p>Total Price: <b id="total-price">M{{total_amount}}</b></p>
-                    <p class="alert" style="color:red;"> If you need to use delivery agent, add M6.00 extra to the amount payable as to avoid your order from being delayed. </p>
-    <form action="{{url_for('main.addorder',total_amount=total_amount)}}"  method="POST" enctype="multipart/form-data">
-        {{ form3.hidden_tag() }}
-        <div class="form-group">
-            {{form3.payment.label}}
-            {{form3.payment(class='form-control')}}
-        </div>
-        <br>
-        <div class="form-group">
-            {{form3.payment_number.label}}
-            {{form3.payment_number(class='form-control ')}}
-        </div>
-        <br>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody id="cart-items" style="background-color: aliceblue;">
+        {% for item in cart.cart_items %}
+        <tr data-item-id="{{ item.id }}">
+          <td>{{ item.product.productname }}</td>
+          <td class="item-price">M{{ '%.2f'|format(item.product.price) }}</td>
+          <td class="item-qty">{{ item.quantity }}</td>
+          <td>
+            <button class="btn btn-outline-secondary rounded-pill remove-item" data-id="{{ item.id }}">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
+  <div class="product-card">
+    <p>
+      <strong>Total Price: </strong>
+      <span id="total-price" data-base="{{ '%.2f'|format(total_amount) }}">
+        M{{ '%.2f'|format(total_amount) }}
+      </span>
+    </p>
 
-        <div class="form-group">
-            {{ form3.deliverymethod.label }}
-            {% for subfield in form3.deliverymethod %}
-                <div class="form-check">
-                    {{ subfield(class="form-check-input") }}
-                    {{ subfield.label(class="form-control outline-success") }}
-                </div>
-            {% endfor %}
-        </div>
+    <p class="alert" style="color:red;">
+      If you need delivery, add M6.00 extra to avoid delays.
+    </p>
 
-        <br>
-        <div class="form-group">
-            {{form3.drop_address.label}}
-            {{form3.drop_address(class='form-control')}}
+    <form id="order-form" action="{{ url_for('main.addorder', total_amount=total_amount) }}" method="POST" enctype="multipart/form-data">
+      {{ form3.hidden_tag() }}
+
+      <div class="form-group">
+        {{ form3.payment.label }} {{ form3.payment(class='form-control') }}
+      </div><br>
+
+      <div class="form-group">
+        {{ form3.payment_number.label }} {{ form3.payment_number(class='form-control') }}
+      </div><br>
+
+      <div class="form-group">
+        {{ form3.deliverymethod.label }}
+        {% for subfield in form3.deliverymethod %}
+        <div class="form-check">
+          {{ subfield(class="form-check-input delivery-option") }}
+          {{ subfield.label(class="form-check-label") }}
         </div>
-        <br>
-        <div class="form-group">
-            {{form3.payment_screenshot.label}}
-            {{form3.payment_screenshot(class='form-control')}}
-        </div>
-        <br>
-    <div class="button-container" style="align-items:center;">
-        <!-- Shop Button -->
-        <button type="submit" class= 'btn btn-outline-success rounded-pill'
-            onclick="window.location.href='{{ url_for('main.addorder', total_amount=total_amount)}}'">Add Order
-        </button>
-    </div>
+        {% endfor %}
+      </div><br>
+
+      <div class="form-group">
+        {{ form3.drop_address.label }} {{ form3.drop_address(class='form-control') }}
+      </div><br>
+
+      <div class="form-group">
+        {{ form3.payment_screenshot.label }} {{ form3.payment_screenshot(class='form-control') }}
+      </div><br>
+
+      <button type="submit" class="btn btn-outline-success rounded-pill">Add Order</button>
     </form>
-    </div>
- 
-    </div>
+  </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const totalPriceEl = document.getElementById('total-price');
+    let baseTotal = parseFloat(totalPriceEl.dataset.base);
+
+    function updateTotal() {
+        const selectedOption = document.querySelector('.delivery-option:checked');
+        let newTotal = baseTotal;
+        if (selectedOption && selectedOption.value === 'agent') {
+            newTotal += 6; // add delivery fee
+        }
+        totalPriceEl.textContent = `M${newTotal.toFixed(2)}`;
+    }
+
+    // Update total when delivery method changes
+    const deliveryOptions = document.querySelectorAll('.delivery-option');
+    deliveryOptions.forEach(option => option.addEventListener('change', updateTotal));
+
+    // Remove item via AJAX
+    const removeButtons = document.querySelectorAll('.remove-item');
+    removeButtons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const itemId = btn.dataset.id;
+            try {
+                const response = await fetch(`/remove_from_cart_ajax/${itemId}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                    row.remove();
+                    baseTotal = parseFloat(result.new_total);
+                    totalPriceEl.dataset.base = baseTotal;
+                    updateTotal();
+                }
+            } catch (err) {
+                console.error('Error removing item:', err);
+            }
+        });
+    });
+
+    // Initialize total on page load
+    updateTotal();
+});
+</script>
 {% endblock %}
