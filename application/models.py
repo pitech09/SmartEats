@@ -178,9 +178,15 @@ class Cart(db.Model):
     cart_items = db.relationship('CartItem', backref='cart', lazy=True)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id', name='fk_store_order'), nullable=False)
     total_amount = db.Column(db.Float, default=0.0)
+    
     def calculate_total(self):
        return sum(item.product.price * item.quantity for item in self.cart_items)
 
+    def total_items(self):
+        return sum(item.quantity for item in self.cart_items)
+
+    def total_amount(self):
+        return sum(item.product.price * item.quantity for item in self.cart_items)
 
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)

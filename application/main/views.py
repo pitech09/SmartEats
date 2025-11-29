@@ -1,5 +1,5 @@
 import os
-from flask import render_template, redirect,  url_for, flash, session, jsonify
+from flask import render_template, redirect,  url_for, flash, session, jsonify, request, current_app
 from flask_login import login_required, current_user, logout_user # type: ignore
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import desc, or_
@@ -350,7 +350,7 @@ def addorder(total_amount):
                                 source_store=pharm.name)
             if form.deliverymethod.data == 'pickup' or form.deliverymethod == 'Customer pickup':
                 neworder.location = 'pickup'
-                flash('Order was placed as Pick up.')
+                
             else:
                 neworder.location = form.drop_address.data
                 flash('Your order will be approved soon, and assined a delivery agent.')
@@ -445,57 +445,89 @@ def menu(page_num=1):
 
 def get_cart_dict(user_id):
     items = CartItem.query.filter_by(user_id=current_user.id)
+@main.route("/add_to_cart_ajax", methods=["POST"])
+@login_required
+def add_to_cart_ajax():
+    data = request.get_json() or {}
+    product_id = data.get("product_id")
+    if not product_id:
+        return jsonify(success=False, error="missing_product_id"), 400
 
-@main.route('/add_to_cart/<int:item_id>', methods=['POST','GET'])
-def add_to_cart(item_id):
-    form = CartlistForm()
-    userid = current_user.id
-    page_num = 1
-    #print('starting...')
-    product = Product.query.get_or_404(item_id)
-    store_id = session.get('store_id')
+    product = Product.query.get_or_404(product_id)
+    store_id = session.get("store_id") or product.store_id if hasattr(product, "store_id") else None
 
-    cart = Cart.query.filter(Cart.user_id==current_user.id, Cart.store_id==store_id).first()
+    # get or create cart
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
     if not cart:
-       # print('cart dont exist, creating one')
         cart = Cart(user_id=current_user.id, store_id=store_id)
-       # print('creation done')
         db.session.add(cart)
+        db.session.commit()  # commit to get cart.id for CartItem FK
 
-   # print('checking cart item...')
+    # add or increment cart item
     cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
     if cart_item:
-        #print('product exists on cart and incremeted')
-        cart_item.quantity+=1
+        cart_item.quantity = cart_item.quantity + 1
     else:
-        #print('adding product to cart')
         cart_item = CartItem(cart_id=cart.id, product_id=product.id, quantity=1)
         db.session.add(cart_item)
-    total_amount = sum(item.product.price * item.quantity for item in cart.cart_items)
+
+    db.session.commit()
+
+    # recalc totals
+    cart_count = cart.total_items()
+    cart_total = cart.total_amount()
+
+    # emit update to only this user (room = user id string)
     try:
-        socketio.emit('cart_updated', {'cart_count':sum(cart.values()), 'cart':cart })
-        db.session.commit()
-        cache.clear()
-        return jsonify(success=True, cart_count=sum(cart.values()))
-    except IntegrityError:
-        return redirect(url_for('main.menu',page_num=1))
-    #print('donee')
+        socketio.emit("cart_updated", {"cart_count": cart_count, "cart_total": cart_total}, room=str(current_user.id))
+    except Exception as e:
+        current_app.logger.debug(f"socketio emit failed: {e}")
+
+    return jsonify(success=True, cart_count=cart_count, cart_total=cart_total)
 
 
-@main.route('/remove_from_cart/<int:item_id>', methods=['POST', 'GET'])
+# --- AJAX remove from cart ---
+@main.route("/remove_from_cart_ajax/<int:item_id>", methods=["POST"])
 @login_required
-def remove_from_cart(item_id):
-    cart = Cart.query.filter_by(user_id=current_user.id).first()
-    #cart_ = CartItem.query.filter_by(cart_id=cart.id, product_id=item_id).first()
-    product = CartItem.query.filter_by(id=item_id).first()
-    if product:
-        product.quantity -= 1
-        db.session.add(product)
-        if product.quantity <= 0:
-            db.session.delete(product)
-    db.session.commit()        #db.session.delete()
-    cache.clear()
-    return redirect(url_for('main.cart', user_id=current_user.id))
+def remove_from_cart_ajax(item_id):
+    item = CartItem.query.get_or_404(item_id)
+
+    # verify ownership
+    cart = Cart.query.get(item.cart_id)
+    if not cart or cart.user_id != current_user.id:
+        return jsonify(success=False, error="forbidden"), 403
+
+    db.session.delete(item)
+    db.session.commit()
+
+    # recalc
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=cart.store_id).first()
+    if not cart:
+        cart_count = 0
+        cart_total = 0.0
+    else:
+        cart_count = cart.total_items()
+        cart_total = cart.total_amount()
+
+    # emit update
+    try:
+        socketio.emit("cart_updated", {"cart_count": cart_count, "cart_total": cart_total}, room=str(current_user.id))
+    except Exception as e:
+        current_app.logger.debug(f"socketio emit failed: {e}")
+
+    return jsonify(success=True, cart_count=cart_count, cart_total=cart_total)
+
+
+# --- Endpoint to fetch current cart totals (optional utility) ---
+@main.route("/cart_status", methods=["GET"])
+@login_required
+def cart_status():
+    store_id = session.get("store_id")
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
+    if not cart:
+        return jsonify(success=True, cart_count=0, cart_total=0.0)
+    return jsonify(success=True, cart_count=cart.total_items(), cart_total=cart.total_amount())
+
 
 
 @main.route("/account", methods=["GET", "POST"])
