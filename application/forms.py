@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired, Length, Email # type: ignore
 
 class PharmacyRegistrationForm(FlaskForm):
     pharmacy_name = StringField('Store Name', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired()])
+    email = EmailField('Email', validators=[DataRequired()])
     phone = StringField('Phone Number', validators=[DataRequired()])
     address = StringField('Address', validators=[DataRequired()])
     opening_hours_and_days = StringField('Opening Hours', validators=[DataRequired()])
@@ -13,7 +13,7 @@ class PharmacyRegistrationForm(FlaskForm):
     submit = SubmitField('Register Store')
 
 class emailform(FlaskForm):
-    email = StringField('Email', validators=[DataRequired()])
+    email = EmailField('Email', validators=[DataRequired()])
     submit = SubmitField('Send')
 
 class resetpassword(FlaskForm):
@@ -29,7 +29,7 @@ class UpdateForm(FlaskForm):
 
     residence = StringField('Place of Residence', validators=[DataRequired()])
 
-    Email = StringField('Email',
+    Email = EmailField('Email',
                         validators=[DataRequired(),
                                     Length(min=5, max=30)])
     submit = SubmitField('Update')
@@ -46,7 +46,7 @@ class RegistrationForm(FlaskForm):
                            validators=[DataRequired(),
                                        Length(min=2, max=16)])
     
-    Email = StringField('Email',
+    Email = EmailField('Email',
                         validators=[DataRequired(),
                                     Length(min=5, max=30)])
 
@@ -62,7 +62,7 @@ class Set_StoreForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
-    email = StringField('Email',
+    email = EmailField('Email',
                         validators=[DataRequired(), Length(min=5, max=30)])
     password = PasswordField('Password',
                              validators=[DataRequired()])

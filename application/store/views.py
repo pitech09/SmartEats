@@ -28,8 +28,8 @@ from ..models import (User, Product, Sales, DeliveryGuy,
 from ..utils.notification import create_notification
 from application import cache
 from datetime import datetime
-
-
+from application.notification import notify_customer
+from application.auth.views import send_sound
 mypharmacy_product = Store.products
 mypharmacy_orders = Store.orders
 bcrypt = Bcrypt()
@@ -404,7 +404,11 @@ def updatestatus(order_id):
             message = f"Order #{order.order_id} status changed from {old_status} to {new_status}"
             # Notify customer
             create_notification(user_type='customer', user_id=order.user_id, message=message)
-
+            try:
+                notify_customer(order.user_id)
+            except Exception:
+                current_app.logger.debug("notify_customer failed during login (admin).")
+            send_sound(order.user_id, sound_name="update_order")
 
             # Also notify store dashboard if needed
             create_notification(user_type='store', user_id=order.store_id, message=message)
@@ -448,13 +452,17 @@ def addproducts():
                                   description=form.product_description.data
                                   )
                 file = form.product_pictures.data
+                print(current_app.config['USE_CLOUDINARY'])
                 if current_app.config['USE_CLOUDINARY']:
+                    print("SAving to cloudinary.")
                     upload_result = upload_to_cloudinary(file)
                     image_url = upload_result['secure_url'] 
                     product.pictures = image_url
-                else:
-                    product.pictures = save_product_picture(file)
-              
+                else: 
+                    print('Saving picture to sqlite db') 
+                    _image = save_product_picture(file)
+                    product.pictures = _image
+
                 product.store_id = mypharmacy.id
                 db.session.add(product)
                 try:
@@ -492,9 +500,7 @@ def userorders(order_id):
     user_order = Order.query.filter(Order.id==order_id, Order.store_id==store_id).first()
     total = 0.00
     if user_order:
-
         gross_total = sum(item.product.price * item.quantity for item in user_order.order_items)
-
         total=gross_total
     else:
         flash('Cant view details')

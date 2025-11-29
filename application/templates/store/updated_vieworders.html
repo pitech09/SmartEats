@@ -64,7 +64,7 @@
         }
     }
 </style>
-<section class="orders-section">
+<section vfs8bvbyhclass="orders-section">
     <h2>Order #{{ user_order.order_id }}</h2>
     <p><strong>Total Cost:</strong> M{{ total }}</p>
     <p><strong>Date:</strong> {{ user_order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</p>
@@ -73,7 +73,7 @@
     <a href="{{ user_order.screenshot }}" target="_blank">
         <img 
             style="width: 50%; height: 200px; object-fit: cover; cursor: pointer;" 
-            src="{{ user_order.screenshot }}" 
+            src="{{ url_for('static', filename='css/products/'+user_order.screenshot) }}" 
             alt="Screenshot from {{ user_order.user_email }}">
     </a>
 {% else %}

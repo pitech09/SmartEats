@@ -25,20 +25,20 @@
                 {{order.create_at.strftime('%Y - %m - %d @ %H:%M') }}
             </td>
             <td>{{order.payment}}</td>
-            <td>{{order.transactionID}}</td>
+            
             <td>
                 {{order.user.email}}
             </td>
             <td>{{order.location}}</td>
             <td>
-                <button class="btn" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
+                <button  class="btn bg-success" onclick="window.location.href='{{url_for('store.userorders', order_id=order.id)}}'">
                               View Details
                 </button>
 
             </td>
         </tr>
         {%endfor%}
-                    <!-- Add more rows for additional orders -->
+                   
         </tbody>
     </table>
 </section>

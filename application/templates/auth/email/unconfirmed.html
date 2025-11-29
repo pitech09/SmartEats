@@ -1,9 +1,19 @@
 {% extends "layout.html" %}
 {% block title %}Unconfirmed Email - SmartEats {% endblock %}
 {% block content %}
-<section class="containers">
-  <p>We have sent a confirmation email. Check your emails and confirm.</p>
-
-    </section>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h3 class="text-center">Email Confirmation Required</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-center">Your email address has not been confirmed yet. Please check your inbox for a confirmation email.</p>
+                    <p class="text-center">If you did not receive the email, you can <a href="{{ url_for('auth.resend_confirmation') }}">resend the confirmation email</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 {%endblock%}
 

@@ -3,6 +3,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from sqlalchemy.pool import NullPool, QueuePool
 
 
 
@@ -11,11 +12,18 @@ class Config:
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     ALLOWED_EXTENSIONS = {'png', 'jpeg', 'jpg', 'gif'}
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_NAME = 'smarteats_session'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = 1800  # seconds
+    WTF_CSRF_ENABLED = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,        # Checks if connection is alive before using
+        "pool_recycle": 280,          # Reconnect before Supabase timeout
+        "pool_size": 5,               # Number of connections in the pool
+        "max_overflow": 10,           # Allow extra connections when needed
+    }
 
     # Flask-Compress config
     COMPRESS_ALGORITHM = 'gzip'
@@ -94,5 +102,5 @@ class ProductionConfig(Config):
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'default': ProductionConfig
+    'default': DevelopmentConfig
 }
