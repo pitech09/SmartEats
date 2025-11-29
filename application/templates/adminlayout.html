@@ -18,12 +18,12 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,900" rel="stylesheet">
 
-    <!-- ✅ Pace.js Loader Integration -->
+    <!-- Pace.js Loader -->
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
     <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
 
     <style>
-    /* Pace.js custom loader (SmartEats green) */
+    /* Pace.js custom loader */
     .pace {
         pointer-events: none;
         user-select: none;
@@ -40,7 +40,7 @@
     }
 
     .pace .pace-progress {
-        background: #00b37e; /* SmartEats green progress bar */
+        background: #00b37e;
         position: fixed;
         z-index: 2000;
         top: 0;
@@ -69,7 +69,7 @@
         100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    /* Sidebar custom green */
+    /* Sidebar */
     .bg-success {
         background-color: #2da350 !important;
     }
@@ -90,7 +90,6 @@
         margin: 10px 0;
     }
 
-    /* Mobile toggle button (green) */
     .custom-toggle {
         background-color: #2da350;
         border: none;
@@ -109,19 +108,43 @@
 </head>
 
 <body id="page-top">
+
+<!-- ================================================ -->
+<!-- 🔊 SOCKET.IO + SOUND SYSTEM (Correct Placement)  -->
+<!-- ================================================ -->
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<audio id="new_order" preload="none" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
+<audio id="order_update" preload="none" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
+<audio id="order_ready" preload="none" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
+
+<script>
+    var socket = io();
+
+    socket.on("play_sound", function(data) {
+        let audio = document.getElementById(data.sound);
+        if (audio) {
+            audio.currentTime = 0; 
+            audio.play();
+        }
+    });
+</script>
+
+<!-- ================================================ -->
+
     <!-- Page Wrapper -->
     <div id="wrapper">
 
         <!-- Sidebar -->
         <ul class="navbar-nav bg-success sidebar sidebar-dark accordion" id="accordionSidebar">
-            <!-- Sidebar - Brand -->
+
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
                 <div class="sidebar-brand-text mx-3">{{ current_user.name }}</div>
             </a>
 
             <hr class="sidebar-divider my-0">
 
-            <!-- Dashboard -->
             <li class="nav-item active">
                 <a class="nav-link" href="{{ url_for('store.adminpage') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
@@ -131,7 +154,6 @@
 
             <hr class="sidebar-divider">
 
-            <!-- Order Management -->
             <div class="sidebar-heading">Order Management</div>
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('store.ActiveOrders') }}">
@@ -154,9 +176,8 @@
 
             <hr class="sidebar-divider">
 
-            <!-- Inventory -->
             <div class="sidebar-heading">Inventory Management</div>
-                <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('store.vendor_analytics') }}">
                     <i class="fas fa-user-plus"></i>
                     <span>Analytics</span>
@@ -177,7 +198,6 @@
 
             <hr class="sidebar-divider">
 
-            <!-- Users -->
             <div class="sidebar-heading">User & Profile</div>
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('store.addstaff') }}">
@@ -200,7 +220,6 @@
 
             <hr class="sidebar-divider d-none d-md-block">
 
-            <!-- Logout -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('main.logout') }}">
                     <i class="fas fa-sign-out-alt"></i>
@@ -214,28 +233,26 @@
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
 
-                <!-- Mobile Sidebar Toggle -->
                 <button id="sidebarToggleTop" class="btn btn-success d-md-none rounded-circle mr-3 custom-toggle">
                     <i class="fa fa-bars"></i>
                 </button>
 
-                <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
-                   <ul class="navbar-nav ml-auto">
+                    <ul class="navbar-nav ml-auto">
 
-                        <!-- Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" data-toggle="dropdown">
                                 <i class="fas fa-bell fa-fw"></i>
                                 <span class="badge badge-danger badge-counter">{{ count }}</span>
                             </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="alertsDropdown">
+
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <h6 class="dropdown-header">Notification Center</h6>
+
                                 {% if unread_notifications %}
                                     {% for note in unread_notifications %}
-                                    <a class="dropdown-item d-flex align-items-center" href="{{ url_for('store.mark_notification_read', notification_id=note.id) }}">
+                                    <a class="dropdown-item d-flex align-items-center" 
+                                       href="{{ url_for('store.mark_notification_read', notification_id=note.id) }}">
                                         <div class="mr-3">
                                             <div class="icon-circle bg-primary">
                                                 <i class="fas fa-file-alt text-white"></i>
@@ -248,19 +265,15 @@
                                     </a>
                                     {% endfor %}
                                 {% else %}
-                                    <a class="dropdown-item text-center small text-gray-500" href="#">
-                                        No new notifications
-                                    </a>
+                                    <a class="dropdown-item text-center small text-gray-500">No new notifications</a>
                                 {% endif %}
                             </div>
                         </li>
 
                         <div class="topbar-divider d-none d-sm-block"></div>
 
-                        <!-- User -->
                         <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ current_user.name }}</span>
                                 <img class="img-profile rounded-circle"
                                     src="{{ url_for('static', filename='css/images/undraw_profile_1.svg') }}">
@@ -269,7 +282,6 @@
                     </ul>
                 </nav>
 
-                <!-- Flash Messages -->
                 <div class="row">
                     {% with messages = get_flashed_messages() %}
                         {% if messages %}
@@ -283,7 +295,6 @@
                 </div>
             </div>
 
-            <!-- Footer -->
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="text-center my-auto">
@@ -294,18 +305,17 @@
         </div>
     </div>
 
-    <!-- Scroll to Top -->
+    <!-- Scroll to Top Button -->
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
 
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='/lib/jquery/dist/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
 
-    <!-- Optional: Restart Pace on AJAX -->
     <script>
         $(document).on('ajaxStart', function() { Pace.restart(); });
     </script>

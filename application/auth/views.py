@@ -1,16 +1,16 @@
 from threading import Thread
 from flask import (
-    session, request, flash, redirect, url_for, render_template
+    session, request, flash, redirect, url_for, render_template, current_app
 )
+from application.notification import *
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user
 from flask_mail import Message, Mail
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import InternalServerError
-from flask import current_app
 from . import auth
-from .. import db, login_manager
+from .. import db, login_manager, socketio  # added socketio import
 from ..forms import (
     RegistrationForm, PharmacyRegistrationForm, LoginForm,
     emailform, resetpassword, Set_StoreForm
@@ -26,7 +26,6 @@ s = URLSafeTimedSerializer('ad40898f84d46bd1d109970e23c0360e')
 
 def send_async_email(app, msg):
     """Send email asynchronously."""
-    
     with app.app_context():
         try:
             mail.send(msg)
@@ -102,6 +101,22 @@ def confirm_token(token, expiration=86400):
         return False
 
 
+# ------------------- Socket helper -------------------
+
+def send_sound(user_id, sound_name="login"):
+    """
+    Emit a play_sound event to the specific user's room.
+    This does not replace any existing notify_* functions — it just triggers the browser sound.
+    """
+    try:
+        # socketio might be None/uninitialized in some contexts, so guard it
+        if socketio:
+            socketio.emit('play_sound', {'sound': sound_name}, room=str(user_id))
+    except Exception as e:
+        # log but do not break existing flow
+        current_app.logger.debug(f"Failed to emit play_sound for user {user_id}: {e}")
+
+
 # ------------------- ROUTES -------------------
 
 @auth.route("/registerstore", methods=['GET', 'POST'])
@@ -117,8 +132,10 @@ def registerstore():
         db.session.add(new_pharmacy)
         try:
             db.session.commit()
-            token = send_confirmation_email(form, is_store=True)
-            return redirect(url_for('auth.unconfirmed', token=token))
+            flash('Store registered successfully. Please check your email to confirm your account.', 'success')
+            return redirect(url_for('auth.newlogin'))
+            #token = send_confirmation_email(form, is_store=True)
+            #return redirect(url_for('auth.unconfirmed', token=token))
         except IntegrityError:
             db.session.rollback()
             flash('Check your input details.')
@@ -140,8 +157,10 @@ def register():
         db.session.add(users)
         try:
             db.session.commit()
-            token = send_confirmation_email(form)
-            return redirect(url_for('auth.unconfirmed', token=token))
+            flash('Registered successfully. Please check your email to confirm your account.', 'success')       
+            return redirect(url_for('auth.newlogin'))
+            #token = send_confirmation_email(form)
+            #return redirect(url_for('auth.unconfirmed', token=token))
         except IntegrityError:
             db.session.rollback()
             flash('Username or email already exists.')
@@ -167,7 +186,9 @@ def newlogin():
 
         for model, session_type in user_types:
             account = model.query.filter_by(email=email).first()
+            print('account found')
             if account and bcrypt.check_password_hash(account.password, password):
+                print('password matched')
                 if session_type == 'store' and not account.confirmed:
                     flash('You need to activate your email before login.')
                     return redirect(url_for('auth.newlogin'))
@@ -175,19 +196,52 @@ def newlogin():
                 login_user(account)
                 session['user_type'] = session_type
                 session['email'] = account.email
+
+                # Play sound (server -> browser) for the logged-in user.
+                # Keep existing notify_customer(...) calls (they may do other things),
+                # and ALSO emit a socket event so the browser can play audio.
                 if session_type == 'customer':
                     flash(f'Login Successful, welcome {account.username}', 'success')
+                    print("play sound for customer login")
+                    try:
+                        notify_customer(account.id)
+                    except Exception:
+                        current_app.logger.debug("notify_customer failed during login (customer).")
+                    send_sound(account.id, sound_name="new_order")
                     return redirect(url_for('main.home'))
+
                 elif session_type == 'administrator':
                     session['admin_id'] = account.id
+                    print('admin id set in session')
+                    print("play sound for admin login")
+                    try:
+                        print("Calling the notify function.")
+                        notify_customer(account.id)
+                    except Exception:
+                        current_app.logger.debug("notify_customer failed during login (admin).")
+                    send_sound(account.id, sound_name="login")
                     return redirect(url_for('admin.admindash'))
+
                 elif session_type == 'store':
                     session['store_id'] = account.id
+                    print("play sound for store login")
+                    try:
+                        notify_customer(account.id)
+                    except Exception:
+                        current_app.logger.debug("notify_customer failed during login (store).")
+                    send_sound(account.id, sound_name="login")
                     flash(f'Login Successful, welcome {account.name}')
                     return redirect(url_for('store.adminpage'))
+
                 elif session_type == 'delivery_guy':
                     session['delivery_guy_id'] = account.id
                     flash(f'Login Successful, welcome {account.names}', 'success')
+                    print("play sound")
+                    try:
+                        notify_customer(account.id)
+                    except Exception:
+                        current_app.logger.debug("notify_customer failed during login (delivery).")
+                    send_sound(account.id, sound_name="login")
                     return redirect(url_for('delivery.dashboard'))
 
         flash("Invalid login credentials", 'danger')
@@ -203,7 +257,6 @@ def resend_email():
         owner = Store.query.filter_by(email=email).first()
         user = User.query.filter_by(email=email).first()
         token = ''
-
         if owner:
             token = send_confirmation_email(owner, is_store=True)
         if user:

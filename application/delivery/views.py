@@ -5,7 +5,7 @@ from flask import render_template, redirect, url_for, flash, session, request # 
 from flask_login import login_required, current_user, logout_user  # type: ignore
 from sqlalchemy import desc, func #type: ignore
 from sqlalchemy.exc import IntegrityError #type: ignore
-
+from application.notification import notify_customer, notify_store
 from application.utils.notification import create_notification
 from . import delivery
 from ..forms import *
@@ -199,7 +199,7 @@ def ready_orders():
     delivery_update = updatedeliveryform()
     formpharm=Set_StoreForm()
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
-    ready = Order.query.filter(Order.status == "Ready ", Order.store_id == session.get('store_id')).all()
+    ready = Order.query.filter(Order.status == "Ready ", Order.location!="pickup" ,Order.store_id == session.get('store_id')).all()
     return render_template('delivery/deliverydashboard.html', ready_orders=ready, myform=myform, store=store,
                            delivery_update=delivery_update,formpharm=formpharm)
 
@@ -245,7 +245,8 @@ def update_delivery(delivery_id):
             # 🔔 Notify store & emit event
 
             create_notification(user_type='store', user_id=order.store_id, message=message)
-
+            notify_customer(order.user_id)
+            notify_store(order.store_id)
             flash('Delivery status successfully updated.')
 
         except IntegrityError:

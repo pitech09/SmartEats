@@ -1,5 +1,5 @@
 import os
-from flask import render_template, redirect,  url_for, flash, session
+from flask import render_template, redirect,  url_for, flash, session, jsonify
 from flask_login import login_required, current_user, logout_user # type: ignore
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import desc, or_
@@ -11,6 +11,10 @@ from PIL import Image
 import cloudinary #type: ignore
 from cloudinary.uploader import upload  # type: ignore
 from dateutil.relativedelta import relativedelta
+from application.notification import *
+from application.auth.views import send_sound
+from application.utils.cache import *
+
 
 PRODUCTS_PER_PAGE = 9
 
@@ -364,14 +368,18 @@ def addorder(total_amount):
                 neworder.screenshot = pics
         else:
             return redirect(url_for('main.cart'))
-        
         #hashed_order = flask_bcrypt.generate_password_hash(neworder.id)
-
         neworder.transactionID ='None'
         db.session.add(neworder)
         try:
             print('committing...')
             db.session.commit()
+            try:
+                notify_store(store_id=store_id)
+            except Exception:
+                current_app.logger.debug("notify_customer failed during login (store).")
+                send_sound(store_id, sound_name="new_order")
+                print("Order added successfully.")
             flash('Order successfully placed Order. Your payment will be verified shortly')
         except IntegrityError:
             db.session.rollback()
@@ -435,6 +443,9 @@ def menu(page_num=1):
                             total_pages=total_pages, page_num=page_num, user=user, store=mystore)
 
 
+def get_cart_dict(user_id):
+    items = CartItem.query.filter_by(user_id=current_user.id)
+
 @main.route('/add_to_cart/<int:item_id>', methods=['POST','GET'])
 def add_to_cart(item_id):
     form = CartlistForm()
@@ -443,6 +454,7 @@ def add_to_cart(item_id):
     #print('starting...')
     product = Product.query.get_or_404(item_id)
     store_id = session.get('store_id')
+
     cart = Cart.query.filter(Cart.user_id==current_user.id, Cart.store_id==store_id).first()
     if not cart:
        # print('cart dont exist, creating one')
@@ -461,13 +473,13 @@ def add_to_cart(item_id):
         db.session.add(cart_item)
     total_amount = sum(item.product.price * item.quantity for item in cart.cart_items)
     try:
+        socketio.emit('cart_updated', {'cart_count':sum(cart.values()), 'cart':cart })
         db.session.commit()
         cache.clear()
-        flash(f'{product.productname} added to cart.')
+        return jsonify(success=True, cart_count=sum(cart.values()))
     except IntegrityError:
         return redirect(url_for('main.menu',page_num=1))
     #print('donee')
-    return redirect(url_for('main.menu', user_id=current_user.id, form=form, page_num=page_num, total_amount=total_amount))
 
 
 @main.route('/remove_from_cart/<int:item_id>', methods=['POST', 'GET'])
