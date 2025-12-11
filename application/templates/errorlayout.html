@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>
     {% block title %}
       {% if store is defined and store.name is defined %}
@@ -12,30 +13,37 @@
       {% endif %}
     {% endblock %}
   </title>
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico')}}">
+
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico')}}">
 
   <!-- Fonts & Styles -->
-  <link href="{{url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
+  <link href="{{url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css')}}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css')}}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css')}}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css')}}"/>
 
-  <!-- ✅ SmartEats Pace.js Loader -->
+  <!-- Pace.js Loader -->
   <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/green/pace-theme-minimal.css') }}">
   <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
 
   <style>
-    /* SmartEats Spinner Styles */
+    /************** GLOBAL BRAND COLORS **************/
+    :root {
+      --accent: {% if store is defined and store.color is defined %}{{ store.color }}{% else %}#00b894{% endif %};
+    }
+
+    /************** SMART LOADER **************/
     .pace {
       pointer-events: none;
       user-select: none;
     }
 
     .pace.pace-active {
-      background: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.65);
       position: fixed;
       z-index: 9999;
       top: 0;
@@ -45,9 +53,8 @@
     }
 
     .pace .pace-progress {
-      background: #00b894; /* SmartEats green */
+      background: var(--accent);
       position: fixed;
-      z-index: 2000;
       top: 0;
       right: 100%;
       width: 100%;
@@ -62,7 +69,7 @@
       left: 50%;
       width: 45px;
       height: 45px;
-      border: 4px solid #00b894;
+      border: 4px solid var(--accent);
       border-top-color: transparent;
       border-radius: 50%;
       animation: pace-spinner 0.8s linear infinite;
@@ -74,106 +81,171 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
+    /************** LOGO **************/
     .logo {
-    max-height: 80px;
-    height: auto;
-    width: auto;
-}
-@media (max-width: 768px) {
-    .logo {
-        max-height: 60px; /* smaller on mobile */
+      max-height: 80px;
+      height: auto;
+      width: auto;
     }
-}
-    /* Dropdown and Header */
-    .dropdown {
-      position: relative;
-      display: inline-block;
+    @media (max-width: 768px) {
+      .logo {
+        max-height: 60px;
+      }
     }
 
-    .dropbtn {
-      background-color: #00b894;
-      color: white;
-      padding: 10px;
-      border: none;
-      cursor: pointer;
-    }
-
-    header {
-      margin: 20px auto;
-      padding: 20px;
-      backdrop-filter: blur(8px);
-    }
-
+    /************** DROPDOWN **************/
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: transparent;
+      background-color: white;
       min-width: 160px;
-      z-index: 1;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.15);
+      z-index: 30;
+      animation: fadeIn 0.25s ease-in-out;
     }
 
     .dropdown-content a {
-      color: black;
-      padding: 10px 2px;
+      color: #333;
+      padding: 10px 14px;
       text-decoration: none;
       display: block;
+      white-space: nowrap;
     }
 
-    .dropdown a:hover {
-      background: #087191;
+    .dropdown-content a:hover {
+      background: var(--accent);
+      color: white;
     }
 
     .show {
       display: block;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
+
+  {% block head %}{% endblock %}
 </head>
 
-<body>
-  <header style="background-color: none;">
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light border-bottom box-shadow mb-3">
+<body class="bg-light">
+
+  <!---------------- HEADER / NAV ---------------->
+  <header class="mb-3">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-2">
       <div class="container">
-<img src="/static/css/images/worka.png" 
-     style="max-height: 80px; width: auto; height: auto;" 
-     class="img-fluid"/>        <br>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                aria-expanded="false" aria-label="Toggle navigation">
+
+        <!-- Logo -->
+        <a class="navbar-brand d-flex align-items-center" href="/">
+          <img src="/static/css/images/worka.png" alt="SmartEats" class="logo img-fluid">
+        </a>
+
+        <!-- Navbar Toggle -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
           <span class="navbar-toggler-icon"></span>
         </button>
+
+        <!-- Navbar Items -->
+        <div class="collapse navbar-collapse" id="mainNavbar">
+
+          <ul class="navbar-nav ms-auto align-items-center">
+
+            <li class="nav-item mx-2">
+              <a class="nav-link" href="/stores">Stores</a>
+            </li>
+
+            <li class="nav-item mx-2">
+              <a class="nav-link" href="/orders">Orders</a>
+            </li>
+
+            <li class="nav-item mx-2">
+              <a class="nav-link" href="/cart">
+                <i class="fas fa-shopping-cart"></i>
+                Cart
+              </a>
+            </li>
+
+            {% if current_user.is_authenticated %}
+            <li class="nav-item dropdown mx-2">
+              <a class="nav-link dropdown-toggle" href="#" onclick="toggleDropdown('userDrop')">
+                <i class="fas fa-user-circle"></i> {{ current_user.username }}
+              </a>
+              <div id="userDrop" class="dropdown-content">
+                <a href="/profile">Profile</a>
+                <a href="/logout">Logout</a>
+              </div>
+            </li>
+            {% else %}
+            <li class="nav-item mx-2">
+              <a class="btn btn-sm btn-success px-3" href="/login">Login</a>
+            </li>
+            {% endif %}
+
+          </ul>
+
+        </div>
       </div>
     </nav>
   </header>
 
-  <div class="topbar-divider d-none d-sm-block"></div>
-
+  <!---------------- ALERTS BLOCK ---------------->
   <div class="container">
-    <main role="main" class="pb-3">
-      {% with messages = get_flashed_messages() %}
-        {% if messages %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
         <div class="mt-3">
-          {% for message in messages %}
-            <div class="alert alert-info" role="alert">{{ message }}</div>
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} shadow-sm">{{ message }}</div>
           {% endfor %}
         </div>
-        {% endif %}
-      {% endwith %}
-      {% block content %} {% endblock %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!---------------- PAGE CONTENT ---------------->
+  <div class="container">
+    <main role="main" class="pb-4">
+      {% block content %}{% endblock %}
     </main>
   </div>
 
-  <footer class="border-top footer text-muted">
-    <div class="container">
-      &copy; 2025 - SmartEats by Pi Technologies
+  <!---------------- FOOTER ---------------->
+  <footer class="border-top footer text-muted py-3">
+    <div class="container text-center">
+      &copy; 2025 SmartEats • Crafted with care by Pi Technologies
     </div>
   </footer>
 
+  <!---------------- SCRIPTS ---------------->
   <script src="{{url_for('static', filename='lib/jquery/dist/jquery.min.js')}}"></script>
   <script src="{{url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js')}}"></script>
+
   <script>
-    // Restart Pace on AJAX
-    $(document).on('ajaxStart', function() { Pace.restart(); });
+    // Pace restart on AJAX
+    $(document).on('ajaxStart', function() {
+      Pace.restart();
+    });
+
+    function toggleDropdown(id) {
+      document.getElementById(id).classList.toggle("show");
+    }
+
+    window.onclick = function(event) {
+      if (!event.target.matches('.dropdown-toggle')) {
+        let dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+          let open = dropdowns[i];
+          if (open.classList.contains('show')) {
+            open.classList.remove('show');
+          }
+        }
+      }
+    }
   </script>
+
+  {% block scripts %}{% endblock %}
 </body>
 </html>

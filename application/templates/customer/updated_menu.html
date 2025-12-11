@@ -1,96 +1,127 @@
 {% extends "layout.html" %}
-{% block title %} {{store.name}} Menu at- SmartEats {% endblock %}
+{% block title %}{{ store.name }} Menu - SmartEats{% endblock %}
+
 {% block content %}
-<nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
-    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-        <ul class="navbar-nav flex-grow-1">
-            <h4 style="text-align: center; padding-left: 15%;"> Now viewing {{store.name}}</h4>
-        </ul>
-    </div>
-</nav>
+<div class="container my-4">
 
-<div class="search-bar">
-    <form id='searchForm' action="{{ url_for('main.search', page_num=1) }}" method="post">
-        {{ form2.hidden_tag() }}
-        <div class="input-group">
-            {{ form2.keyword(class='form-control bg-light border-0 small') }}
-            <div class="input-group-append">
-                <button class="btn btn-success" type="submit">
-                    <i class="fas fa-search fa-sm"></i>
-                </button>
-            </div>
-        </div>
+  <!-- Header -->
+  <div class="text-center mb-4">
+    <h2 class="text-success">{{ store.name }} Menu</h2>
+    <p class="text-muted">Browse and add your favorite meals to the cart!</p>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="mb-4">
+    <form id="searchForm" action="{{ url_for('main.search', page_num=1) }}" method="post" class="d-flex justify-content-center">
+      {{ form2.hidden_tag() }}
+      <div class="input-group w-75">
+        {{ form2.keyword(class='form-control border-0 shadow-sm', placeholder='Search for meals...') }}
+        <button class="btn btn-success" type="submit">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
     </form>
-</div>
+  </div>
 
-<div class="product-grid">
+  <!-- Product Grid -->
+  <div class="row row-cols-1 row-cols-md-3 g-4">
     {% for product in products %}
-    <div class="product-card">
-
-        <img class="image-top" style="border-radius: 20%;" src="{{ product.pictures }}" alt="{{ product.name }}">
-
-        <div class="product-name">{{ product.productname }}</div>
-        <div class="product-price">M{{ product.price }}</div>
-        <div class="product-description"><p>{{ product.description }}</p></div>
-
-        <a href="{{ url_for('main.viewproduct', product_id=product.id) }}">More...</a>
-
-        <div class="actions">
-            <!-- NEW AJAX BUTTON -->
+    <div class="col">
+      <div class="card h-100 shadow-sm border-0 product-card">
+        <img src="{{ product.pictures }}" class="card-img-top p-3" style="border-radius: 20%;" alt="{{ product.productname }}">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title text-success">{{ product.productname }}</h5>
+          <p class="card-text text-muted mb-2">{{ product.description|truncate(80) }}</p>
+          <p class="fw-bold mb-3">M{{ '%.2f'|format(product.price) }}</p>
+          <div class="mt-auto d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('main.viewproduct', product_id=product.id) }}" class="btn btn-outline-info btn-sm">More...</a>
             <button 
-                class="btn btn-outline-success rounded-pill add-to-cart-btn"
-                data-id="{{ product.id }}"
+              class="btn btn-success btn-sm rounded-pill add-to-cart-btn"
+              data-id="{{ product.id }}"
             >
-                Add To Cart
+              <i class="fas fa-cart-plus me-1"></i> Add
             </button>
+          </div>
         </div>
-
+      </div>
     </div>
     {% endfor %}
-</div>
+  </div>
 
-<div class="pagination">
+  <!-- Pagination -->
+  <div class="d-flex justify-content-center align-items-center mt-4">
     {% if page_num > 1 %}
-    <a href="{{ url_for('main.menu', page_num=page_num - 1) }}">Previous</a>
+      <a href="{{ url_for('main.menu', page_num=page_num - 1) }}" class="btn btn-outline-secondary me-2">Previous</a>
     {% endif %}
-
-    <span>Page {{ page_num }} of {{ total_pages }}</span>
-
+    <span class="mx-2">Page {{ page_num }} of {{ total_pages }}</span>
     {% if page_num < total_pages %}
-    <a href="{{ url_for('main.menu', page_num=page_num + 1) }}">Next</a>
+      <a href="{{ url_for('main.menu', page_num=page_num + 1) }}" class="btn btn-outline-secondary ms-2">Next</a>
     {% endif %}
+  </div>
+
 </div>
 
-<!-- AJAX SCRIPT -->
+<!-- AJAX Script -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    const cartCountEl = document.getElementById("cart-count");
+
     document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            let productId = btn.dataset.id;
+        btn.addEventListener("click", async () => {
+            const productId = btn.dataset.id;
 
-            fetch("/add_to_cart_ajax", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ product_id: productId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Update cart number
-                    const cartCount = document.getElementById("cart-count");
-                    if (cartCount) {
-                        cartCount.textContent = data.cart_count;
-                    }
+            try {
+                const response = await fetch("/add_to_cart_ajax", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ product_id: productId })
+                });
 
-                    // Optional: Play sound
-                    // document.getElementById("new_order").play();
+                const data = await response.json();
+                if (data.success && cartCountEl) {
+                    cartCountEl.textContent = data.cart_count;
+
+                    // Optional: brief visual feedback
+                    btn.classList.add('btn-success');
+                    btn.textContent = 'Added ✓';
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="fas fa-cart-plus me-1"></i> Add';
+                    }, 1200);
                 }
-            });
+            } catch (err) {
+                console.error("Error adding to cart:", err);
+            }
         });
     });
 });
 </script>
 
+<style>
+/* Card hover effects */
+.product-card:hover {
+  transform: translateY(-5px);
+  transition: 0.3s;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Responsive product image */
+.card-img-top {
+  height: 180px;
+  object-fit: cover;
+}
+
+/* Search bar style */
+input.form-control {
+  border-radius: 50px !important;
+  padding-left: 1.5rem;
+}
+
+/* Add button hover effect */
+.add-to-cart-btn:hover {
+  background-color: #28a745;
+  color: white;
+  transform: scale(1.05);
+  transition: 0.2s;
+}
+</style>
 {% endblock %}

@@ -1,26 +1,73 @@
 {% extends "layout.html" %}
-{% block title %}Complete Orders - SmartEats {% endblock %}
+{% block title %}Completed Orders - SmartEats{% endblock %}
+
 {% block content %}
-<div class="order-list">
-        <button type="submit" class="btn btn-outline-secondary bg-light rounded-pill" onclick="window.location.href='{{ url_for('main.myorders')}}'">Active/Pending Orders</button>
-        <button onclick="window.location.href='{{ url_for('main.completed_order') }}'" class="btn btn-outline-secondary bg-light rounded-pill">Order History</button>
-        <button  class="btn btn-outline bg-light rounded-pill" onclick="window.location.href='{{ url_for('main.cancelled_orders')}}'">Cancelled Order</button>
- </div>
-        <!-- Active Orders -->
-        <section class="order-list" id="active-orders">
-            {%if not orders_completed%}
-            <p>There are no Complete orders</p>
-            {%else%}
-            {%for order in orders_completed%}
-            <div class="order-card">
-                <h3>Order ID: {{order.order_id}}</h3>
+<style>
+    .order-filters {
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .order-filters .btn {
+        flex: 1;
+        border-radius: 50px;
+        padding: 0.5rem 1.5rem;
+    }
+    .order-card {
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.2s ease;
+    }
+    .order-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    }
+    .order-card h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    .order-card p {
+        margin: 0.25rem 0;
+        color: #555;
+    }
+    .empty-message {
+        text-align: center;
+        color: #777;
+        margin-top: 2rem;
+        font-size: 1.1rem;
+    }
+</style>
 
-                <p>Dest: {{order.location}}</p>
-                <p>Order Date:{{order.create_at.strftime('%Y - %m - %d @ %H:%M')}}</p>
+<div class="container-xxl mt-4">
+
+    <!-- Filter Buttons -->
+    <div class="order-filters">
+        <button type="button" class="btn btn-outline-success" onclick="window.location.href='{{ url_for('main.myorders') }}'">Active/Pending Orders</button>
+        <button type="button" class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('main.completed_order') }}'">Order History</button>
+        <button type="button" class="btn btn-outline-danger" onclick="window.location.href='{{ url_for('main.cancelled_orders') }}'">Cancelled Orders</button>
+    </div>
+
+    <!-- Completed Orders List -->
+    <section class="order-list">
+        {% if not orders_completed %}
+            <div class="empty-message">
+                <p>You have no completed orders yet.</p>
+                <p>Go back to the <a href="{{ url_for('main.menu', page_num=1) }}">menu</a> to place new orders.</p>
             </div>
-            {%endfor%}
-            {%endif%}
-            <!-- Repeat order-card for more orders -->
-        </section>
+        {% else %}
+            {% for order in orders_completed %}
+            <div class="order-card">
+                <h3>Order ID: {{ order.order_id }}</h3>
+                <p><strong>Destination:</strong> {{ order.location }}</p>
+                <p><strong>Order Date:</strong> {{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </section>
 
+</div>
 {% endblock %}

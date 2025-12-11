@@ -1,42 +1,109 @@
 {% extends "layout.html" %}
 {% block title %}Home{% endblock %}
-{% block content %}
 
-<div>
-  <div class="row my-4">
+{% block content %}
+<div class="container my-4">
+  <div class="row g-4">
+    <!-- Getting Started Card -->
     <div class="col-md-6">
-      <div class="card border-primary mb-3">
-        <div class="card-header bg-success text-white">How to Get Started.</div>
+      <div class="card shadow-sm border-success">
+        <div class="card-header bg-success text-white">How to Get Started</div>
         <div class="card-body">
-          <h5 class="card-title">Getting Started is Easy</h5>
-          
-            <ul>
-              <li> 
-                Choose your favorite restuarant and click <b>Select</b>
-              </li>
-              <li>
-                Browse the menu to view their available meals.
-              </li>
-              <li>
-                Add your favorites to the cart.
-              </li>
-              <li>
-                <b>Checkout</b> - quick and simple!
-              </li>
-            </ul>
+          <h5 class="card-title">Quick Start Guide</h5>
+          <ul>
+            <li>Choose your favorite restaurant and click <b>Select</b>.</li>
+            <li>Browse the menu to view their available meals.</li>
+            <li>Add your favorite meals to the cart.</li>
+            <li><b>Checkout</b> - fast and simple!</li>
+          </ul>
         </div>
       </div>
     </div>
+
+    <!-- Cart Summary Card -->
     <div class="col-md-6">
-      <div class="card border-success mb-3">
-        <div class="card-header bg-success text-white">Cart Items</div>
+      <div class="card shadow-sm border-warning">
+        <div class="card-header bg-warning text-dark">Cart Items</div>
         <div class="card-body">
-          <h5 class="card-title">{{total_count}} items</h5>
-          <a href="{{ url_for('main.cart') }}" class="btn btn-success">View Cart</a>
+          <h5 class="card-title">{{ total_count or 0 }} items</h5>
+          <p>Total Price: <b>M{{ '%.2f'|format(total_amount or 0) }}</b></p>
+          <a href="{{ url_for('main.cart') }}" class="btn btn-warning">View Cart</a>
         </div>
       </div>
     </div>
   </div>
 
+  <div class="row g-4 mt-3">
+    <!-- User Stats Card -->
+    <div class="col-md-6">
+      <div class="card shadow-sm border-primary">
+        <div class="card-header bg-primary text-white">Your Stats</div>
+        <div class="card-body">
+          <p><b>Total Orders:</b> {{ user_orders_count or 0 }}</p>
+          <p><b>Peak Order Rate:</b> {{ peak_rate or "N/A" }}</p>
+          <p><b>Completed Orders:</b> {{ completed_orders_count or 0 }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Center Card -->
+    <div class="col-md-6">
+      <div class="card shadow-sm border-dark">
+        <div class="card-header bg-dark text-white">Notifications</div>
+        <div class="card-body">
+          <ul class="list-group" id="notification-list">
+            {% if notifications %}
+              {% for note in notifications %}
+                <li class="list-group-item">
+                  <strong>{{ note.type }}:</strong> {{ note.message }}
+                  <span class="text-muted float-end">{{ note.time }}</span>
+                </li>
+              {% endfor %}
+            {% else %}
+              <li class="list-group-item text-muted">No notifications at the moment.</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Real-time Notification Script -->
+<script>
+  var socket = io();
+
+  // Join user-specific room
+  {% if current_user.is_authenticated %}
+    socket.emit('join', { room: 'user_{{ current_user.id }}' });
+  {% endif %}
+
+  // Listen for new notifications
+  socket.on('new_notification', function(data) {
+    const list = document.getElementById('notification-list');
+
+    // Remove placeholder if it exists
+    const placeholder = list.querySelector('.text-muted');
+    if (placeholder) placeholder.remove();
+
+    // Create new notification item
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.innerHTML = `<strong>${data.type}:</strong> ${data.message} <span class="text-muted float-end">${data.time}</span>`;
+    
+    // Prepend to list
+    list.prepend(li);
+
+    // Play notification sound
+    const audio = document.getElementById('order_update');
+    if (audio) audio.play();
+  });
+
+  // Optional: listen for cart updates
+  socket.on('cart_updated', function(data) {
+    // Example: update cart count in navbar
+    const el = document.getElementById("cart-count");
+    if (el) el.textContent = data.cart_count;
+  });
+</script>
 {% endblock %}

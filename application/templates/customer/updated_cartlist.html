@@ -2,83 +2,105 @@
 {% block title %}Cartlist - SmartEats{% endblock %}
 
 {% block content %}
-<div class="containerr">
-  <div class="cart">
-    <div class="product-card">
-      <h4>Payment Codes</h4>
-      <p>Mpesa Till/Number: {{ store.mpesa_shortcode }}</p>
-      <p>Ecocash Till/Number: {{ store.ecocash_short_code }}</p>
+<div class="container my-5">
+  <h2 class="mb-4 text-center text-success">Your Cart</h2>
+
+  <div class="row g-4">
+    <!-- Payment Info Card -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-success h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Payment Codes</h5>
+        </div>
+        <div class="card-body">
+          <p><strong>Mpesa Till/Number:</strong> {{ store.mpesa_shortcode }}</p>
+          <p><strong>Ecocash Till/Number:</strong> {{ store.ecocash_short_code }}</p>
+          <p class="text-muted small">
+            Use these codes for secure payments. Make sure to enter your correct number when checking out.
+          </p>
+        </div>
+      </div>
     </div>
 
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Price</th>
-          <th>Quantity</th>
-          <th>Remove</th>
-        </tr>
-      </thead>
-      <tbody id="cart-items" style="background-color: aliceblue;">
-        {% for item in cart.cart_items %}
-        <tr data-item-id="{{ item.id }}">
-          <td>{{ item.product.productname }}</td>
-          <td class="item-price">M{{ '%.2f'|format(item.product.price) }}</td>
-          <td class="item-qty">{{ item.quantity }}</td>
-          <td>
-            <button class="btn btn-outline-secondary rounded-pill remove-item" data-id="{{ item.id }}">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="product-card">
-    <p>
-      <strong>Total Price: </strong>
-      <span id="total-price" data-base="{{ '%.2f'|format(total_amount) }}">
-        M{{ '%.2f'|format(total_amount) }}
-      </span>
-    </p>
-
-    <p class="alert" style="color:red;">
-      If you need delivery, add M6.00 extra to avoid delays.
-    </p>
-
-    <form id="order-form" action="{{ url_for('main.addorder', total_amount=total_amount) }}" method="POST" enctype="multipart/form-data">
-      {{ form3.hidden_tag() }}
-
-      <div class="form-group">
-        {{ form3.payment.label }} {{ form3.payment(class='form-control') }}
-      </div><br>
-
-      <div class="form-group">
-        {{ form3.payment_number.label }} {{ form3.payment_number(class='form-control') }}
-      </div><br>
-
-      <div class="form-group">
-        {{ form3.deliverymethod.label }}
-        {% for subfield in form3.deliverymethod %}
-        <div class="form-check">
-          {{ subfield(class="form-check-input delivery-option") }}
-          {{ subfield.label(class="form-check-label") }}
+    <!-- Cart Items & Checkout -->
+    <div class="col-md-8">
+      <div class="card shadow-sm border-primary">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Cart Items</h5>
         </div>
-        {% endfor %}
-      </div><br>
+        <div class="card-body">
+          {% if cart.cart_items|length == 0 %}
+            <p class="text-center text-muted">Your cart is empty!</p>
+          {% else %}
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Remove</th>
+              </tr>
+            </thead>
+            <tbody id="cart-items">
+              {% for item in cart.cart_items %}
+              <tr data-item-id="{{ item.id }}" class="align-middle">
+                <td>{{ item.product.productname }}</td>
+                <td class="item-price">M{{ '%.2f'|format(item.product.price) }}</td>
+                <td class="item-qty">{{ item.quantity }}</td>
+                <td>
+                  <button class="btn btn-outline-danger btn-sm rounded-pill remove-item" data-id="{{ item.id }}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
 
-      <div class="form-group">
-        {{ form3.drop_address.label }} {{ form3.drop_address(class='form-control') }}
-      </div><br>
+          <!-- Total & Checkout -->
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <h5>Total: <span id="total-price" data-base="{{ '%.2f'|format(total_amount) }}">M{{ '%.2f'|format(total_amount) }}</span></h5>
+            <p class="text-muted mb-0 small"> M6.00 will be added to order if delivery agent is selected.</p>
+          </div>
 
-      <div class="form-group">
-        {{ form3.payment_screenshot.label }} {{ form3.payment_screenshot(class='form-control') }}
-      </div><br>
+          <hr>
 
-      <button type="submit" class="btn btn-outline-success rounded-pill">Add Order</button>
-    </form>
+          <!-- Order Form -->
+          <form id="order-form" action="{{ url_for('main.addorder', total_amount=total_amount) }}" method="POST" enctype="multipart/form-data">
+            {{ form3.hidden_tag() }}
+
+            <div class="mb-3">
+              {{ form3.payment.label }} {{ form3.payment(class='form-control') }}
+            </div>
+
+            <div class="mb-3">
+              {{ form3.payment_number.label }} {{ form3.payment_number(class='form-control') }}
+            </div>
+
+            <div class="mb-3">
+              {{ form3.deliverymethod.label }}
+              {% for subfield in form3.deliverymethod %}
+              <div class="form-check">
+                {{ subfield(class="form-check-input delivery-option") }}
+                {{ subfield.label(class="form-check-label") }}
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              {{ form3.drop_address.label }} {{ form3.drop_address(class='form-control') }}
+            </div>
+
+            <div class="mb-3">
+              {{ form3.payment_screenshot.label }} {{ form3.payment_screenshot(class='form-control') }}
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill">Place Order</button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -91,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedOption = document.querySelector('.delivery-option:checked');
         let newTotal = baseTotal;
         if (selectedOption && selectedOption.value === 'agent') {
-            newTotal += 6; // add delivery fee
+            newTotal += 6; // delivery fee
         }
         totalPriceEl.textContent = `M${newTotal.toFixed(2)}`;
     }
@@ -121,8 +143,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initialize total on page load
     updateTotal();
 });
 </script>
+
+<style>
+/* Card hover & table styling */
+.table-hover tbody tr:hover { background-color: #e6f7f1; }
+.remove-item:hover { transform: scale(1.1); transition: 0.2s; }
+.card { border-radius: 15px; }
+.card-header { font-weight: bold; font-size: 1.1rem; }
+#total-price { font-weight: bold; color: #00b37e; }
+</style>
 {% endblock %}

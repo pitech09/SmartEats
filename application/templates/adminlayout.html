@@ -23,7 +23,6 @@
     <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
 
     <style>
-    /* Pace.js custom loader */
     .pace {
         pointer-events: none;
         user-select: none;
@@ -69,7 +68,6 @@
         100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    /* Sidebar */
     .bg-success {
         background-color: #2da350 !important;
     }
@@ -109,10 +107,6 @@
 
 <body id="page-top">
 
-<!-- ================================================ -->
-<!-- 🔊 SOCKET.IO + SOUND SYSTEM (Correct Placement)  -->
-<!-- ================================================ -->
-
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
 <audio id="new_order" preload="none" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
@@ -121,203 +115,209 @@
 
 <script>
     var socket = io();
-
     socket.on("play_sound", function(data) {
         let audio = document.getElementById(data.sound);
         if (audio) {
-            audio.currentTime = 0; 
+            audio.currentTime = 0;
             audio.play();
         }
     });
 </script>
 
-<!-- ================================================ -->
+<div id="wrapper">
 
-    <!-- Page Wrapper -->
-    <div id="wrapper">
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-success sidebar sidebar-dark accordion" id="accordionSidebar">
 
-        <!-- Sidebar -->
-        <ul class="navbar-nav bg-success sidebar sidebar-dark accordion" id="accordionSidebar">
+        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
+            <div class="sidebar-brand-text mx-3">{{ current_user.name }}</div>
+        </a>
 
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
-                <div class="sidebar-brand-text mx-3">{{ current_user.name }}</div>
+        <hr class="sidebar-divider my-0">
+
+        <li class="nav-item active">
+            <a class="nav-link" href="{{ url_for('store.adminpage') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard</span>
             </a>
+        </li>
 
-            <hr class="sidebar-divider my-0">
+        <hr class="sidebar-divider">
 
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ url_for('store.adminpage') }}">
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
+        <div class="sidebar-heading">Order Management</div>
 
-            <hr class="sidebar-divider">
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.ActiveOrders') }}">
+                <i class="fas fa-spinner"></i>
+                <span>Active Orders</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.delivered_orders') }}">
+                <i class="fa fa-check"></i>
+                <span>Complete Orders</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.cancelled_orders') }}">
+                <i class="fas fa-times-circle"></i>
+                <span>Cancelled Orders</span>
+            </a>
+        </li>
 
-            <div class="sidebar-heading">Order Management</div>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.ActiveOrders') }}">
-                    <i class="fas fa-spinner"></i>
-                    <span>Active Orders</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.delivered_orders') }}">
-                    <i class="fa fa-check"></i>
-                    <span>Complete Orders</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.cancelled_orders') }}">
-                    <i class="fas fa-times-circle"></i>
-                    <span>Cancelled Orders</span>
-                </a>
-            </li>
+        <hr class="sidebar-divider">
 
-            <hr class="sidebar-divider">
+        <div class="sidebar-heading">Inventory Management</div>
 
-            <div class="sidebar-heading">Inventory Management</div>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.vendor_analytics') }}">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Analytics</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.products') }}">
-                    <i class="fas fa-th-list"></i>
-                    <span>View Products</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.addproducts') }}">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Add Products</span>
-                </a>
-            </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.vendor_analytics') }}">
+                <i class="fas fa-user-plus"></i>
+                <span>Analytics</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.products') }}">
+                <i class="fas fa-th-list"></i>
+                <span>View Products</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.addproducts') }}">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Products</span>
+            </a>
+        </li>
 
-            <hr class="sidebar-divider">
+        <hr class="sidebar-divider">
 
-            <div class="sidebar-heading">User & Profile</div>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.addstaff') }}">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Add Staff</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.register_delivery') }}">
-                    <i class="fas fa-truck"></i>
-                    <span>Register Delivery</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('store.updatestore') }}">
-                    <i class="fas fa-plus"></i>
-                    <span>Update Payment Options</span>
-                </a>
-            </li>
+        <div class="sidebar-heading">User & Profile</div>
 
-            <hr class="sidebar-divider d-none d-md-block">
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.addstaff') }}">
+                <i class="fas fa-user-plus"></i>
+                <span>Add Staff</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.register_delivery') }}">
+                <i class="fas fa-truck"></i>
+                <span>Register Delivery</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.updatestore') }}">
+                <i class="fas fa-plus"></i>
+                <span>Update Payment Options</span>
+            </a>
+        </li>
 
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.logout') }}">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </li>
-        </ul>
-        <!-- End Sidebar -->
+        <hr class="sidebar-divider d-none d-md-block">
 
-        <!-- Content Wrapper -->
-        <div id="content-wrapper" class="d-flex flex-column">
-            <div id="content">
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.logout') }}">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </li>
+    </ul>
 
-                <button id="sidebarToggleTop" class="btn btn-success d-md-none rounded-circle mr-3 custom-toggle">
-                    <i class="fa fa-bars"></i>
-                </button>
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
 
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
-                    <ul class="navbar-nav ml-auto">
+            <button id="sidebarToggleTop" class="btn btn-success d-md-none rounded-circle mr-3 custom-toggle">
+                <i class="fa fa-bars"></i>
+            </button>
 
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" data-toggle="dropdown">
-                                <i class="fas fa-bell fa-fw"></i>
-                                <span class="badge badge-danger badge-counter">{{ count }}</span>
-                            </a>
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
+                <ul class="navbar-nav ml-auto">
 
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header">Notification Center</h6>
+                    <li class="nav-item dropdown no-arrow mx-1">
+                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" data-toggle="dropdown">
+                            <i class="fas fa-bell fa-fw"></i>
+                            <span class="badge badge-danger badge-counter">{{ count }}</span>
+                        </a>
 
-                                {% if unread_notifications %}
-                                    {% for note in unread_notifications %}
-                                    <a class="dropdown-item d-flex align-items-center" 
-                                       href="{{ url_for('store.mark_notification_read', notification_id=note.id) }}">
-                                        <div class="mr-3">
-                                            <div class="icon-circle bg-primary">
-                                                <i class="fas fa-file-alt text-white"></i>
-                                            </div>
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                            <h6 class="dropdown-header">Notification Center</h6>
+
+                            {% if unread_notifications %}
+                                {% for note in unread_notifications %}
+                                <a class="dropdown-item d-flex align-items-center" 
+                                   href="{{ url_for('store.mark_notification_read', notification_id=note.id) }}">
+                                    <div class="mr-3">
+                                        <div class="icon-circle bg-primary">
+                                            <i class="fas fa-file-alt text-white"></i>
                                         </div>
-                                        <div>
-                                            <div class="small text-gray-500">{{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
-                                            <span class="font-weight-bold">{{ note.message }}</span>
+                                    </div>
+                                    <div>
+                                        <div class="small text-gray-500">
+                                            {{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}
                                         </div>
-                                    </a>
-                                    {% endfor %}
-                                {% else %}
-                                    <a class="dropdown-item text-center small text-gray-500">No new notifications</a>
-                                {% endif %}
-                            </div>
-                        </li>
+                                        <span class="font-weight-bold">{{ note.message }}</span>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                                <a class="dropdown-item text-center small text-gray-500">No new notifications</a>
+                            {% endif %}
+                        </div>
+                    </li>
 
-                        <div class="topbar-divider d-none d-sm-block"></div>
+                    <div class="topbar-divider d-none d-sm-block"></div>
 
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ current_user.name }}</span>
-                                <img class="img-profile rounded-circle"
-                                    src="{{ url_for('static', filename='css/images/undraw_profile_1.svg') }}">
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
+                    <li class="nav-item dropdown no-arrow">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown">
+                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ current_user.name }}</span>
+                            <img class="img-profile rounded-circle"
+                                 src="{{ url_for('static', filename='css/images/undraw_profile_1.svg') }}">
+                        </a>
+                    </li>
+                </ul>
+            </nav>
 
-                <div class="row">
-                    {% with messages = get_flashed_messages() %}
-                        {% if messages %}
-                            <div class="alert alert-success w-100" role="alert">
-                                {{ messages[0] }}
-                            </div>
-                        {% endif %}
-                    {% endwith %}
+            <div class="row">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="alert alert-success w-100" role="alert">
+                            {{ messages[0] }}
+                        </div>
+                    {% endif %}
+                {% endwith %}
 
-                    {% block content %}{% endblock %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+                <div class="text-center my-auto">
+                    <span>Copyright &copy; SmartEats 2025</span>
                 </div>
             </div>
-
-            <footer class="sticky-footer bg-white">
-                <div class="container my-auto">
-                    <div class="text-center my-auto">
-                        <span>Copyright &copy; SmartEats 2025</span>
-                    </div>
-                </div>
-            </footer>
-        </div>
+        </footer>
     </div>
+</div>
 
-    <!-- Scroll to Top Button -->
-    <a class="scroll-to-top rounded" href="#page-top">
-        <i class="fas fa-angle-up"></i>
-    </a>
+<a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+</a>
 
-    <!-- Scripts -->
-    <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
 
-    <script>
-        $(document).on('ajaxStart', function() { Pace.restart(); });
-    </script>
+<script>
+    $(document).on('ajaxStart', function() { Pace.restart(); });
+</script>
+
+<!-- Chart.js (needed for analytics dashboard) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Per-page scripts -->
+{% block scripts %}{% endblock %}
+
 </body>
 </html>

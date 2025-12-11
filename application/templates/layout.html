@@ -2,120 +2,124 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="current-user-id" content="{{ current_user.id if current_user.is_authenticated else '' }}">
-<title>
-    {% block title %}
-        {% if store is defined and store.name is defined %}
-            {{ store.name }}
-        {% else %}
-            SmartEats
-        {% endif %}
-    {% endblock %}
-</title>
-<link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png') }}">
-<link href="{{url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-<link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css')}}"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/site.css')}}"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css')}}"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css')}}"/>
+  <title>
+      {% block title %}
+          {% if store is defined and store.name is defined %}
+              {{ store.name }}
+          {% else %}
+              SmartEats
+          {% endif %}
+      {% endblock %}
+  </title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png') }}">
+  <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}"/>
 
-<!-- ✅ Pace.js Loader Integration -->
-<link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
-<script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
+  <!-- Pace.js Loader -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
+  <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
 
-<style>
-    .logo { max-height: 80px; height: auto; width: auto; }
-    @media (max-width: 768px) { .logo { max-height: 60px; } }
+  <style>
+      body {
+          background: linear-gradient(135deg, #FFF9F0, #FFFAF5);
+          font-family: 'Nunito', sans-serif;
+      }
 
-    /* SmartEats Spinner & Loader Styles */
-    .pace { pointer-events: none; user-select: none; }
-    .pace.pace-active { background: rgba(255, 255, 255, 0.8); position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; }
-    .pace .pace-progress { background: #00b37e; position: fixed; z-index: 2000; top: 0; right: 100%; width: 100%; height: 3px; }
-    .pace .pace-activity { display: block; position: fixed; z-index: 2001; top: 50%; left: 50%; width: 45px; height: 45px; border: 4px solid #00b37e; border-top-color: transparent; border-radius: 50%; animation: pace-spinner 0.8s linear infinite; transform: translate(-50%, -50%); }
-    @keyframes pace-spinner { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+      .logo { max-height: 80px; width: auto; }
+      @media (max-width: 768px) { .logo { max-height: 60px; } }
 
-    .dropdown { position: relative; display: inline-block; }
-    .dropbtn { background-color: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; }
-    header { margin:20px auto; padding:20px; backdrop-filter: blur(8px); }
-    .dropdown-content { display: none; position: absolute; background-color: transparent; min-width: 160px; z-index: 1; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); }
-    .dropdown-content a { color: black; padding: 10px 2px; text-decoration: none; display: block; }
-    .dropdown a:hover { background: #087191; }
-    .show { display: block; }
-</style>
+      .pace { pointer-events: none; user-select: none; }
+      .pace.pace-active { background: rgba(255, 255, 255, 0.8); position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; }
+      .pace .pace-progress { background: #00b37e; position: fixed; z-index: 2000; top: 0; right: 100%; width: 100%; height: 3px; }
+      .pace .pace-activity { display: block; position: fixed; z-index: 2001; top: 50%; left: 50%; width: 45px; height: 45px; border: 4px solid #00b37e; border-top-color: transparent; border-radius: 50%; animation: pace-spinner 0.8s linear infinite; transform: translate(-50%, -50%); }
+      @keyframes pace-spinner { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
+      header { margin:20px auto; padding:20px; backdrop-filter: blur(8px); background-color: rgba(255,255,255,0.95); border-radius: 10px; }
+
+      .navbar-nav .nav-item .btn { margin: 2px; }
+
+      /* CTA Section */
+      .cta-section { margin: 50px auto; }
+      .cta-card { padding: 30px; border-radius: 12px; color: white; min-height: 250px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 8px 16px rgba(0,0,0,0.1); transition: transform 0.2s; }
+      .cta-card:hover { transform: translateY(-5px); }
+      .cta-vendor { background: linear-gradient(135deg, #007bff, #00aaff); }
+      .cta-customer { background: linear-gradient(135deg, #28a745, #85e085); }
+      .cta-delivery { background: linear-gradient(135deg, #fd7e14, #ffb347); }
+      .btn-custom { margin-top: 20px; font-weight: bold; }
+
+      /* Welcome Section */
+      .welcome-section {
+          background: linear-gradient(135deg, #fffbf0, #fff4e6);
+          padding: 50px 20px;
+          border-radius: 12px;
+          text-align: center;
+          margin-bottom: 30px;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      }
+      .welcome-section h1 { color: #ff6600; font-weight: 700; margin-bottom: 20px; }
+      .welcome-section p { color: #555; font-size: 1.2rem; }
+  </style>
 </head>
 
 <body>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
-<!-- ✅ Audio Elements -->
+<!-- Audio -->
 <audio id="new_order" preload="auto" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
 <audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
 <audio id="order_ready" preload="auto" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
 
 <script>
     var socket = io();
-
-    // Unlock audio on first user interaction (prevents autoplay blocking)
     let audioUnlocked = false;
     document.body.addEventListener('click', () => { audioUnlocked = true; }, {once: true});
 
     socket.on("play_sound", function(data) {
-        if (!audioUnlocked) return;  // Prevent blocked playback
+        if (!audioUnlocked) return;
         let audio = document.getElementById(data.sound);
         if (audio) {
-            audio.currentTime = 0;  // restart sound if already playing
+            audio.currentTime = 0;
             audio.play().catch(err => console.log("Audio playback error:", err));
         }
     });
 </script>
 
+<!-- Navbar -->
 <header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light border-bottom box-shadow mb-3">
-        <div class="container">
-            <img src="{{ url_for('static', filename='css/images/worka.png') }}" class="img-fluid logo" />
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse flex-sm-row justify-content-between">
-                <ul class="navbar-nav flex-row flex-wrap gap-1">
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item"><a href="{{ url_for('main.home') }}" class="btn bg-light rounded-pill">Home</a></li>
-                    <li class="nav-item"><a href="{{ url_for('main.menu', page_num=1) }}" class="btn bg-light rounded-pill">Menu</a></li>
-                    <li class="nav-item"><a href="{{ url_for('main.restuarants') }}" class="btn bg-light rounded-pill">View Stores</a></li>
-                    <li class="nav-item"><a href="{{ url_for('main.cart') }}" class="btn bg-light rounded-pill">Cart<sup>{{ total_count or 0 }}</sup></a></li>
-                    <li class="nav-item"><a href="{{ url_for('main.myorders') }}" class="btn bg-light rounded-pill">Orders</a></li>
-                    <li class="nav-item"><a href="{{ url_for('main.account') }}" class="btn bg-light rounded-pill">Profile</a></li>
-                    <li class="nav-item"><a href="{{ url_for('main.logout') }}" class="btn bg-light rounded-pill">Logout</a></li>
-                    {% if formpharm is defined %}
-                    <li class="nav-item">
-                        <div class="dropdown">
-                            <form action="{{ url_for('main.set_store') }}" method="POST">
-                                {{ formpharm.hidden_tag() }}
-                                <div class="input-group">
-                                    {{ formpharm.store(class='form-control bg-light border-0 small') }}
-                                    <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-check-circle"></i></button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </li>
-                    {% endif %}
-                    {% else %}
-                    <li class="nav-item"><a href="{{ url_for('auth.newlogin') }}" class="btn btn-outline-secondary bg-light rounded-pill">Login</a></li>
-                    <li class="nav-item"><a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary bg-light rounded-pill">Register</a></li>
-                    <li class="nav-item"><a href="{{ url_for('auth.registerstore') }}" class="btn btn-outline-secondary bg-light rounded-pill">Register Store</a></li>
-                    <li class="nav-item"><a href="{{ url_for('main.restuarants') }}" class="btn btn-outline-secondary bg-light rounded-pill">View Stores</a></li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
+  <nav class="navbar navbar-expand-sm navbar-light border-bottom box-shadow mb-3">
+      <div class="container">
+          <img src="{{ url_for('static', filename='css/images/worka.png') }}" class="img-fluid logo" />
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                  aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="navbar-collapse collapse flex-sm-row justify-content-between">
+              <ul class="navbar-nav flex-row flex-wrap gap-1">
+                  {% if current_user.is_authenticated %}
+                  <li class="nav-item"><a href="{{ url_for('main.home') }}" class="btn bg-light rounded-pill">Home</a></li>
+                  <li class="nav-item"><a href="{{ url_for('main.menu', page_num=1) }}" class="btn bg-light rounded-pill">Menu</a></li>
+                  <li class="nav-item"><a href="{{ url_for('main.restuarants') }}" class="btn bg-light rounded-pill">View Stores</a></li>
+                  <li class="nav-item"><a href="{{ url_for('main.cart') }}" class="btn bg-light rounded-pill">Cart<sup>{{ total_count or 0 }}</sup></a></li>
+                  <li class="nav-item"><a href="{{ url_for('main.myorders') }}" class="btn bg-light rounded-pill">Orders</a></li>
+                  <li class="nav-item"><a href="{{ url_for('main.account') }}" class="btn bg-light rounded-pill">Profile</a></li>
+                  <li class="nav-item"><a href="{{ url_for('main.logout') }}" class="btn bg-light rounded-pill">Logout</a></li>
+                  {% else %}
+                  <li class="nav-item"><a href="{{ url_for('auth.newlogin') }}" class="btn btn-outline-secondary bg-light rounded-pill">Login</a></li>
+                  <li class="nav-item"><a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary bg-light rounded-pill">Register</a></li>
+                  <li class="nav-item"><a href="{{ url_for('auth.registerstore') }}" class="btn btn-outline-secondary bg-light rounded-pill">Register Store</a></li>
+                  <li class="nav-item"><a href="{{ url_for('main.restuarants') }}" class="btn btn-outline-secondary bg-light rounded-pill">View Stores</a></li>
+                  {% endif %}
+              </ul>
+          </div>
+      </div>
+  </nav>
 </header>
 
 <div class="container">
@@ -133,28 +137,24 @@
     </main>
 </div>
 
-<footer class="border-top footer text-muted">
-    <div class="container">&copy; 2025 - SmartEats by Pi Technologies</div>
+<footer class="border-top footer text-muted" style="background: #fff4e6; padding:15px;">
+    <div class="container text-center">&copy; 2025 - SmartEats by Pi Technologies</div>
 </footer>
 
 <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
 <script src="{{ url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
 
-<!-- Optional: Restart Pace on AJAX -->
 <script>
     $(document).on('ajaxStart', function() { Pace.restart(); });
-</script>
-<script>
-var socket = io();
 
-socket.on("cart_updated", function(data) {
-    const el = document.getElementById("cart-count");
-    if (el) el.textContent = data.cart_count;
+    var socket = io();
+    socket.on("cart_updated", function(data) {
+        const el = document.getElementById("cart-count");
+        if (el) el.textContent = data.cart_count;
 
-    // OPTIONAL — play sound when item added
-    let sound = document.getElementById("new_order");
-    if (sound) sound.play();
-});
+        let sound = document.getElementById("new_order");
+        if (sound) sound.play();
+    });
 </script>
 
 </body>

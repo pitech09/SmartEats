@@ -1,88 +1,126 @@
 {% extends "adminlayout.html" %}
+{% block title %}{{ store.name }} — Analytics Dashboard{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-  <h2>{{ store.name }} — Analytics Dashboard</h2>
+    <h2>{{ store.name }} — Analytics Dashboard</h2>
 
-  <form class="d-flex gap-2 my-3" method="get">
-    <label>From:</label>
-    <input type="date" name="start_date" value="{{ start_date }}">
-    <label>To:</label>
-    <input type="date" name="end_date" value="{{ end_date }}">
-    <button class="btn btn-primary btn-sm">Filter</button>
-  </form>
+    <!-- Date Filter -->
+    <form class="d-flex gap-2 my-3" method="get">
+        <label class="mt-1">From:</label>
+        <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}">
+        <label class="mt-1">To:</label>
+        <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}">
+        <button class="btn btn-primary btn-sm">Filter</button>
+    </form>
 
-  <div class="row mt-4">
-    <div class="col-md-4">
-      <div class="card p-3 text-center">
-        <h5>Total Revenue</h5>
-        <p class="fw-bold text-success">M{{ total_sales | round(2) }}</p>
-        <small class="{% if sales_change >= 0 %}text-success{% else %}text-danger{% endif %}">
-          {{ sales_change }}% vs previous period
-        </small>
-      </div>
+    <!-- KPI Cards -->
+    <div class="row mt-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm p-3 text-center">
+                <h6>Total Revenue</h6>
+                <p class="fw-bold text-success h5">M{{ total_sales | round(2) }}</p>
+                <small class="{% if sales_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ sales_change }}% vs previous
+                </small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm p-3 text-center">
+                <h6>Average Order Value</h6>
+                <p class="fw-bold text-info h5">M{{ avg_order_value }}</p>
+                <small class="{% if aov_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ aov_change }}% vs previous
+                </small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm p-3 text-center">
+                <h6>Repeat Customer Rate</h6>
+                <p class="fw-bold text-warning h5">{{ repeat_rate }}%</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm p-3 text-center">
+                <h6>Stock Turnover Rate</h6>
+                <p class="fw-bold text-primary h5">{{ stock_turnover_rate }}</p>
+                <small>Days Left: {{ days_left }}</small>
+            </div>
+        </div>
     </div>
-    <div class="col-md-4">
-      <div class="card p-3 text-center">
-        <h5>Average Order Value</h5>
-        <p class="fw-bold text-info">M{{ avg_order_value }}</p>
-        <small class="{% if aov_change >= 0 %}text-success{% else %}text-danger{% endif %}">
-          {{ aov_change }}% vs previous period
-        </small>
-      </div>
+
+    <hr class="my-4">
+
+    <!-- Time-Based Analytics -->
+    <h4>Time-Based Analytics</h4>
+    <div class="row">
+        <div class="col-md-6 mt-4">
+            <h6>Hourly Sales Distribution</h6>
+            {{ hourly_graph | safe }}
+        </div>
+        <div class="col-md-6 mt-4">
+            <h6>Sales by Weekday</h6>
+            {{ weekday_graph | safe }}
+        </div>
     </div>
-  </div>
-  <hr class="my-4">
 
-<h4>Time-Based Analytics</h4>
-<div class="mt-4">
-  <h6>Hourly Sales Distribution</h6>
-  {{ hourly_graph | safe }}
-</div>
-<div class="mt-4">
-  <h6>Sales by Weekday</h6>
-  {{ weekday_graph | safe }}
-</div>
-<div class="mt-4">
-  <h6>Monthly Sales Trend</h6>
-  {{ monthly_graph | safe }}
-</div>
+    <div class="mt-4">
+        <h6>Monthly Sales Trend</h6>
+        {{ monthly_graph | safe }}
+    </div>
 
-<hr class="my-4">
+    <hr class="my-4">
 
-<h4>Customer Behavior</h4>
-<p>Repeat Customer Rate: <strong>{{ repeat_rate }}%</strong></p>
-<ul>
-  {% for user, orders in repeat_customers %}
-    <li>{{ user }} — {{ orders }} orders</li>
-  {% endfor %}
-</ul>
+    <!-- Product Performance -->
+    <h4>Product Performance</h4>
+    <div class="row">
+        <div class="col-md-6 mt-4">
+            <h6>Top 5 Products by Revenue</h6>
+            {{ product_graph | safe }}
+        </div>
+        <div class="col-md-6 mt-4">
+            <h6>Product Contribution Table</h6>
+            <table class="table table-striped table-bordered">
+                <thead class="table-light">
+                    <tr><th>Product</th><th>Revenue (M)</th></tr>
+                </thead>
+                <tbody>
+                    {% for name, revenue in product_contribution %}
+                        <tr><td>{{ name }}</td><td>{{ revenue | round(2) }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<hr class="my-4">
+    <hr class="my-4">
 
-<h4>Product Performance</h4>
-<table class="table table-striped">
-  <thead>
-    <tr><th>Product</th><th>Revenue (M)</th></tr>
-  </thead>
-  <tbody>
-    {% for name, revenue in product_contribution %}
-      <tr><td>{{ name }}</td><td>{{ revenue | round(2) }}</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    <hr class="my-4">
 
-<hr class="my-4">
+    <!-- Top Customers -->
+    <h4>Top Customers</h4>
+    <div class="mt-2">
+        <ul class="list-group">
+            {% for user, spent in top_customers %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ user }}
+                    <span class="badge bg-success rounded-pill">M{{ spent | round(2) }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 
-  <div class="mt-5">{{ trend_graph | safe }}</div>
-  <div class="mt-5">{{ product_graph | safe }}</div>
-
-  <div class="mt-5">
-    <h5>Top Customers</h5>
-    <ul>
-      {% for user, spent in top_customers %}
-        <li>{{ user }} — M{{ spent | round(2) }}</li>
-      {% endfor %}
-    </ul>
-  </div>
+    <!-- Repeat Customers -->
+    <div class="mt-4">
+        <h5>Repeat Customers</h5>
+        <ul class="list-group">
+            {% for user, orders in repeat_customers %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ user }}
+                    <span class="badge bg-warning rounded-pill">{{ orders }} orders</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 {% endblock %}

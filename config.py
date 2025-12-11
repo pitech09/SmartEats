@@ -98,9 +98,9 @@ class ProductionConfig(Config):
 )
 
 
-# Dict to map config names
+# Dict to map config names' 
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'default': ProductionConfig
+    'default': DevelopmentConfig
 }

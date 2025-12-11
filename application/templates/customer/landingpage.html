@@ -101,30 +101,38 @@
     }
 </style>
 
-<div class="hero-section">
-    <div class="hero-text">
-        <h1>Welcome to SmartEats</h1>
-        <p>Your favorite meals, delivered hot and fresh to your doorstep.</p>
-        
-    </div>
-
+<!-- Welcome Section -->
+<div class="container welcome-section">
+    <h1>Welcome to SmartEats</h1>
+    <p>Your platform for delicious food, fast delivery, and convenient online ordering.</p>
 </div>
 
-<div class="features mt-5">
-    <div class="feature-card">
-        <i class="fas fa-utensils"></i>
-        <h4>Top Restaurants</h4>
-        <p>Choose from a wide range of top-rated restaurants near you.</p>
+<!-- Call-to-Action Section -->
+<div class="container cta-section">
+  <div class="row g-3 text-center">
+    <div class="col-md-4">
+      <div class="cta-card cta-vendor">
+        <h4>Food Vendors</h4>
+        <p>Reach thousands of hungry customers. Register your store today.</p>
+        <a href="{{ url_for('auth.registerstore') }}" class="btn btn-custom btn-light">Register Store</a>
+      </div>
     </div>
-    <div class="feature-card">
-        <i class="fas fa-bolt"></i>
-        <h4>Fast Delivery</h4>
-        <p>We deliver your food quickly so it’s always hot and fresh.</p>
+
+    <div class="col-md-4">
+      <div class="cta-card cta-customer">
+        <h4>Hungry?</h4>
+        <p>Browse menus and order delicious meals from your favorite stores.</p>
+        <a href="{{ url_for('main.menu', page_num=1) }}" class="btn btn-custom btn-light">Order Now</a>
+      </div>
     </div>
-    <div class="feature-card">
-        <i class="fas fa-credit-card"></i>
-        <h4>Secure Payments</h4>
-        <p>Pay easily with your Mpesa, Ecocash and C-pay.</p>
+
+    <div class="col-md-4">
+      <div class="cta-card cta-delivery">
+        <h4>Delivery Agents</h4>
+        <p>To join as a delivery agent, please visit the store you wish to deliver for. The store will register you and provide your login credentials.</p>
+      </div>
     </div>
+  </div>
 </div>
+
 {% endblock %}
