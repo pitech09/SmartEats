@@ -2,45 +2,64 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-body">
-            <h2 class="text-success">{{ restaurant.name }}</h2>
-            
+
+    <div class="card border-0 shadow-lg rounded-4">
+        <div class="card-body p-4">
+
+            <!-- Restaurant Name -->
+            <h2 class="text-success fw-bold mb-3">
+                {{ restaurant.name }}
+            </h2>
+
+            <!-- Image -->
             {% if restaurant.image_url %}
-                <img src="{{ restaurant.image_url }}" 
-                     alt="{{ restaurant.name }}" 
-                     class="img-fluid rounded my-3">
+                <div class="text-center mb-4">
+                    <img src="{{ restaurant.image_url }}"
+                         alt="{{ restaurant.name }}"
+                         class="img-fluid rounded-4 shadow-sm"
+                         style="max-height: 260px; object-fit: cover;">
+                </div>
             {% endif %}
 
-            <ul class="list-group mb-3">
-                <li class="list-group-item">
-                    <strong>Location:</strong> {{ restaurant.address or "Not specified" }}
+            <!-- Details List -->
+            <ul class="list-group mb-4 rounded-4">
+                <li class="list-group-item py-3">
+                    <strong class="text-success">Location:</strong>
+                    <span class="text-muted">{{ restaurant.address or "Not specified" }}</span>
                 </li>
-                <li class="list-group-item">
-                    <strong>Contact:</strong> {{ restaurant.phone or "N/A" }}
+                <li class="list-group-item py-3">
+                    <strong class="text-success">Contact:</strong>
+                    <span class="text-muted">{{ restaurant.phone or "N/A" }}</span>
                 </li>
-                <li class="list-group-item">
-                    <strong>Email:</strong> {{ restaurant.email or "N/A" }}
+                <li class="list-group-item py-3">
+                    <strong class="text-success">Email:</strong>
+                    <span class="text-muted">{{ restaurant.email or "N/A" }}</span>
                 </li>
-                <li class="list-group-item">
-                    <strong>Opening Hours:</strong> {{ restaurant.openinghours or "Not available" }}
+                <li class="list-group-item py-3">
+                    <strong class="text-success">Opening Hours:</strong>
+                    <span class="text-muted">{{ restaurant.openinghours or "Not available" }}</span>
                 </li>
-                <li class="list-group-item">
-                    <strong>Registered:</strong> {{ registered_for }} ago
+                <li class="list-group-item py-3">
+                    <strong class="text-success">Registered:</strong>
+                    <span class="text-muted">{{ registered_for }} ago</span>
                 </li>
             </ul>
 
+            <!-- Buttons -->
             <div class="d-flex justify-content-between">
-                <a href="{{ url_for('main.restuarants') }}" 
-                   class="btn btn-outline-success">
+                <a href="{{ url_for('main.restuarants') }}"
+                   class="btn btn-outline-success rounded-pill px-4">
                     Back to Stores
                 </a>
-                <a href="{{ url_for('main.set_storee', store_id=restaurant.id) }}" 
-                   class="btn btn-success">
+
+                <a href="{{ url_for('main.set_storee', store_id=restaurant.id) }}"
+                   class="btn btn-success rounded-pill px-4">
                     Choose Store
                 </a>
             </div>
+
         </div>
     </div>
+
 </div>
 {% endblock %}

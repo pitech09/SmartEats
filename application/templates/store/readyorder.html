@@ -1,57 +1,137 @@
 {% extends "adminlayout.html" %}
-{% block title %}{{store.name}} Pending and Active Orders- SmartEats {% endblock %}
-{% block content %}
-        <section class="orders-section">
-        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" class="btn btn-outline bg-success rounded-pill" style="color:white;">Ready Orders</button>
-        <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" class="btn btn-outline bg-success rounded-pill" style="color:white;">On Delivery</button>
+{% block title %}{{store.name}} Ready Orders - SmartEats{% endblock %}
 
- <h2 style="text-align: center;">Ready Orders </h2>
-            {%if not readyorders%}
-            <small>There are ready orders</small>
-            {%else%}
-            <div style="overflow-x: auto;">
-  <table class="orders-table" style="min-width: 800px; width: 100%;">
-    <thead>
-      <tr>
-        <th scope="col">Order-Id</th>
-        <th scope="col">Status</th>
-        <th scope="col">Date</th>
-        <th scope="col">Order From</th>
-        <th scope="col">Drop Location</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for order in readyorders %}
-      <tr>
-        <td>{{ order.order_id }}</td>
-        <td>
-          {{ order.status }}
-          <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST">
-            {% if order.location != 'pickup' %}
-              {{ form.hidden_tag() }}
-              {{ form.status(class='form-control') }}
-              {{ form.submit(class='btn') }}
-            {% else %}
-              {{ form1.hidden_tag() }}
-              {{ form1.status(class='form-control') }}
-              {{ form1.submit(class='btn bg-success') }}
-            {% endif %}
-          </form>
-        </td>
-        <td>{{ order.create_at.strftime('%Y - %m - %d @ %H:%M') }}</td>
-        <td>{{ order.user.email | e }}</td>
-        <td>{{ order.location }}</td>
-        <td>
-          <button class="btn bg-success" onclick="window.location.href='{{ url_for('store.userorders', order_id=order.id) }}'">
-            View Details
-          </button>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{%endif%}
+{% block content %}
+<section class="orders-section p-3">
+
+    <div class="d-flex justify-content-center gap-3 mb-4">
+        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" 
+                class="btn rounded-pill smart-btn-active">
+            Ready Orders
+        </button>
+
+        <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" 
+                class="btn rounded-pill smart-btn-secondary">
+            On Delivery
+        </button>
+    </div>
+
+    <h2 class="text-center mb-3 fw-bold">Ready Orders</h2>
+
+    {% if not readyorders %}
+        <p class="text-center text-muted">There are no ready orders at the moment.</p>
+    {% else %}
+
+    <div class="table-responsive shadow-sm rounded" style="overflow-x: auto;">
+        <table class="table table-hover align-middle" style="min-width: 900px;">
+
+            <thead class="table-light">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Status Update</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Drop Location</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for order in readyorders %}
+                <tr>
+                    <td class="fw-semibold">{{ order.order_id }}</td>
+
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success">{{ order.status }}</span>
+
+                            <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST"
+                                  class="d-flex gap-2">
+
+                                {% if order.location != 'pickup' %}
+                                    {{ form.hidden_tag() }}
+                                    {{ form.status(class='form-control form-control-sm rounded') }}
+                                    {{ form.submit(class='btn btn-sm btn-success rounded-pill') }}
+                                {% else %}
+                                    {{ form1.hidden_tag() }}
+                                    {{ form1.status(class='form-control form-control-sm rounded') }}
+                                    {{ form1.submit(class='btn btn-sm btn-primary rounded-pill') }}
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+
+                    <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
+
+                    <td>{{ order.user.email | e }}</td>
+
+                    <td class="text-capitalize">
+                        {{ order.location }}
+                    </td>
+
+                    <td>
+                        <button class="btn btn-sm btn-outline-success rounded-pill"
+                                onclick="window.location.href='{{ url_for('store.userorders', order_id=order.id) }}'">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+    {% endif %}
+
 </section>
-{%endblock%}
+
+<style>
+    /* Action Buttons (Top Navigation) */
+    .smart-btn-active {
+        background-color: #198754;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.3rem;
+        font-weight: 600;
+        transition: 0.2s ease-in-out;
+    }
+
+    .smart-btn-active:hover {
+        background-color: #157347;
+    }
+
+    .smart-btn-secondary {
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.3rem;
+        font-weight: 600;
+        transition: 0.2s ease-in-out;
+    }
+
+    .smart-btn-secondary:hover {
+        background-color: #0b5ed7;
+    }
+
+    /* Table Styling */
+    table thead th {
+        font-weight: 600;
+    }
+
+    td, th {
+        padding: 0.85rem;
+    }
+
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 0.4rem;
+    }
+
+    .orders-section {
+        max-width: 1100px;
+        margin: auto;
+    }
+</style>
+{% endblock %}

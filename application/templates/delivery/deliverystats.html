@@ -1,88 +1,91 @@
 {% extends "deliverylayout.html" %}
 {% block content %}
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7054933627312511"
-     crossorigin="anonymous"></script>
 <div class="container mt-4">
-  <h2>📦 My Delivery Stats</h2>
-  <div class="row mt-3">
+  <h2 class="mb-4">📦 My Delivery Stats</h2>
 
-    <div class="col-md-3">
-      <div class="card text-white bg-primary mb-3">
-        <div class="card-body">
+  <!-- Stats Cards -->
+  <div class="row g-3">
+
+    <!-- Total Deliveries -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-white bg-primary h-100">
+        <div class="card-body text-center">
           <h5 class="card-title">Total Deliveries</h5>
-          <p class="card-text">{{ total }}</p>
+          <p class="card-text fs-4">{{ total }}</p>
         </div>
       </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="card text-white bg-success mb-3">
-        <div class="card-body">
+    <!-- Delivered -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-white bg-success h-100">
+        <div class="card-body text-center">
           <h5 class="card-title">Delivered</h5>
-          <p class="card-text">{{ delivered }}</p>
+          <p class="card-text fs-4">{{ delivered }}</p>
         </div>
       </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="card text-white bg-warning mb-3">
-        <div class="card-body">
+    <!-- In Progress -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-white bg-warning h-100">
+        <div class="card-body text-center">
           <h5 class="card-title">In Progress</h5>
-          <p class="card-text">{{ in_progress }}</p>
+          <p class="card-text fs-4">{{ in_progress }}</p>
         </div>
       </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="card text-white bg-danger mb-3">
-        <div class="card-body">
+    <!-- Cancelled -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-white bg-danger h-100">
+        <div class="card-body text-center">
           <h5 class="card-title">Cancelled</h5>
-          <p class="card-text">{{ cancelled }}</p>
+          <p class="card-text fs-4">{{ cancelled }}</p>
         </div>
       </div>
     </div>
-  </div>
-   <div class="row mt-3">
-      <div class="col-md-3">
-      <div class="card text-white bg-success mb-3">
-        <div class="card-body">
+
+    <!-- Total Revenue -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-white bg-success h-100">
+        <div class="card-body text-center">
           <h5 class="card-title">Total Revenue</h5>
-          <p class="card-text">M {{ revenue }}</p>
+          <p class="card-text fs-4">M {{ revenue }}</p>
         </div>
       </div>
     </div>
 
-
-
-      <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-          <div class="card-body">
-            <h5 class="card-title">Weekly Revenue</h5>
-            <p class="card-text">M {{ weekly_revenue }}</p>
-          </div>
+    <!-- Weekly Revenue -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-white bg-success h-100">
+        <div class="card-body text-center">
+          <h5 class="card-title">Weekly Revenue</h5>
+          <p class="card-text fs-4">M {{ weekly_revenue }}</p>
         </div>
       </div>
+    </div>
 
-      <div class="col-md-3">
-      <div class="card text-white bg-success mb-3">
-        <div class="card-body">
+    <!-- Daily Revenue -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-white bg-success h-100">
+        <div class="card-body text-center">
           <h5 class="card-title">Daily Revenue</h5>
-          <p class="card-text">M {{ daily_revenue }}</p>
-        </div>
-      </div>
-   </div>
-
-  <div class="row mt-3">
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">Success Rate</div>
-        <div class="card-body">
-          <h4>{{ success_rate }}%</h4>
+          <p class="card-text fs-4">M {{ daily_revenue }}</p>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Success Rate -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card h-100">
+        <div class="card-header text-center bg-light">Success Rate</div>
+        <div class="card-body text-center">
+          <h4 class="text-success">{{ success_rate }}%</h4>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
-
 {% endblock %}

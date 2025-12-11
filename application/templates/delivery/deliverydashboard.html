@@ -1,42 +1,41 @@
 {% extends "deliverylayout.html" %}
-{% block title %}{{store.name}} Order Details View - MediCart {% endblock %}
+{% block title %}{{ store.name }} Ready Orders - MediCart{% endblock %}
+
 {% block content %}
+<h1 class="mb-4">{{ store.name }} Ready Orders</h1>
 
-<!-- Active Orders -->
-<h1>{{store.name}} Ready Orders</h1>
-<table border="1">
-
-    <thead>
-        <tr>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Address</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-    {%if not ready_orders%}
-<p>There are no ready orders</p>
-    {%else%}
-        {% for order in ready_orders %}
-        <tr>
-            <td>{{ order.order_id }}</td>
-            <td>{{ order.user.lastname}}
-                {{order.user.username}}
-            </td>
-
-            <td>{{ order.location }}</td>
-            <td>
-                <button class="btn btn-outline-success rounded-pill" onclick="window.location.href='{{url_for('delivery.takeorder', order_id=order.id)}}'">
-                             Take Order
-                </button>
-            </td>
-
-
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{%endif%}
-
+{% if not ready_orders %}
+    <div class="alert alert-info">
+        There are no ready orders at the moment.
+    </div>
+{% else %}
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-success">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Address</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in ready_orders %}
+                <tr>
+                    <td>{{ order.order_id }}</td>
+                    <td>{{ order.user.lastname }} {{ order.user.username }}</td>
+                    <td>{{ order.location }}</td>
+                    <td>
+                        <button 
+                            class="btn btn-outline-success btn-sm rounded-pill"
+                            onclick="window.location.href='{{ url_for('delivery.takeorder', order_id=order.id) }}'">
+                            Take Order
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
 {% endblock %}

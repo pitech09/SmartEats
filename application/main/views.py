@@ -210,11 +210,13 @@ def home():
     pharmacies = Store.query.all()
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     store_id = session.get('store_id')
+    cart = Cart.query.filter(Cart.user_id==current_user.id, Cart.store_id == store_id).first()
+    total_amount = sum(item.product.price * item.quantity for item in cart.cart_items) if cart else 0.00   
+
     count = Cart.query.filter(Cart.user_id==current_user.id, Cart.store_id == store_id).first()
     if count:
         count = sum(item.quantity for item in count.cart_items)
-
-    return render_template("customer/home.html", user=current_user, total_count=count, pharmacies=pharmacies, formpharm=formpharm)
+    return render_template("customer/home.html", user=current_user, total_count=count, total_amount=total_amount, pharmacies=pharmacies, formpharm=formpharm)
 
 
 @main.route("/", methods=["POST", "GET"])

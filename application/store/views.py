@@ -607,8 +607,6 @@ def register_delivery():
             flash('An integrity error occurred.')
             return redirect(url_for('store.register_delivery'))   
     return render_template('store/add_delivery.html', form=form)
-
-
 @store.route('/vendor/analytics')
 @login_required
 def vendor_analytics():
@@ -620,30 +618,26 @@ def vendor_analytics():
     # Date filters (defaults to last 7 days)
     end_date = request.args.get('end_date', datetime.utcnow().date())
     start_date = request.args.get('start_date', (datetime.utcnow() - timedelta(days=7)).date())
-    
+
     if isinstance(start_date, str):
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     if isinstance(end_date, str):
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
-    # Previous period (for comparison)
     period_length = (end_date - start_date).days or 1
     prev_start = start_date - timedelta(days=period_length)
     prev_end = start_date
 
-    # Helper: Filtered query
     def sales_query(start, end):
         return db.session.query(func.sum(Sales.price * Sales.quantity))\
             .filter(Sales.store_id == store_id)\
             .filter(func.date(Sales.date_).between(start, end))\
             .scalar() or 0
 
-    # Current vs previous period totals
     total_sales = sales_query(start_date, end_date)
     prev_sales = sales_query(prev_start, prev_end)
     sales_change = round(((total_sales - prev_sales) / prev_sales * 100), 2) if prev_sales else 100
 
-    # Average Order Value (AOV)
     total_orders = db.session.query(func.count(Sales.order_id.distinct()))\
         .filter(Sales.store_id == store_id)\
         .filter(func.date(Sales.date_).between(start_date, end_date))\
@@ -654,10 +648,10 @@ def vendor_analytics():
         .filter(Sales.store_id == store_id)\
         .filter(func.date(Sales.date_).between(prev_start, prev_end))\
         .scalar() or 1
-    prev_aov = (prev_sales / prev_orders) if prev_orders else 0
+    prev_aov = prev_sales / prev_orders if prev_orders else 0
     aov_change = round(((avg_order_value - prev_aov) / prev_aov * 100), 2) if prev_aov else 100
 
-    # Sales over time
+    # ------------------ Sales Trend ------------------
     sales_trend = (
         db.session.query(func.date(Sales.date_), func.sum(Sales.price * Sales.quantity))
         .filter(Sales.store_id == store_id)
@@ -666,9 +660,12 @@ def vendor_analytics():
         .order_by(func.date(Sales.date_))
         .all()
     )
-    dates, revenues = zip(*sales_trend) if sales_trend else ([], [])
 
-    # Product and category analysis
+    dates, revenues = zip(*sales_trend) if sales_trend else ([], [])
+    # Fix: convert to strings if necessary
+    dates = [d.strftime('%Y-%m-%d') if hasattr(d, 'strftime') else str(d) for d in dates]
+
+    # ------------------ Product and Category ------------------
     product_sales = (
         db.session.query(Product.productname, func.sum(Sales.price * Sales.quantity))
         .join(Sales, Sales.product_id == Product.id)
@@ -691,7 +688,7 @@ def vendor_analytics():
     )
     categories, cat_revenue = zip(*category_sales) if category_sales else ([], [])
 
-    # Top customers
+    # ------------------ Top Customers ------------------
     top_customers = (
         db.session.query(User.username, func.sum(Sales.price * Sales.quantity).label('spent'))
         .join(Sales, Sales.user_id == User.id)
@@ -703,17 +700,20 @@ def vendor_analytics():
         .all()
     )
 
-    # Plotly Charts
+    # ------------------ Plotly Charts ------------------
+    import plotly.graph_objs as go
+    import plotly.io as pio
+
     trend_fig = go.Figure([go.Scatter(x=dates, y=revenues, mode='lines+markers', name='Revenue')])
     trend_fig.update_layout(title='Sales Over Time', xaxis_title='Date', yaxis_title='Revenue (M)', template='plotly_white')
 
-    prod_fig = go.Figure([go.Bar(x=prod_names, y=prod_revenues)])
+    prod_fig = go.Figure([go.Bar(x=prod_names, y=prod_revenues, marker_color='green')])
     prod_fig.update_layout(title='Top 5 Products by Revenue', xaxis_title='Product', yaxis_title='Revenue (M)', template='plotly_white')
 
     cat_fig = go.Figure([go.Pie(labels=categories, values=cat_revenue)])
     cat_fig.update_layout(title='Sales by Category', template='plotly_white')
 
-    # 🕒 1️⃣ Hourly & Weekday Sales Trends
+    # ------------------ Hourly, Weekday, Monthly ------------------
     hourly_sales = (
         db.session.query(func.extract('hour', Sales.date_), func.sum(Sales.price * Sales.quantity))
         .filter(Sales.store_id == store_id)
@@ -732,7 +732,6 @@ def vendor_analytics():
         .all()
     )
 
-    # 📅 Monthly Sales Trend
     monthly_sales = (
         db.session.query(func.extract('month', Sales.date_), func.sum(Sales.price * Sales.quantity))
         .filter(Sales.store_id == store_id)
@@ -741,7 +740,26 @@ def vendor_analytics():
         .all()
     )
 
-    # 👥 2️⃣ Customer Behavior Analytics
+    hourly_fig = go.Figure([go.Bar(x=[int(h) for h, _ in hourly_sales], y=[r for _, r in hourly_sales])])
+    hourly_fig.update_layout(title='Hourly Sales Distribution', xaxis_title='Hour', yaxis_title='Revenue', template='plotly_white')
+
+    weekday_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    weekday_fig = go.Figure([go.Bar(
+        x=[weekday_names[int(w)] for w, _ in weekday_sales],
+        y=[r for _, r in weekday_sales],
+        marker_color='orange'
+    )])
+    weekday_fig.update_layout(title='Sales by Weekday', xaxis_title='Day', yaxis_title='Revenue', template='plotly_white')
+
+    monthly_fig = go.Figure([go.Scatter(
+        x=[int(m) for m, _ in monthly_sales],
+        y=[r for _, r in monthly_sales],
+        mode='lines+markers',
+        line=dict(color='purple')
+    )])
+    monthly_fig.update_layout(title='Monthly Sales Trend', xaxis_title='Month', yaxis_title='Revenue', template='plotly_white')
+
+    # ------------------ Customer Behavior ------------------
     repeat_customers = (
         db.session.query(User.username, func.count(Sales.order_id.distinct()).label('orders'))
         .join(Sales, Sales.user_id == User.id)
@@ -760,7 +778,7 @@ def vendor_analytics():
     repeat_customer_count = len(repeat_customers)
     repeat_rate = round((repeat_customer_count / total_customers) * 100, 2)
 
-    # 💰 3️⃣ Product Performance Analytics
+    # ------------------ Product Performance ------------------
     product_contribution = (
         db.session.query(Product.productname, func.sum(Sales.price * Sales.quantity))
         .join(Sales, Sales.product_id == Product.id)
@@ -770,8 +788,7 @@ def vendor_analytics():
         .all()
     )
 
-    # 📦 4️⃣ Inventory Analytics
-    # Stock turnover rate = total quantity sold / total current stock
+    # ------------------ Inventory Analytics ------------------
     total_sold = db.session.query(func.sum(Sales.quantity))\
         .filter(Sales.store_id == store_id)\
         .scalar() or 0
@@ -780,30 +797,11 @@ def vendor_analytics():
         .scalar() or 1
     stock_turnover_rate = round(total_sold / total_stock, 2)
 
-    # Estimate days of inventory left (based on avg daily sales)
     days = max(1, (end_date - start_date).days)
     avg_daily_sales = total_sold / days
     days_left = round(total_stock / avg_daily_sales, 1) if avg_daily_sales > 0 else "N/A"
 
-    # 🎨 Charts
-    hourly_fig = go.Figure([go.Bar(x=[int(h) for h, _ in hourly_sales], y=[r for _, r in hourly_sales])])
-    hourly_fig.update_layout(title='Hourly Sales Distribution', xaxis_title='Hour', yaxis_title='Revenue', template='plotly_white')
-
-    weekday_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    weekday_fig = go.Figure([go.Bar(
-        x=[weekday_names[int(w)] for w, _ in weekday_sales],
-        y=[r for _, r in weekday_sales]
-    )])
-    weekday_fig.update_layout(title='Sales by Weekday', xaxis_title='Day', yaxis_title='Revenue', template='plotly_white')
-
-    monthly_fig = go.Figure([go.Scatter(
-        x=[int(m) for m, _ in monthly_sales],
-        y=[r for _, r in monthly_sales],
-        mode='lines+markers'
-    )])
-    monthly_fig.update_layout(title='Monthly Sales Trend', xaxis_title='Month', yaxis_title='Revenue', template='plotly_white')
-
-
+    # ------------------ Render ------------------
     return render_template(
         'store/vendor_analystics.html',
         store=store,
@@ -826,6 +824,3 @@ def vendor_analytics():
         end_date=end_date,
         top_customers=top_customers
     )
-
-
-
