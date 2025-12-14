@@ -8,8 +8,8 @@ from PIL import Image
 from flask import current_app # type: ignore
 from flask import render_template, redirect, url_for, session, request, flash
 from flask_bcrypt import Bcrypt
-from flask_login import login_required, current_user, logout_user, LoginManager  # type: ignore
-from sqlalchemy import func, extract
+from flask_login import login_required, current_user, logout_user, LoginManager # type: ignore
+from sqlalchemy import func, extract, case,and_
 from sqlalchemy.exc import IntegrityError
 
 from datetime import datetime, timedelta
@@ -105,20 +105,23 @@ def load_user(user_id):
     return None
 
 
+
 @store.route('/adminpage', methods=["POST", "GET"])
 @login_required
 def adminpage():
-    if not current_user.email == session['email']:
-        flash('you are not authorised to see contents on this page.')
+    if current_user.email != session.get('email'):
+        flash('You are not authorised to see contents on this page.')
         logout_user()
-        return redirect(url_for('main.newlogin')) 
+        return redirect(url_for('main.newlogin'))
+
     mypharmacy = Store.query.get_or_404(current_user.id)
+
+    # Notifications
     unread_notifications = Notification.query.filter_by(
         user_type='store', user_id=mypharmacy.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
-    count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
-    ).order_by(Notification.timestamp.desc()).count()
+
+    count = len(unread_notifications)
 
     today = datetime.today()
     current_month, current_year = today.month, today.year
@@ -131,52 +134,71 @@ def adminpage():
 
     store_id = session.get('store_id')
 
-    # Daily sales
-    daily_sales = db.session.query(
-            func.date(Sales.date_).label('date'),
-            func.sum(Sales.price * Sales.quantity).label('total')
-        ).filter(Sales.store_id == store_id).group_by(func.date(Sales.date_)).order_by(
-            func.date(Sales.date_)).all()
+    # Aggregate sales
+    sales_query = db.session.query(
+        func.sum(case((func.date(Sales.date_) == today.date(), Sales.price * Sales.quantity), else_=0)).label('daily'),
+        func.sum(case(
+            ((Sales.date_ >= start_of_month) & (Sales.date_ <= end_of_month), Sales.price * Sales.quantity),
+            else_=0
+        )).label('monthly'),
+        func.sum(case(
+            ((Sales.date_ >= start_of_year) & (Sales.date_ <= end_of_year), Sales.price * Sales.quantity),
+            else_=0
+        )).label('annual')
+    ).filter(Sales.store_id == store_id).first()
 
-    daily_data = {
-        "dates": [row.date for row in daily_sales],
-        "totals": [float(row.total) for row in daily_sales]
-    }
+    total_daily_sales = float(sales_query.daily or 0)
+    total_monthly_sales = float(sales_query.monthly or 0)
+    total_annual_sales = float(sales_query.annual or 0)
 
-        # Total sales
-    total_monthly_sales = db.session.query(func.sum(Sales.price * Sales.quantity)).filter(
-            Sales.date_ >= start_of_month, Sales.date_ <= end_of_month,
-            Sales.store_id == store_id
-        ).scalar() or 0.0
-
-    total_annual_sales = db.session.query(func.sum(Sales.price * Sales.quantity)).filter(
-            Sales.date_ >= start_of_year, Sales.date_ <= end_of_year,
-            Sales.store_id == store_id
-        ).scalar() or 0.0
-
-    today_sales = db.session.query(func.sum(Sales.price * Sales.quantity)).filter(
-            func.date(Sales.date_) == today.date(),
-            Sales.store_id == store_id
-        ).scalar() or 0.0
-
-    pending_orders = len(Order.query.filter(
+    # Pending orders
+    pending_orders = Order.query.filter(
         extract('month', Order.create_at) == current_month,
         extract('year', Order.create_at) == current_year,
-        (Order.status == "Pending"), (Order.store_id==mypharmacy.id)).all())
-    if not pending_orders:
-        pending_orders = 0
+        Order.status == "Pending",
+        Order.store_id == mypharmacy.id
+    ).count()
+
+    # FIXED DAILY DATA FOR CHART
+    daily_dates = []
+    daily_totals = []
+
+    # Loop through each day of the current month
+    current_day = start_of_month
+    while current_day <= today:
+        next_day = current_day + timedelta(days=1)
+
+        total = db.session.query(
+            func.sum(Sales.price * Sales.quantity)
+        ).filter(
+            Sales.store_id == store_id,
+            Sales.date_ >= current_day,
+            Sales.date_ < next_day
+        ).scalar() or 0
+
+        daily_dates.append(current_day.strftime("%Y-%m-%d"))
+        daily_totals.append(float(total))
+
+        current_day = next_day
+
+    daily_data = {
+        "dates": daily_dates,
+        "totals": daily_totals
+    }
 
     return render_template(
-            'store/updated_dashboard.html',
-            total_sales=total_monthly_sales,
-            total_annual_sales=total_annual_sales,
-            total_daily_sales=today_sales,
-            total_monthly_sales=total_monthly_sales,
-            store=mypharmacy,
-            pending_orders=pending_orders,
-            unread_notifications=unread_notifications,
-            count=count
-        )
+        'store/updated_dashboard.html',
+        total_sales=total_monthly_sales,
+        total_annual_sales=total_annual_sales,
+        total_daily_sales=total_daily_sales,
+        total_monthly_sales=total_monthly_sales,
+        store=mypharmacy,
+        pending_orders=pending_orders,
+        unread_notifications=unread_notifications,
+        count=count,
+        daily_data=daily_data     # <-- FIXED
+    )
+
 
 
 @store.route('/search', methods=['POST', 'GET'])
@@ -824,3 +846,4 @@ def vendor_analytics():
         end_date=end_date,
         top_customers=top_customers
     )
+

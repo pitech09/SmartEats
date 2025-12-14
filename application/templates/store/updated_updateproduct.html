@@ -1,37 +1,49 @@
 {% extends "adminlayout.html" %}
-{% block title %}{{store.name}} update product - SmartEats {% endblock %}
+{% block title %}{{ store.name }} Update Product - SmartEats{% endblock %}
 {% block content %}
 
-<div class="container">
-    <h1>Updating Product-{{item_id}}</h1>
-    <!-- Product Add Form -->
-    <form method="POST" enctype="multipart/form-data" style="padding:20px;">
-        {{ form.hidden_tag() }} <!-- This is for CSRF protection -->
-        <!-- Product Name -->
-        <div class="form-group">
-            {{form.newname.label}}
-            {{ form.newname(class="form-control") }}
-        </div>
+<div class="container mt-4">
 
-        <!-- Product Price -->
-        <div class="form-group">
-            {{form.newprice.label}}
-            {{ form.newprice(class="form-control") }}
-        </div>
+    <h2 class="fw-bold mb-4">Update Product #{{ item_id }}</h2>
 
-        <div class="form-group">
-            {{form.newdescription.label}}
-            {{ form.newdescription(class="form-control") }}
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+
+                <!-- Product Name -->
+                <div class="mb-3">
+                    {{ form.newname.label(class="form-label fw-semibold") }}
+                    {{ form.newname(class="form-control") }}
+                </div>
+
+                <!-- Product Price -->
+                <div class="mb-3">
+                    {{ form.newprice.label(class="form-label fw-semibold") }}
+                    {{ form.newprice(class="form-control") }}
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    {{ form.newdescription.label(class="form-label fw-semibold") }}
+                    {{ form.newdescription(class="form-control") }}
+                </div>
+
+                <!-- Product Image -->
+                <div class="mb-3">
+                    {{ form.picture.label(class="form-label fw-semibold") }}
+                    {{ form.picture(class="form-control") }}
+                </div>
+
+                <button type="submit" class="btn btn-success rounded-pill px-4">
+                    Confirm Update
+                </button>
+            </form>
+
         </div>
-        <!-- Product Image -->
-        <div class="form-group">
-            {{form.picture.label}}
-            {{ form.picture(class="form-control") }}
-        </div>
-        <!-- Submit Button -->
-        <button type="submit" class="submit-btn">Confirm Update</button>
-    </form>
+    </div>
+
 </div>
-{%endblock%}
 
-
+{% endblock %}

@@ -158,7 +158,7 @@
         <div class="product-details">
             <div class="price">Price: M{{ product.price }}</div>
 
-            <form action="{{ url_for('add_to_cart', item_id=product.id) }}" method="POST">
+            <form action="{{ url_for('add_to_cart_ajax', item_id=product.id) }}" method="POST">
                 <button type="submit" class="add-to-cart-btn">Add To Cart</button>
             </form>
         </div>

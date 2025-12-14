@@ -2,67 +2,21 @@
 {% block title %}{{ store.name }} Orders - SmartEats{% endblock %}
 {% block content %}
 
-<style>
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Orders table styling */
-.orders-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 30px;
-    background: #fff;
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.orders-table th, .orders-table td {
-    padding: 12px;
-    text-align: center;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-.orders-table th {
-    background-color: #2da350;
-    color: #fff;
-    font-weight: bold;
-}
-
-.orders-table tr:nth-child(even) {
-    background-color: #f8fdf9;
-}
-
-@media (max-width: 768px) {
-    .orders-table {
-        font-size: 12px;
-    }
-    .orders-table th, .orders-table td {
-        padding: 8px;
-    }
-}
-</style>
-
-<section class="orders-section">
-    <!-- Navigation buttons -->
-    <div class="mb-3 text-center">
-        <button onclick="window.location.href='{{ url_for('store.ready_orders') }}'" 
-                class="btn btn-success btn-sm rounded-pill">Ready Orders</button>
-        <button onclick="window.location.href='{{ url_for('store.orders_on_delivery') }}'" 
-                class="btn btn-success btn-sm rounded-pill">On Delivery</button>
+<section class="container py-4">
+    <!-- Navigation Buttons -->
+    <div class="text-center mb-4">
+        <a href="{{ url_for('store.ready_orders') }}" class="btn btn-success btn-sm rounded-pill mx-1">Ready Orders</a>
+        <a href="{{ url_for('store.orders_on_delivery') }}" class="btn btn-success btn-sm rounded-pill mx-1">On Delivery</a>
     </div>
 
     <!-- Pending Orders -->
-    <h2 class="text-center">Pending Orders</h2>
+    <h3 class="text-center mb-3">Pending Orders</h3>
     {% if not orders %}
-        <p class="text-center text-muted">There are no pending orders</p>
+        <p class="text-center text-muted">There are no pending orders.</p>
     {% else %}
     <div class="table-responsive">
-        <table class="orders-table" style="table-layout: fixed;">
-            <thead>
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-success">
                 <tr>
                     <th scope="col">Order-Id</th>
                     <th scope="col">Status</th>
@@ -77,25 +31,24 @@
                     <td>{{ order.order_id }}</td>
                     <td>
                         {{ order.status }}
-                        <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-1">
+                        <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-2 d-flex flex-column gap-1">
                             {% if order.location != 'pickup' %}
                                 {{ form.hidden_tag() }}
-                                {{ form.status(class='form-control form-control-sm') }}
-                                {{ form.submit(class="btn btn-success btn-sm rounded-pill mt-1") }}
+                                {{ form.status(class='form-select form-select-sm') }}
+                                {{ form.submit(class='btn btn-success btn-sm rounded-pill') }}
                             {% else %}
                                 {{ form1.hidden_tag() }}
-                                {{ form1.status(class='form-control form-control-sm') }}
-                                {{ form1.submit(class="btn btn-success btn-sm rounded-pill mt-1") }}
+                                {{ form1.status(class='form-select form-select-sm') }}
+                                {{ form1.submit(class='btn btn-success btn-sm rounded-pill') }}
                             {% endif %}
                         </form>
                     </td>
                     <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
                     <td>{{ order.location }}</td>
                     <td>
-                        <button class="btn btn-success btn-sm rounded-pill" 
-                                onclick="window.location.href='{{ url_for('store.userorders', order_id=order.id) }}'">
+                        <a href="{{ url_for('store.userorders', order_id=order.id) }}" class="btn btn-primary btn-sm rounded-pill">
                             View Details
-                        </button>
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -105,19 +58,19 @@
     {% endif %}
 
     <!-- Approved Orders -->
-    <h2 class="text-center mt-5">Approved User Orders</h2>
+    <h3 class="text-center mt-5 mb-3">Approved User Orders</h3>
     {% if not approved_order %}
-        <p class="text-center text-muted">There are no approved orders</p>
+        <p class="text-center text-muted">There are no approved orders.</p>
     {% else %}
     <div class="table-responsive">
-        <table class="orders-table">
-            <thead>
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-success">
                 <tr>
-                    <th>Order-Id</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Location</th>
-                    <th>Actions</th>
+                    <th scope="col">Order-Id</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -126,25 +79,24 @@
                     <td>{{ order.order_id }}</td>
                     <td>
                         {{ order.status }}
-                        <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-1">
+                        <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-2 d-flex flex-column gap-1">
                             {% if order.location != 'pickup' %}
                                 {{ form.hidden_tag() }}
-                                {{ form.status(class='form-control form-control-sm') }}
-                                {{ form.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                                {{ form.status(class='form-select form-select-sm') }}
+                                {{ form.submit(class='btn btn-success btn-sm rounded-pill') }}
                             {% else %}
                                 {{ form1.hidden_tag() }}
-                                {{ form1.status(class='form-control form-control-sm') }}
-                                {{ form1.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                                {{ form1.status(class='form-select form-select-sm') }}
+                                {{ form1.submit(class='btn btn-success btn-sm rounded-pill') }}
                             {% endif %}
                         </form>
                     </td>
                     <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
                     <td>{{ order.location }}</td>
                     <td>
-                        <button class="btn btn-success btn-sm rounded-pill" 
-                                onclick="window.location.href='{{ url_for('store.userorders', order_id=order.id) }}'">
+                        <a href="{{ url_for('store.userorders', order_id=order.id) }}" class="btn btn-primary btn-sm rounded-pill">
                             View Details
-                        </button>
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -153,4 +105,5 @@
     </div>
     {% endif %}
 </section>
+
 {% endblock %}

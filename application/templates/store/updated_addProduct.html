@@ -1,36 +1,66 @@
 {% extends "adminlayout.html" %}
-{% block title %} {{store.name}} Add product - SmartEats {% endblock %}
+{% block title %}Add Product – {{ store.name }} | SmartEats{% endblock %}
 {% block content %}
 
-<div class="container">
-    <h1>Add New Product</h1>
-    <!-- Product Add Form -->
-    <form method="POST" enctype="multipart/form-data" style="padding:20px;">
-        {{ form.hidden_tag() }} <!-- This is for CSRF protection -->
-        <div class="form-group">
-            {{form.product_name.label}}
-            {{ form.product_name(class="form-control") }}
+<div class="container mt-4" style="max-width: 700px;">
+    <h2 class="mb-4 fw-bold">Add New Product</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+
+                <!-- Product Name -->
+                <div class="mb-3">
+                    {{ form.product_name.label(class="form-label fw-semibold") }}
+                    {{ form.product_name(class="form-control", placeholder="Enter product name") }}
+                    {% if form.product_name.errors %}
+                        <div class="text-danger small">{{ form.product_name.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Product Price -->
+                <div class="mb-3">
+                    {{ form.product_price.label(class="form-label fw-semibold") }}
+                    {{ form.product_price(class="form-control", placeholder="Enter price") }}
+                    {% if form.product_price.errors %}
+                        <div class="text-danger small">{{ form.product_price.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Product Description -->
+                <div class="mb-3">
+                    {{ form.product_description.label(class="form-label fw-semibold") }}
+                    {{ form.product_description(class="form-control", rows="3", placeholder="Write a short description") }}
+                    {% if form.product_description.errors %}
+                        <div class="text-danger small">{{ form.product_description.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Product Picture -->
+                <div class="mb-4">
+                    {{ form.product_pictures.label(class="form-label fw-semibold") }}
+                    {{ form.product_pictures(class="form-control") }}
+                    <div class="form-text">Upload a clear product image (JPEG, PNG).</div>
+                    {% if form.product_pictures.errors %}
+                        <div class="text-danger small">{{ form.product_pictures.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 rounded-pill py-2">
+                    Add Product
+                </button>
+            </form>
+
         </div>
-        <!-- Product Price -->
-        <div class="form-group">
-            {{form.product_price.label}}
-            {{ form.product_price(class="form-control") }}
-        </div>
-        <!-- Product Description -->
-        <div class="form-group">
-            {{form.product_description.label}}
-            {{ form.product_description(class="form-control") }}
-        </div>
-        <!-- Product Image -->
-        <div class="form-group">
-            {{form.product_pictures.label}}
-            {{ form.product_pictures(class="form-control") }}
-        </div>
-        <!-- Submit Button -->
-        <button type="submit" style="color:white;" class="btn btn-outline-success bg-success rounded-pill">Add Product</button>
-    </form>
-    <!-- Back to Products Page -->
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="{{ url_for('store.products', store_id=store.id) }}" class="btn btn-outline-secondary rounded-pill px-4">
+            Back to Products
+        </a>
+    </div>
 </div>
 
-{%endblock%}
-
+{% endblock %}

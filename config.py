@@ -17,7 +17,7 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = 1800  # seconds
-    WTF_CSRF_ENABLED = False
+    WTF_CSRF_ENABLED = True
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,        # Checks if connection is alive before using
         "pool_recycle": 280,          # Reconnect before Supabase timeout
@@ -54,10 +54,12 @@ class DevelopmentConfig(Config):
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USE_SSL = False
-
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'pitechcorp7@gmail.com'
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'rljm azij wply ihrp'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'khauhelo872@gmail.com'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'gvzi kwcq vgzg xawr'
+    MAIL_DEBUG = True
     USE_CLOUDINARY = False
+    MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
+
     UPLOAD_PATH = os.path.join(basedir, 'static/css/images/profiles')
     UPLOAD_PRODUCTS = os.path.join(basedir, 'static/css/images/products')
     UPLOAD_DELIVERY = os.path.join(basedir, 'static/css/images/deliveries')
@@ -82,8 +84,10 @@ class ProductionConfig(Config):
     MAIL_USE_TLS = True
     MAIL_USE_SSL = False
     USE_CLOUDINARY = True
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'pitechcorp7@gmail.com'
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'rljm azij wply ihrp'
+    MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
+
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'khauhelo872@gmail.com'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'gvzi kwcq vgzg xawr'
     SQLALCHEMY_DATABASE_URI = (
     "postgresql://postgres.lqqhcvfotzowyitgnfgf:Boity%202003"
     "@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"

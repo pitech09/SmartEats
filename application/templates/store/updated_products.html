@@ -1,43 +1,74 @@
 {% extends "adminlayout.html" %}
-{% block title %}{{store.name}} Product List - SmartEats {% endblock %}
+{% block title %}{{ store.name }} Product List - SmartEats{% endblock %}
 {% block content %}
 
-<section class="orders-section">
-    {%if not product%}
-    <p>There are no products. Add them first.</p>
-    {%else%}
-    <table class="orders-table" style="width:100%; table-layout:fixed;">
-  <thead>
-    <tr>
-        <th>Product Name</th>
-        <th>Description</th>
-        <th>Price</th>
-        <th>Action</th>
-    </tr>
-  </thead>
-     {%for product in product%}
-  <tbody>
+<div class="container mt-4">
 
-  <td>{{product.productname}}</td>
-  <td>{{product.description}}</td>
-  <td>{{product.price}}</td>
+    <h2 class="mb-4 fw-bold">Products</h2>
 
-  <td>
-      <div style="display:grid;">
+    {% if not product %}
+        <div class="alert alert-info text-center py-4 rounded-3">
+            No products found. Add your first product to begin.
+        </div>
+    {% else %}
 
-      <button  class="btn btn-outline-success bg-success rounded-pill" onclick="window.location.href='{{ url_for('store.remove_product', item_id=product.id) }}'"><i
-      class="fas fa-minus"></i>
-      </button>
-      <button  class="btn btn-outline-success bg-success rounded-pill" onclick="window.location.href='{{ url_for('store.updateproduct', item_id=product.id) }}'">
-          <i class="fas fa-edit"></i>
-      </button>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:25%">Product Name</th>
+                        <th style="width:45%">Description</th>
+                        <th style="width:15%">Price (M)</th>
+                        <th style="width:15%">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for item in product %}
+                    <tr>
+                        <td class="fw-semibold">{{ item.productname }}</td>
+                        <td style="white-space: normal;">{{ item.description }}</td>
+                        <td class="fw-bold">M {{ item.price }}</td>
+
+                        <td>
+                            <div class="d-flex gap-2">
+
+                                <!-- Edit product -->
+                                <button
+                                    class="btn btn-outline-primary rounded-pill px-3"
+                                    onclick="window.location.href='{{ url_for('store.updateproduct', item_id=item.id) }}'">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
+                                <!-- Remove product -->
+                                <button
+                                    class="btn btn-outline-danger rounded-pill px-3"
+                                    onclick="window.location.href='{{ url_for('store.remove_product', item_id=item.id) }}'">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+    {% endif %}
+
+    <div class="mt-3 text-end">
+        <a href="{{ url_for('store.addproducts', store_id=store.id) }}"
+           class="btn btn-success rounded-pill px-4">
+           + Add New Product
+        </a>
+    </div>
+
 </div>
 
-  </td>
-
-  </tbody>
-    {%endfor%}
-</table>
-    {%endif%}
-</section>
-{%endblock%}
+{% endblock %}
