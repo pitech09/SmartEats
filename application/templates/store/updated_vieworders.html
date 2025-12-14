@@ -20,9 +20,10 @@
     }
     .orders-table th {
         background-color: #16af37;
+        color: white;
     }
 
-    /* Mobile-friendly stacked table */
+    /* Mobile stacked table */
     @media (max-width: 600px) {
         .orders-table, 
         .orders-table thead, 
@@ -34,7 +35,7 @@
             width: 100%;
         }
         .orders-table thead {
-            display: none; /* Hide headers */
+            display: none;
         }
         .orders-table tr {
             margin-bottom: 10px;
@@ -64,40 +65,45 @@
         }
     }
 </style>
-<section vfs8bvbyhclass="orders-section">
+
+<div class="container my-4">
+
     <h2>Order #{{ user_order.order_id }}</h2>
     <p><strong>Total Cost:</strong> M{{ total }}</p>
     <p><strong>Date:</strong> {{ user_order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</p>
 
-{% if user_order.screenshot %}
-    <a href="{{ user_order.screenshot }}" target="_blank">
-        <img 
-            style="width: 50%; height: 200px; object-fit: cover; cursor: pointer;" 
-            src="{{ url_for('static', filename='css/products/'+user_order.screenshot) }}" 
-            alt="Screenshot from {{ user_order.user_email }}">
-    </a>
-{% else %}
-    <p><em>No screenshot provided for this order.</em></p>
-{% endif %}
+    {% if user_order.screenshot %}
+        <a href="{{ user_order.screenshot }}" target="_blank">
+            <img 
+                style="width: 100%; max-width: 350px; height: 200px; object-fit: cover; cursor: pointer;" 
+                src="{% if user_order.screenshot.startswith('http') %}{{ user_order.screenshot }}{% else %}{{ url_for('static', filename='css/products/' + user_order.screenshot) }}{% endif %}"
+                alt="Screenshot from {{ user_order.user_email }}">
+        </a>
+    {% else %}
+        <p><em>No screenshot provided for this order.</em></p>
+    {% endif %}
 
+    <div class="table-responsive mt-3">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th scope="col">Product Name</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Unit Price (M)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in user_order.order_items %}
+                <tr>
+                    <td data-label="Product">{{ item.product.productname }}</td>
+                    <td data-label="Quantity">{{ item.quantity }}</td>
+                    <td data-label="Unit Price">M{{ item.product.price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <table class="orders-table">
-        <thead>
-            <tr>
-                <th scope="col">Product Name</th>
-                <th scope="col">Quantity</th>
-                <th scope="col">Unit Price (M)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in user_order.order_items %}
-            <tr>
-                <td>{{ item.product.productname }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>M{{ item.product.price }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</section>
+</div>
+
 {% endblock %}
