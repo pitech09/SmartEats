@@ -44,8 +44,7 @@ def create_admin_accounts():
             new_admin = Administrater(
                 username=admin_data["username"],
                 email=admin_data["email"],
-                password=hashed_pw,
-                
+                password=hashed_pw,  
                 
             )
 

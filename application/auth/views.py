@@ -1,6 +1,6 @@
 from threading import Thread
 from flask import (
-    session, request, flash, redirect,
+    abort, session, request, flash, redirect,
     url_for, render_template, current_app
 )
 from flask_bcrypt import Bcrypt
@@ -85,6 +85,22 @@ def send_sound(user_id, sound="login"):
             )
     except Exception:
         pass
+@auth.route('/auth/partial/<name>')
+def auth_partial(name):
+    allowed = {
+        'login': 'auth/partials/login.html',
+        'register': 'auth/partials/register.html',
+        'registerstore': 'auth/partials/registerstore.html',
+        'reset': 'auth/partials/reset.html'
+    }
+
+    template = allowed.get(name)
+    if not template:
+        abort(404)
+
+    return render_template(template)
+
+
 
 # --------------------------------------------------
 # REGISTER CUSTOMER
