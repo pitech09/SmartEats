@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block title %}Login Into Account - SmartEats{% endblock %}
+
+{% block content %}
+<div class="container-xxl">
+  <div class="authentication-wrapper authentication-basic container-p-y">
+    <div class="authentication-inner">
+      {% include "auth/partials/login.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}
