@@ -140,7 +140,7 @@ def register():
             flash("Registration failed. Try again.", "danger")
 
     return render_template(
-        "auth/register.html",
+        "auth/partials/register.html",
         form=form,
         formpharm=formpharm
     )
@@ -183,7 +183,7 @@ def registerstore():
             flash("Registration failed.", "danger")
 
     return render_template(
-        "auth/registerphar.html",
+        "auth/patials/register_store.html",
         form=form,
         formpharm=formpharm
     )
@@ -240,7 +240,7 @@ def newlogin():
         flash("Invalid login credentials", "danger")
 
     return render_template(
-        "auth/newlogin.html",
+        "auth/partials/login.html",
         form=form,
         formpharm=formpharm
     )
@@ -296,7 +296,7 @@ def resend_email():
         flash("Confirmation email resent.", "success")
         return redirect(url_for("auth.newlogin"))
 
-    return render_template("auth/resend_email.html", form=form)
+    return render_template("auth/partials/resend_email.html", form=form)
 
 # --------------------------------------------------
 # RESET PASSWORD
