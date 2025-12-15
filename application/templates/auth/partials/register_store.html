@@ -9,16 +9,16 @@
     <h5 class="mb-2">This is a good start.</h5>
     <p class="mb-4">Reach more customers today. Increase sales hassle free.</p>
 
-    <form id="registerStoreForm" class="mb-3" action="{{ url_for('auth.registerstore') }}" method="POST">
-      {{ form.hidden_tag() }}
+    <form id="registerStoreForm" class="mb-3" action="{{ url_for('auth.ajax_registerstore') }}" method="POST">
+      {{ store_form.hidden_tag() }}
 
       {% for field in [
-        form.pharmacy_name,
-        form.email,
-        form.phone,
-        form.address,
-        form.opening_hours_and_days,
-        form.password
+        store_form.pharmacy_name,
+        store_form.email,
+        store_form.phone,
+        store_form.address,
+        store_form.opening_hours_and_days,
+        store_form.password
       ] %}
         <div class="mb-3">
           {{ field.label(class="form-label") }}

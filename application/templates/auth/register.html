@@ -5,7 +5,77 @@
 <div class="container-xxl">
   <div class="authentication-wrapper authentication-basic container-p-y">
     <div class="authentication-inner">
-      {% include "auth/partials/register.html" %}
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+          <h4 class="mb-2">Sign Up Today with SmartEats! 👋</h4>
+          <p class="mb-4">Your time is valuable. Let us handle the rest while you live your life.</p>
+
+          <form id="formAuthentication" class="mb-3" action="{{ url_for('auth.register') }}" method="POST">
+            {{ form.hidden_tag() }}
+
+            <!-- First Name -->
+            <div class="mb-3">
+              {{ form.username.label(class="form-label") }}
+              {{ form.username(class="form-control", placeholder="Enter first name") }}
+
+              {% for error in form.username.errors %}
+                <small class="text-danger">{{ error }}</small>
+              {% endfor %}
+            </div>
+
+            <!-- Last Name -->
+            <div class="mb-3">
+              {{ form.lastName.label(class="form-label") }}
+              {{ form.lastName(class="form-control", placeholder="Enter last name") }}
+
+              {% for error in form.lastName.errors %}
+                <small class="text-danger">{{ error }}</small>
+              {% endfor %}
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              {{ form.Email.label(class="form-label") }}
+              {{ form.Email(class="form-control", placeholder="example@email.com") }}
+
+              {% for error in form.Email.errors %}
+                <small class="text-danger">{{ error }}</small>
+              {% endfor %}
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3 form-password-toggle">
+              <div class="d-flex justify-content-between">
+                {{ form.Password.label(class="form-label") }}
+              </div>
+
+              <div class="input-group input-group-merge">
+                {{ form.Password(class="form-control", placeholder="••••••••") }}
+
+                <span class="input-group-text cursor-pointer">
+                  <i class="fas fa-eye-slash"></i>
+                </span>
+              </div>
+
+              {% for error in form.Password.errors %}
+                <small class="text-danger">{{ error }}</small>
+              {% endfor %}
+            </div>
+
+            <!-- Submit -->
+            <div class="mb-3">
+              <button class="btn btn-success d-grid w-100" type="submit">
+                Create Account
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

@@ -2,11 +2,41 @@
 {% block title %}Register your Store - SmartEats{% endblock %}
 
 {% block content %}
-<div class="container-xxl">
-  <div class="authentication-wrapper authentication-basic container-p-y">
-    <div class="authentication-inner">
-      {% include "auth/partials/register_store.html" %}
-    </div>
-  </div>
+
+
+
+
+<div class="card">
+    <div class="text-center mb-4">
+    <h4>Store Registration</h4>
+
+    <p class="text-muted">Fill in the details below to register your store.</p>
+
 </div>
+            <div class="card-body">
+              <!-- Logo -->
+              
+              <!-- /Logo -->
+              <h4 class="mb-2">This is a good start.</h4>
+              <p class="mb-4">Reach more customers today. Increase sales hussle free.</p>
+              <form id="formAuthentication" class="mb-3" action="{{url_for('auth.registerstore')}}" method="POST">
+                <div class="mb-3">
+                {{ form.hidden_tag() }}
+                {% for field in [form.pharmacy_name, form.email, form.phone, form.address, form.opening_hours_and_days, form.password] %}
+                    <div class="form-group mb-3">
+                        {{ field.label(class="form-label") }}
+                        {{ field(class="form-control", placeholder=field.label.text) }}
+                        {% if field.errors %}
+                            <div class="text-danger small">
+                                {% for error in field.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-success d-grid w-100">Submit</button>
+              </form>
+            </div>
+          </div>
 {% endblock %}
