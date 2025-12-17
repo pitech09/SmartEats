@@ -1,7 +1,7 @@
 # create_admins.py
 from flask_bcrypt import Bcrypt
 from application import create_app, db
-from application.models import User, Administrater  # Adjust path if your models file is elsewhere
+from application.models import User, Administrater, Store  # Adjust path if your models file is elsewhere
 from manage import app
 def create_admin_accounts():
     bcrypt = Bcrypt(app) 
@@ -33,6 +33,42 @@ def create_admin_accounts():
                 "password": "CustPass123",
             },
         ]
+
+        stores = [
+            {
+                "name": "Majezz Eatery",
+                "address": "maputsoe ha maqele",
+                "email": "danielnteso@gmail.com",
+                "password": "StorePass123",
+                "phone":" +26658888888",
+                "opening_hours":"8:00 AM - 9:00 PM",
+            }
+        ]
+
+        for store_data in stores:
+            # Check if already exists
+            existing = Store.query.filter_by(email=store_data["email"]).first()
+
+            if existing:
+                print(f"⚠️ {store_data['email']} already exists. Skipping.")
+                continue
+
+            hashed_pw = bcrypt.generate_password_hash(store_data["password"]).decode("utf-8")
+            new_store = Store(
+                name=store_data["name"],
+                address=store_data["address"],
+                email=store_data["email"],
+                password=hashed_pw,  
+                phone=store_data["phone"],
+                openinghours=store_data["opening_hours"],
+            )
+
+            db.session.add(new_store)
+            print(f"✅ Created store: {store_data['email']}")
+
+        db.session.commit()
+        print("🎉 All store accounts created successfully!"
+              )
         for admin_data in admins:
             # Check if already exists
             existing = User.query.filter_by(email=admin_data["email"]).first()

@@ -410,6 +410,10 @@ def addorder(total_amount):
         cache.clear()
     return redirect(url_for('main.myorders', total_amount=total_amount))
 
+@main.route("/health")
+def health():
+    return "ok", 200
+
 
 @cache.memoize(timeout=300)
 @main.route("/menu/<int:page_num>", methods=["POST", "GET"])
