@@ -62,7 +62,8 @@ def create_admin_accounts():
                 phone=store_data["phone"],
                 openinghours=store_data["opening_hours"],
             )
-
+            new_store.verified = True  # Mark as verified
+            new_store.confirmed = True  # Mark as confirmed
             db.session.add(new_store)
             print(f"✅ Created store: {store_data['email']}")
 
