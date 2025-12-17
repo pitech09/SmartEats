@@ -1,13 +1,16 @@
 from threading import Thread
+
 from flask import (
     session, request, flash, redirect,
     url_for, render_template, current_app
 )
 from flask_bcrypt import Bcrypt
 from flask_login import login_user
-from flask_mail import Message, Mail
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from sqlalchemy.exc import IntegrityError
+
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail as SGMail
 
 from . import auth
 from .. import db, socketio
@@ -18,52 +21,85 @@ from ..forms import (
 )
 from application.notification import notify_customer
 
+
+# --------------------------------------------------
+# INIT
+# --------------------------------------------------
+
 bcrypt = Bcrypt()
-mail = Mail()
 
-serializer = URLSafeTimedSerializer('ad40898f84d46bd1d109970e23c0360e')
+serializer = URLSafeTimedSerializer(
+    lambda: current_app.config["SECRET_KEY"]
+)
+
 
 # --------------------------------------------------
-# EMAIL HELPERS
+# SENDGRID EMAIL HELPERS
 # --------------------------------------------------
 
-def send_async_email(app, msg):
+def send_async_email(app, message):
     with app.app_context():
         try:
-            mail.send(msg)
-            current_app.logger.info(f"Email sent to {msg.recipients}")
-        except Exception:
-            import traceback
-            current_app.logger.error("EMAIL ERROR:")
-            current_app.logger.error(traceback.format_exc())
+            sg = SendGridAPIClient(app.config["SENDGRID_API_KEY"])
+            response = sg.send(message)
+
+            app.logger.info(
+                f"SendGrid email sent | Status: {response.status_code}"
+            )
+
+        except Exception as e:
+            app.logger.error("SENDGRID EMAIL ERROR")
+            app.logger.error(str(e))
 
 
 def send_confirmation_email(email):
     token = serializer.dumps(email)
-    print("Generated token:", token)
-    link = url_for('auth.confirm_email', token=token, _external=True)
+    link = url_for("auth.confirm_email", token=token, _external=True)
 
-    msg = Message(
+    message = SGMail(
+        from_email=current_app.config["SENDGRID_FROM_EMAIL"],
+        to_emails=email,
         subject="Confirm your SmartEats account",
-        sender=current_app.config['MAIL_USERNAME'],
-        recipients=[email],
-        body=f"""
-Welcome to SmartEats 🎉
-
-Please confirm your email by clicking the link below:
-{link}
-
-If you did not create this account, ignore this email.
-
-SmartEats Team
-"""
+        html_content=f"""
+        <h2>Welcome to SmartEats 🎉</h2>
+        <p>Please confirm your email by clicking the link below:</p>
+        <p><a href="{link}">Confirm my account</a></p>
+        <br>
+        <p>If you did not create this account, ignore this email.</p>
+        <p><strong>SmartEats Team</strong></p>
+        """
     )
 
     Thread(
         target=send_async_email,
-        args=(current_app._get_current_object(), msg)
+        args=(current_app._get_current_object(), message),
+        daemon=True
     ).start()
-    print(f"Confirmation email sent to {email}")
+
+
+def send_reset_email(email):
+    token = serializer.dumps(email)
+    link = url_for("auth.reset", token=token, _external=True)
+
+    message = SGMail(
+        from_email=current_app.config["SENDGRID_FROM_EMAIL"],
+        to_emails=email,
+        subject="Reset your SmartEats password",
+        html_content=f"""
+        <h3>Password Reset</h3>
+        <p>Click below to reset your password:</p>
+        <p><a href="{link}">Reset Password</a></p>
+        <br>
+        <p>If you didn’t request this, ignore this email.</p>
+        """
+    )
+
+    Thread(
+        target=send_async_email,
+        args=(current_app._get_current_object(), message),
+        daemon=True
+    ).start()
+
 
 def confirm_token(token, expiration=86400):
     try:
@@ -71,20 +107,21 @@ def confirm_token(token, expiration=86400):
     except (SignatureExpired, BadSignature):
         return None
 
+
 # --------------------------------------------------
 # SOCKET SOUND
 # --------------------------------------------------
 
 def send_sound(user_id, sound="login"):
     try:
-        if socketio:
-            socketio.emit(
-                'play_sound',
-                {'sound': sound},
-                room=str(user_id)
-            )
+        socketio.emit(
+            "play_sound",
+            {"sound": sound},
+            room=str(user_id)
+        )
     except Exception:
         pass
+
 
 # --------------------------------------------------
 # REGISTER CUSTOMER
@@ -96,29 +133,29 @@ def register():
     formpharm = Set_StoreForm()
 
     if form.validate_on_submit():
+
         if User.query.filter_by(email=form.Email.data).first():
             flash("Email already exists", "danger")
-            return redirect(url_for('auth.register'))
-
-        hashed_password = bcrypt.generate_password_hash(
-            form.Password.data
-        ).decode('utf-8')
+            return redirect(url_for("auth.register"))
 
         user = User(
             username=form.username.data,
             lastname=form.lastName.data,
             email=form.Email.data,
-            password=hashed_password
+            password=bcrypt.generate_password_hash(
+                form.Password.data
+            ).decode("utf-8"),
+            confirmed=False
         )
-        print("Created user:", user.email)
 
         db.session.add(user)
+
         try:
-            print("Attempting to commit user to database.")
             db.session.commit()
             send_confirmation_email(user.email)
             flash("Registration successful. Check your email to confirm.", "success")
-            return redirect(url_for('auth.newlogin'))
+            return redirect(url_for("auth.newlogin"))
+
         except IntegrityError:
             db.session.rollback()
             flash("Registration failed. Try again.", "danger")
@@ -128,6 +165,7 @@ def register():
         form=form,
         formpharm=formpharm
     )
+
 
 # --------------------------------------------------
 # REGISTER STORE
@@ -139,29 +177,31 @@ def registerstore():
     formpharm = Set_StoreForm()
 
     if form.validate_on_submit():
+
         if Store.query.filter_by(email=form.email.data).first():
             flash("Email already exists", "danger")
-            return redirect(url_for('auth.registerstore'))
-
-        hashed_password = bcrypt.generate_password_hash(
-            form.password.data
-        ).decode('utf-8')
+            return redirect(url_for("auth.registerstore"))
 
         store = Store(
             name=form.pharmacy_name.data,
-            password=hashed_password,
             email=form.email.data,
             phone=form.phone.data,
             address=form.address.data,
-            openinghours=form.opening_hours_and_days.data
+            openinghours=form.opening_hours_and_days.data,
+            password=bcrypt.generate_password_hash(
+                form.password.data
+            ).decode("utf-8"),
+            confirmed=False
         )
 
         db.session.add(store)
+
         try:
             db.session.commit()
             send_confirmation_email(store.email)
             flash("Store registered. Check email to confirm.", "success")
-            return redirect(url_for('auth.newlogin'))
+            return redirect(url_for("auth.newlogin"))
+
         except IntegrityError:
             db.session.rollback()
             flash("Registration failed.", "danger")
@@ -171,6 +211,7 @@ def registerstore():
         form=form,
         formpharm=formpharm
     )
+
 
 # --------------------------------------------------
 # LOGIN
@@ -229,6 +270,7 @@ def newlogin():
         formpharm=formpharm
     )
 
+
 # --------------------------------------------------
 # CONFIRM EMAIL
 # --------------------------------------------------
@@ -241,23 +283,24 @@ def confirm_email(token):
         flash("Confirmation link invalid or expired.", "danger")
         return redirect(url_for("auth.newlogin"))
 
-    user = User.query.filter_by(email=email).first()
-    store = Store.query.filter_by(email=email).first()
+    account = (
+        User.query.filter_by(email=email).first()
+        or Store.query.filter_by(email=email).first()
+    )
 
-    target = user or store
-
-    if not target:
+    if not account:
         flash("Account not found.", "danger")
         return redirect(url_for("auth.register"))
 
-    target.confirmed = True
+    account.confirmed = True
     db.session.commit()
 
     flash("Email confirmed. You can now log in.", "success")
     return redirect(url_for("auth.newlogin"))
 
+
 # --------------------------------------------------
-# RESEND EMAIL
+# RESEND CONFIRMATION EMAIL
 # --------------------------------------------------
 
 @auth.route("/resend_email", methods=["GET", "POST"])
@@ -282,6 +325,7 @@ def resend_email():
 
     return render_template("auth/resend_email.html", form=form)
 
+
 # --------------------------------------------------
 # RESET PASSWORD
 # --------------------------------------------------
@@ -296,25 +340,25 @@ def reset(token):
         return redirect(url_for("auth.newlogin"))
 
     if form.validate_on_submit():
-        hashed = bcrypt.generate_password_hash(
-            form.password.data
-        ).decode("utf-8")
-
         account = (
             User.query.filter_by(email=email).first()
             or Store.query.filter_by(email=email).first()
         )
 
         if account:
-            account.password = hashed
+            account.password = bcrypt.generate_password_hash(
+                form.password.data
+            ).decode("utf-8")
             db.session.commit()
+
             flash("Password reset successful.", "success")
             return redirect(url_for("auth.newlogin"))
 
     return render_template("auth/newpassword.html", form=form)
 
+
 # --------------------------------------------------
-# UNCONFIRMED
+# UNCONFIRMED PAGE
 # --------------------------------------------------
 
 @auth.route("/unconfirmed")
