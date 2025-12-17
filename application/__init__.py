@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
+from flask_mail import Mail
 from flask_caching import Cache
 from flask_profiler import Profiler
 from flask_compress import Compress
@@ -8,6 +9,7 @@ from config import config
 from flask_socketio import SocketIO, join_room
 
 db = SQLAlchemy()
+mail = Mail()
 cache = Cache()
 compress = Compress()
 login_manager = LoginManager()
@@ -36,7 +38,7 @@ def create_app(config_name):
     app.config['UPLOAD_PAYMENT_PROOF'] = 'static/css/images/payments/'
 
     db.init_app(app)
-
+    mail.init_app(app)
     cache.init_app(app)
     compress.init_app(app)
     login_manager.init_app(app)
