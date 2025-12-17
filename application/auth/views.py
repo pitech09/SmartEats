@@ -21,38 +21,28 @@ from ..forms import (
 )
 from application.notification import notify_customer
 
-
 # --------------------------------------------------
 # INIT
 # --------------------------------------------------
-
 bcrypt = Bcrypt()
 
 
 # --------------------------------------------------
 # SERIALIZER (SAFE)
 # --------------------------------------------------
-
 def get_serializer():
-    return URLSafeTimedSerializer(
-        current_app.config["SECRET_KEY"]
-    )
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
 
 
 # --------------------------------------------------
 # SENDGRID HELPERS
 # --------------------------------------------------
-
 def send_async_email(app, message):
     with app.app_context():
         try:
             sg = SendGridAPIClient(app.config["SENDGRID_API_KEY"])
             response = sg.send(message)
-
-            app.logger.info(
-                f"SendGrid email sent | Status: {response.status_code}"
-            )
-
+            app.logger.info(f"SendGrid email sent | Status: {response.status_code}")
         except Exception as e:
             app.logger.error("SENDGRID EMAIL ERROR")
             app.logger.error(str(e))
@@ -61,7 +51,6 @@ def send_async_email(app, message):
 def send_confirmation_email(email):
     serializer = get_serializer()
     token = serializer.dumps(email)
-
     link = url_for("auth.confirm_email", token=token, _external=True)
 
     message = SGMail(
@@ -87,7 +76,6 @@ def send_confirmation_email(email):
 def send_reset_email(email):
     serializer = get_serializer()
     token = serializer.dumps(email)
-
     link = url_for("auth.reset", token=token, _external=True)
 
     message = SGMail(
@@ -120,14 +108,9 @@ def confirm_token(token, expiration=86400):
 # --------------------------------------------------
 # SOCKET SOUND
 # --------------------------------------------------
-
 def send_sound(user_id, sound="login"):
     try:
-        socketio.emit(
-            "play_sound",
-            {"sound": sound},
-            room=str(user_id)
-        )
+        socketio.emit("play_sound", {"sound": sound}, room=str(user_id))
     except Exception:
         pass
 
@@ -135,14 +118,12 @@ def send_sound(user_id, sound="login"):
 # --------------------------------------------------
 # REGISTER CUSTOMER
 # --------------------------------------------------
-
 @auth.route("/register", methods=["GET", "POST"])
 def register():
     form = RegistrationForm()
     formpharm = Set_StoreForm()
 
     if form.validate_on_submit():
-
         if User.query.filter_by(email=form.Email.data).first():
             flash("Email already exists", "danger")
             return redirect(url_for("auth.register"))
@@ -151,45 +132,31 @@ def register():
             username=form.username.data,
             lastname=form.lastName.data,
             email=form.Email.data,
-            password=bcrypt.generate_password_hash(
-                form.Password.data
-            ).decode("utf-8")
-            
+            password=bcrypt.generate_password_hash(form.Password.data).decode("utf-8")
         )
 
         db.session.add(user)
-
         try:
             db.session.commit()
             send_confirmation_email(user.email)
-            flash(
-                "Registration successful. Check your email to confirm.",
-                "success"
-            )
+            flash("Registration successful. Check your email to confirm.", "success")
             return redirect(url_for("auth.newlogin"))
-
         except IntegrityError:
             db.session.rollback()
             flash("Registration failed. Try again.", "danger")
 
-    return render_template(
-        "auth/register.html",
-        form=form,
-        formpharm=formpharm
-    )
+    return render_template("auth/register.html", form=form, formpharm=formpharm)
 
 
 # --------------------------------------------------
 # REGISTER STORE
 # --------------------------------------------------
-
 @auth.route("/registerstore", methods=["GET", "POST"])
 def registerstore():
     form = PharmacyRegistrationForm()
     formpharm = Set_StoreForm()
 
     if form.validate_on_submit():
-
         if Store.query.filter_by(email=form.email.data).first():
             flash("Email already exists", "danger")
             return redirect(url_for("auth.registerstore"))
@@ -200,38 +167,26 @@ def registerstore():
             phone=form.phone.data,
             address=form.address.data,
             openinghours=form.opening_hours_and_days.data,
-            password=bcrypt.generate_password_hash(
-                form.password.data
-            ).decode("utf-8"),
+            password=bcrypt.generate_password_hash(form.password.data).decode("utf-8"),
             confirmed=False
         )
 
         db.session.add(store)
-
         try:
             db.session.commit()
             send_confirmation_email(store.email)
-            flash(
-                "Store registered. Check email to confirm.",
-                "success"
-            )
+            flash("Store registered. Check email to confirm.", "success")
             return redirect(url_for("auth.newlogin"))
-
         except IntegrityError:
             db.session.rollback()
             flash("Registration failed.", "danger")
 
-    return render_template(
-        "auth/registerphar.html",
-        form=form,
-        formpharm=formpharm
-    )
+    return render_template("auth/registerphar.html", form=form, formpharm=formpharm)
 
 
 # --------------------------------------------------
 # LOGIN
 # --------------------------------------------------
-
 @auth.route("/newlogin", methods=["GET", "POST"])
 def newlogin():
     form = LoginForm()
@@ -251,9 +206,7 @@ def newlogin():
 
         for model, role in user_sets:
             account = model.query.filter_by(email=email).first()
-
             if account and bcrypt.check_password_hash(account.password, password):
-
                 if hasattr(account, "confirmed") and not account.confirmed:
                     flash("Please confirm your email first.", "warning")
                     return redirect(url_for("auth.newlogin"))
@@ -267,49 +220,38 @@ def newlogin():
 
                 if role == "customer":
                     return redirect(url_for("main.home"))
-                if role == "administrator":
+                elif role == "administrator":
                     session["admin_id"] = account.id
                     return redirect(url_for("admin.admindash"))
-                if role == "store":
+                elif role == "store":
                     session["store_id"] = account.id
                     return redirect(url_for("store.adminpage"))
-                if role == "delivery_guy":
+                elif role == "delivery_guy":
                     session["delivery_guy_id"] = account.id
                     return redirect(url_for("delivery.dashboard"))
 
         flash("Invalid login credentials", "danger")
 
-    return render_template(
-        "auth/newlogin.html",
-        form=form,
-        formpharm=formpharm
-    )
+    return render_template("auth/newlogin.html", form=form, formpharm=formpharm)
 
 
 # --------------------------------------------------
 # CONFIRM EMAIL
 # --------------------------------------------------
-
 @auth.route("/confirm_email/<token>")
 def confirm_email(token):
     email = confirm_token(token)
-
     if not email:
         flash("Confirmation link invalid or expired.", "danger")
         return redirect(url_for("auth.newlogin"))
 
-    account = (
-        User.query.filter_by(email=email).first()
-        or Store.query.filter_by(email=email).first()
-    )
-
+    account = User.query.filter_by(email=email).first() or Store.query.filter_by(email=email).first()
     if not account:
         flash("Account not found.", "danger")
         return redirect(url_for("auth.register"))
 
     account.confirmed = True
     db.session.commit()
-
     flash("Email confirmed. You can now log in.", "success")
     return redirect(url_for("auth.newlogin"))
 
@@ -317,19 +259,12 @@ def confirm_email(token):
 # --------------------------------------------------
 # RESEND CONFIRMATION EMAIL
 # --------------------------------------------------
-
 @auth.route("/resend_email", methods=["GET", "POST"])
 def resend_email():
     form = emailform()
-
     if form.validate_on_submit():
         email = form.email.data
-
-        account = (
-            User.query.filter_by(email=email).first()
-            or Store.query.filter_by(email=email).first()
-        )
-
+        account = User.query.filter_by(email=email).first() or Store.query.filter_by(email=email).first()
         if not account:
             flash("Email not found.", "danger")
             return redirect(url_for("auth.resend_email"))
@@ -344,28 +279,19 @@ def resend_email():
 # --------------------------------------------------
 # RESET PASSWORD
 # --------------------------------------------------
-
 @auth.route("/reset_password/<token>", methods=["GET", "POST"])
 def reset(token):
     form = resetpassword()
     email = confirm_token(token)
-
     if not email:
         flash("Reset link invalid or expired.", "danger")
         return redirect(url_for("auth.newlogin"))
 
     if form.validate_on_submit():
-        account = (
-            User.query.filter_by(email=email).first()
-            or Store.query.filter_by(email=email).first()
-        )
-
+        account = User.query.filter_by(email=email).first() or Store.query.filter_by(email=email).first()
         if account:
-            account.password = bcrypt.generate_password_hash(
-                form.password.data
-            ).decode("utf-8")
+            account.password = bcrypt.generate_password_hash(form.password.data).decode("utf-8")
             db.session.commit()
-
             flash("Password reset successful.", "success")
             return redirect(url_for("auth.newlogin"))
 
@@ -375,7 +301,6 @@ def reset(token):
 # --------------------------------------------------
 # UNCONFIRMED PAGE
 # --------------------------------------------------
-
 @auth.route("/unconfirmed")
 def unconfirmed():
     return render_template("auth/email/unconfirmed.html")

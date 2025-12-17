@@ -86,7 +86,7 @@ class ProductionConfig(Config):
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
-    MAIL_USE_SSL = False
+    MAIL_USE_SSL = True
     MAIL_USERNAME = 'khauhelo872@gmail.com'
     MAIL_PASSWORD = 'gvzi kwcq vgzg xawr'
     MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
