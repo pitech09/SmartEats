@@ -92,7 +92,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False, unique=False)
     carts = db.relationship('Cart', backref='user', lazy=True)
     #residence = db.Column(db.String(100), nullable=False, default="Unknown")
-
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     loyalty_points = db.Column(db.Integer, default=0)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))

@@ -153,8 +153,8 @@ def register():
             email=form.Email.data,
             password=bcrypt.generate_password_hash(
                 form.Password.data
-            ).decode("utf-8"),
-            confirmed=False
+            ).decode("utf-8")
+            
         )
 
         db.session.add(user)
