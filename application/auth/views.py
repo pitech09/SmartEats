@@ -1,7 +1,7 @@
 from threading import Thread
 
 from flask import (
-    session, request, flash, redirect,
+    session, flash, redirect,
     url_for, render_template, current_app
 )
 from flask_bcrypt import Bcrypt
@@ -28,13 +28,19 @@ from application.notification import notify_customer
 
 bcrypt = Bcrypt()
 
-serializer = URLSafeTimedSerializer(
-    lambda: current_app.config["SECRET_KEY"]
-)
+
+# --------------------------------------------------
+# SERIALIZER (SAFE)
+# --------------------------------------------------
+
+def get_serializer():
+    return URLSafeTimedSerializer(
+        current_app.config["SECRET_KEY"]
+    )
 
 
 # --------------------------------------------------
-# SENDGRID EMAIL HELPERS
+# SENDGRID HELPERS
 # --------------------------------------------------
 
 def send_async_email(app, message):
@@ -53,7 +59,9 @@ def send_async_email(app, message):
 
 
 def send_confirmation_email(email):
+    serializer = get_serializer()
     token = serializer.dumps(email)
+
     link = url_for("auth.confirm_email", token=token, _external=True)
 
     message = SGMail(
@@ -62,11 +70,10 @@ def send_confirmation_email(email):
         subject="Confirm your SmartEats account",
         html_content=f"""
         <h2>Welcome to SmartEats 🎉</h2>
-        <p>Please confirm your email by clicking the link below:</p>
+        <p>Please confirm your email:</p>
         <p><a href="{link}">Confirm my account</a></p>
         <br>
         <p>If you did not create this account, ignore this email.</p>
-        <p><strong>SmartEats Team</strong></p>
         """
     )
 
@@ -78,7 +85,9 @@ def send_confirmation_email(email):
 
 
 def send_reset_email(email):
+    serializer = get_serializer()
     token = serializer.dumps(email)
+
     link = url_for("auth.reset", token=token, _external=True)
 
     message = SGMail(
@@ -87,7 +96,6 @@ def send_reset_email(email):
         subject="Reset your SmartEats password",
         html_content=f"""
         <h3>Password Reset</h3>
-        <p>Click below to reset your password:</p>
         <p><a href="{link}">Reset Password</a></p>
         <br>
         <p>If you didn’t request this, ignore this email.</p>
@@ -102,6 +110,7 @@ def send_reset_email(email):
 
 
 def confirm_token(token, expiration=86400):
+    serializer = get_serializer()
     try:
         return serializer.loads(token, max_age=expiration)
     except (SignatureExpired, BadSignature):
@@ -153,7 +162,10 @@ def register():
         try:
             db.session.commit()
             send_confirmation_email(user.email)
-            flash("Registration successful. Check your email to confirm.", "success")
+            flash(
+                "Registration successful. Check your email to confirm.",
+                "success"
+            )
             return redirect(url_for("auth.newlogin"))
 
         except IntegrityError:
@@ -199,7 +211,10 @@ def registerstore():
         try:
             db.session.commit()
             send_confirmation_email(store.email)
-            flash("Store registered. Check email to confirm.", "success")
+            flash(
+                "Store registered. Check email to confirm.",
+                "success"
+            )
             return redirect(url_for("auth.newlogin"))
 
         except IntegrityError:
