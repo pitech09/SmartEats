@@ -15,14 +15,13 @@ compress = Compress()
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
 login_manager.login_view = "auth.newlogin"
-
 socketio = SocketIO(
+    
     cors_allowed_origins="*",
     async_mode="eventlet",
-    serve_static=False,        # 🔥 Fixes BrokenPipeError
-    always_connect=True,
     ping_timeout=20,
-    ping_interval=10
+    ping_interval=25,
+    always_connect=True # 👈 IMPORTANT
 )
 
 def create_app(config_name):

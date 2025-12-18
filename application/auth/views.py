@@ -45,6 +45,7 @@ def send_async_email(app, message):
             response = sg.send(message)
             app.logger.info(f"SendGrid email sent | Status: {response.status_code}")
         except Exception as e:
+            print(e)
             app.logger.error("SENDGRID EMAIL ERROR")
             app.logger.error(str(e))
 
@@ -168,8 +169,7 @@ def registerstore():
             phone=form.phone.data,
             address=form.address.data,
             openinghours=form.opening_hours_and_days.data,
-            password=bcrypt.generate_password_hash(form.password.data).decode("utf-8"),
-            confirmed=False
+            password=bcrypt.generate_password_hash(form.password.data).decode("utf-8")
         )
 
         db.session.add(store)

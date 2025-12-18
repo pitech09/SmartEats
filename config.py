@@ -47,18 +47,12 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-
-
     MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
-
-
     USE_CLOUDINARY = False
-
     # Upload paths
     UPLOAD_PATH = os.path.join(basedir, 'static/css/images/profiles')
     UPLOAD_PRODUCTS = os.path.join(basedir, 'static/css/images/products')
     UPLOAD_DELIVERY = os.path.join(basedir, 'static/css/images/deliveries')
-
     # Database
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data-dev.db')
 
@@ -71,11 +65,10 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-
     MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
     USE_CLOUDINARY = True
 
-    # Database (Supabase)
+    # Data  base (Supabase)
     SQLALCHEMY_DATABASE_URI = (
         "postgresql://postgres.lqqhcvfotzowyitgnfgf:Boity%202003"
         "@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
@@ -88,7 +81,7 @@ class ProductionConfig(Config):
         api_secret='s4FgdXdoys3aBFWh_ZnXJHgye2U',
         secure=True
     )
-
+    SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
     @staticmethod
     def init_app(app):
         pass
