@@ -41,6 +41,7 @@ def send_async_email(app, message):
     with app.app_context():
         try:
             sg = SendGridAPIClient(app.config["SENDGRID_API_KEY"])
+            print(app.config["SENDGRID_API_KEY"])
             response = sg.send(message)
             app.logger.info(f"SendGrid email sent | Status: {response.status_code}")
         except Exception as e:
@@ -54,11 +55,11 @@ def send_confirmation_email(email):
     link = url_for("auth.confirm_email", token=token, _external=True)
 
     message = SGMail(
-        from_email=current_app.config["SENDGRID_FROM_EMAIL"],
+        from_email='khauhelo872@gmail.com',
         to_emails=email,
         subject="Confirm your SmartEats account",
         html_content=f"""
-        <h2>Welcome to SmartEats 🎉</h2>
+        <h2>Welcome to SmartEats </h2>
         <p>Please confirm your email:</p>
         <p><a href="{link}">Confirm my account</a></p>
         <br>

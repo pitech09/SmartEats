@@ -48,19 +48,9 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
 
-    # Email (Gmail)
-    MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
-    MAIL_USE_SSL = False
-    MAIL_USERNAME = 'khauhelo872@gmail.com'
-    MAIL_PASSWORD = 'gvzi kwcq vgzg xawr'
-    MAIL_DEBUG = True
+
     MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
 
-    # SendGrid (if needed later)
-    SENDGRID_API_KEY = 'SG.INSERT_YOUR_KEY_HERE'
-    SENDGRID_FROM_EMAIL = 'noreply@smarteats.com'
 
     USE_CLOUDINARY = False
 
@@ -82,15 +72,7 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
 
-    # Email (Gmail)
-    MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
-    MAIL_USE_SSL = True
-    MAIL_USERNAME = 'khauhelo872@gmail.com'
-    MAIL_PASSWORD = 'gvzi kwcq vgzg xawr'
     MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
-
     USE_CLOUDINARY = True
 
     # Database (Supabase)
