@@ -94,14 +94,19 @@ def create_admin_accounts():
             if existing:
                 print(f"⚠️ {customer_data['email']} already exists. Skipping.")
                 continue
-
-            hashed_pw = bcrypt.generate_password_hash(admin_data["password"]).decode("utf-8")
+            if not existing.confirmed:
+                existing.confirmed = True  # Mark as confirmed
+                db.session.add(existing)
+                print(f"✅ Confirmed existing customer: {customer_data['email']}")
+                continue
+            hashed_pw = bcrypt.generate_password_hash(customer_data["password"]).decode("utf-8")
             new_user = User(
                 username=customer_data["username"],
                 lastname=customer_data["lastname"],
                 email=customer_data["email"],
                 password=hashed_pw,  
             )
+            new_user.confirmed = True  # Mark as confirmed
 
             db.session.add(new_user)
             print(f"✅ Created customer: {customer_data['email']}")
