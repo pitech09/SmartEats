@@ -13,11 +13,7 @@ def create_admin_accounts():
                 "email": "admin12@smarteats.com",
                 "password": "AdminPass123",
             },
-            {
-                "username": "AdminTwo2",
-                "email": "admin22@smarteats.com",
-                "password": "AdminPass123",
-            },
+
         ]
         customers = [
             {
@@ -37,10 +33,10 @@ def create_admin_accounts():
         stores = [
             {
                 "name": "Majezz Eatery",
-                "address": "maputsoe ha maqele",
-                "email": "danielnteso@gmail.com",
-                "password": "StorePass123",
-                "phone":" +26658888888",
+                "address": "Maputsoe Ha Maqele",
+                "email": "danielnteso5@gmail.com",
+                "password": "MajezzNteso123",
+                "phone":" +266 5786 3240",
                 "opening_hours":"8:00 AM - 9:00 PM",
             }
         ]

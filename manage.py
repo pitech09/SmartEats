@@ -1,25 +1,22 @@
-import eventlet
-eventlet.monkey_patch()
 import os
 from application import create_app, db, socketio
-from flask_migrate import Migrate  # type: ignore
+from flask_migrate import Migrate
 from application.models import Product
 from application.utils.cache import products_cache
 
-# Create the Flask app instance
-app = create_app(os.getenv('FLASK_CONFIG') or 'default')
+# Create Flask app
+app = create_app(os.getenv("FLASK_CONFIG", "default"))
+
+# Setup migrations
 migrate = Migrate(app, db)
 
-
+# Shell context
+@app.shell_context_processor
 def make_shell_context():
-    return dict(app=app, db=db)
-app.shell_context_processor(make_shell_context)
+    return {
+        "app": app,
+        "db": db,
+        "Product": Product
+    }
 
-if __name__ == "__main__":
-    if products_cache is None:
-        #On preload, load all products to memory
-        products_cache.set()
-
-    socketio.run(app, host="0.0.0.0", port=5000)
-    
-
+#
