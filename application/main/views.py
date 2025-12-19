@@ -156,7 +156,6 @@ def home():
 
 
 @main.route('/store/<int:store_id>')
-@login_required
 def details(store_id):
     store = Store.query.get_or_404(store_id)
     registered_for = human_duration(store.registered_on)
@@ -466,3 +465,59 @@ def logout():
     logout_user()
     flash('You have successfully logged out.', 'success')
     return redirect(url_for('main.landing'))
+
+@main.route('/deactivate account/<int:user_id>')
+@login_required
+def deactivate_Account(user_id):
+    user = User.query.get_or_404(user_id)
+    if not user:
+        flash('Failed to get user')
+        return redirect(url_for('main.account'))
+    db.session.delete(user)
+    try:
+        db.session.commit()
+        logout_user()
+        session.pop('store_id', None)
+        flash('Account successfully deleted.')
+    except IntegrityError:
+        flash('Error deleting account')
+        db.session.rollback() 
+        return redirect(url_for('main.account'))
+    return redirect(url_for('auth.newlogin'))   
+
+
+@main.route('/set_store', methods=['POST', 'GET'])
+@login_required
+def set_store():
+    formpharm = Set_StoreForm()
+    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+    if formpharm.validate_on_submit():
+        session['store_id'] = formpharm.store.data
+        return redirect(url_for('main.home', store_id=formpharm.store.data))
+    elif formpharm.errors:
+        print(formpharm.errors)
+        return formpharm.errors
+    else:
+        flash(f'{current_user.id} had a problem selecting your store, please try again later')
+        return redirect(url_for('main.home'))
+    
+@main.route('/set_store/<int:store_id>', methods=['POST', 'GET'])
+@login_required
+def set_storee(store_id):
+    store = Store.query.get_or_404(store_id)
+    if store:
+        session['store_id'] = store.id
+        flash(f'You are now viewing {store.name}', 'success')
+        return redirect(url_for('main.home', store_id=store.id))
+    else:
+        flash('Store not found', 'danger')
+        return redirect(url_for('main.home'))
+
+@main.route('/restuarants', methods=['POST', 'GET'])
+def restuarants():
+    formpharm = Set_StoreForm()
+    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+    stores = Store.query.all()
+    return render_template('customer/restuarants.html', stores=stores, formpharm=formpharm)
+
+    

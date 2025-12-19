@@ -64,7 +64,7 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
-    DEBUG = False
+    DEBUG = True
     MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
     USE_CLOUDINARY = True
 
