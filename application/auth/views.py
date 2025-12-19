@@ -110,7 +110,7 @@ def confirm_token(token, expiration=86400):
 # --------------------------------------------------
 # SOCKET SOUND
 # --------------------------------------------------
-def send_sound(user_id, sound="login"):
+def send_sound(user_id, sound):
     try:
         socketio.emit("play_sound", {"sound": sound}, room=str(user_id))
     except Exception:
@@ -217,7 +217,7 @@ def newlogin():
                 session["email"] = account.email
 
                 notify_customer(account.id)
-                send_sound(account.id)
+                send_sound(account.id, "login")
 
                 if role == "customer":
                     return redirect(url_for("main.home"))

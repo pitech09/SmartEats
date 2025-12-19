@@ -403,7 +403,7 @@ def addorder(total_amount):
         CartItem.query.filter_by(cart_id=cart.id).delete()
         cart.redeemed = False
         db.session.commit()
-        cache.clear()
+        Cache_.clear_cache()
     return redirect(url_for('main.myorders', total_amount=total_amount))
 
 @main.route("/health")

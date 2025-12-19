@@ -428,7 +428,7 @@ def updatestatus(order_id):
                 notify_customer(order.user_id)
             except Exception:
                 current_app.logger.debug("notify_customer failed during login (admin).")
-            send_sound(order.user_id, sound_name="update_order")
+            send_sound(order.user_id, "update_order")
 
             # Also notify store dashboard if needed
             create_notification(user_type='store', user_id=order.store_id, message=message)
