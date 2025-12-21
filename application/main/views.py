@@ -13,6 +13,7 @@ from dateutil.relativedelta import relativedelta
 from . import main  # Blueprint is fine to import at top
 from ..forms import *
 from ..models import *
+
 from application.notification import *
 from application.auth.views import send_sound
 from application.utils.cache import *
@@ -106,7 +107,30 @@ def save_update_profile_picture(form_picture):
     form_picture.save(post_image_path)
     return post_img_fn
 
+
 # --------------------- ROUTES ---------------------
+@main.route('/subscribe', methods=['POST'])
+@login_required
+def subscribe():
+    data = request.get_json()
+    existing = PushSubscription.query.filter_by(user_id=current_user.id).first()
+    if existing:
+        existing.subscription_info = data
+    else:
+        new_sub = PushSubscription(user_id=current_user.id, subscription_info=data)
+        db.session.add(new_sub)
+    db.session.commit()
+    return jsonify({"success": True})
+
+@main.route('/unsubscribe', methods=['POST'])
+@login_required
+def unsubscribe():
+    sub = PushSubscription.query.filter_by(user_id=current_user.id).first() # type: ignore
+    if sub:
+        db.session.delete(sub)
+        db.session.commit()
+    return jsonify({"success": True})
+
 
 # ---------------- HOME ----------------
 @main.route('/home', methods=["POST", "GET"])
@@ -148,7 +172,8 @@ def cart():
     total_amount = 0.0
     total_count = 0
     if cart:
-        total_amount = sum(item.product.price * item.quantity for item in cart.cart_items)
+        total_amount = cart.total_amount()
+
         total_count = sum(item.quantity for item in cart.cart_items)
 
     return render_template('customer/updated_cartlist.html', form=form, form2=form2, form3=form3,

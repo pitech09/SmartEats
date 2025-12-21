@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from flask import current_app
 from flask_login import UserMixin
 from itsdangerous import TimedSerializer
-
+from sqlalchemy.dialects.postgresql import JSON
 from . import db, login_manager
 
 # ----------------- Utilities -----------------
@@ -335,3 +335,8 @@ class Ad(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     store = db.relationship('Store', backref='ads_Store', lazy=True)
     product = db.relationship('Product', backref='ads_Product', lazy=True)
+
+    class PushSubscription(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, nullable=False)  # link to your User table
+        subscription_info = db.Column(JSON, nullable=False)

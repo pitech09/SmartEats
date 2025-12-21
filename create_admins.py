@@ -17,12 +17,12 @@ def create_admin_accounts():
         ]
         stores = [
             {
-                "name": "Main Street Store",
-                "address": "123 Main St, Cityville",
-                "email": "mainstreet@smarteats.com",
+                "name": "SmartEat",
+                "address": "Remote",
+                "email": "smarteats200@gmail.com",
                 "password": "StorePass123",
                 "openinghours": "8am - 10pm",
-                "phone": "123-456-7890"
+                "phone": "266 5853 8173"
             }
         ]
 
