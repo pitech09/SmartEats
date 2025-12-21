@@ -294,52 +294,77 @@ def custom_meal(store_id):
         ingredients=ingredients
     )
 
-# ---------------- ADD ORDER ----------------
-@main.route('/addorder/<int:total_amount>', methods=['POST', 'GET'])
+#@main.route('/addorder/<int:total_amount>', methods=['POST', 'GET'])
 @login_required
 def addorder(total_amount):
     form = confirmpurchase()
     store_id = session.get('store_id')
     pharm = Store.query.get_or_404(store_id)
+
+    # Get the user's cart for this store
     cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
-    if not cart:
+    if not cart or not cart.cart_items:
+        flash("Your cart is empty.", "warning")
         return redirect(url_for('main.menu'))
+
+    # Prevent multiple pending orders
     existing_order = Order.query.filter_by(user_id=current_user.id, status='Pending', store_id=store_id).first()
     if existing_order:
         flash("You still have a pending order.", "unsuccessful")
         return redirect(url_for('main.myorders'))
+
     if form.validate_on_submit():
-        neworder = Order(user_id=current_user.id, payment=form.payment.data, user_email=current_user.email,
-                         store_id=pharm.id, source_store=pharm.name)
+        # Create new order
+        neworder = Order(
+            user_id=current_user.id,
+            payment=form.payment.data,
+            user_email=current_user.email,
+            store_id=pharm.id
+        )
         neworder.location = 'pickup' if form.deliverymethod.data == 'pickup' else form.drop_address.data
+
+        # Handle payment screenshot
         file = form.payment_screenshot.data
         if not file:
-            flash("Missing payment proof")
+            flash("Missing payment proof", "warning")
             return redirect(url_for('main.cart'))
         if current_app.config.get('USE_CLOUDINARY'):
             neworder.screenshot = upload_to_cloudinary(file)['secure_url']
         else:
             neworder.screenshot = save_product_picture(file)
+
         db.session.add(neworder)
         db.session.commit()
-        # Attach Cart Items
+
+        # Process cart items and custom meals
         total_amount_calc = 0
         for item in cart.cart_items:
-            order_item = OrderItem(order_id=neworder.id, product_id=item.product.id,
-                                   product_name=item.product.productname, product_price=item.product.price,
-                                   quantity=item.quantity)
-            total_amount_calc += item.product.price * item.quantity
-            db.session.add(order_item)
-        # Attach Custom Meals
-        custom_meals = CustomMeal.query.filter_by(user_id=current_user.id, order_id=None).all()
-        for meal in custom_meals:
-            meal.order_id = neworder.id
-            total_amount_calc += meal.total_price
+            if item.product:
+                order_item = OrderItem(
+                    order_id=neworder.id,
+                    product_id=item.product.id,
+                    product_name=item.product.productname,
+                    product_price=item.product.price,
+                    quantity=item.quantity
+                )
+                total_amount_calc += item.product.price * item.quantity
+                db.session.add(order_item)
+            elif item.custom_meal:
+                item.custom_meal.order_id = neworder.id
+                total_amount_calc += item.custom_meal.total_price
+
+        # Clear cart items
         CartItem.query.filter_by(cart_id=cart.id).delete()
         db.session.commit()
+
+        # Clear cache if used
         Cache_.clear_cache()
-        flash('Order successfully placed.')
-    return redirect(url_for('main.myorders', total_amount=total_amount_calc))
+
+        flash('Order successfully placed.', 'success')
+        return redirect(url_for('main.myorders', total_amount=total_amount_calc))
+
+    flash("Invalid submission.", "warning")
+    return redirect(url_for('main.cart'))
 
 # ---------------- MY ORDERS ----------------
 @main.route('/myorders')
