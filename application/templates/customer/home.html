@@ -3,107 +3,194 @@
 
 {% block content %}
 <div class="container my-4">
-  <div class="row g-4">
-    <!-- Getting Started Card -->
-    <div class="col-md-6">
-      <div class="card shadow-sm border-success">
-        <div class="card-header bg-success text-white">How to Get Started</div>
-        <div class="card-body">
-          <h5 class="card-title">Quick Start Guide</h5>
-          <ul>
-            <li>Choose your favorite restaurant and click <b>Select</b>.</li>
-            <li>Browse the menu to view their available meals.</li>
-            <li>Add your favorite meals to the cart.</li>
-            <li><b>Checkout</b> - fast and simple!</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+{% if ads %}
+<div id="adsCarousel"
+     class="carousel slide mb-5"
+     data-bs-ride="carousel">
 
-    <!-- Cart Summary Card -->
-    <div class="col-md-6">
-      <div class="card shadow-sm border-warning">
-        <div class="card-header bg-warning text-dark">Cart Items</div>
-        <div class="card-body">
-          <h5 class="card-title">{{ total_count or 0 }} items</h5>
-          <p>Total Price: <b>M{{ '%.2f'|format(total_amount or 0) }}</b></p>
-          <a href="{{ url_for('main.cart') }}" class="btn btn-warning">View Cart</a>
+  <div class="carousel-inner">
+    {% for ad in ads %}
+    <div class="carousel-item {% if loop.first %}active{% endif %}">
+      <a class="text-decoration-none" href="
+        {% if ad.link_type == 'product' %}
+          {{ url_for('main.product_detail', product_id=ad.product_id) }}
+        {% elif ad.link_type == 'store' %}
+          {{ url_for('main.go_to_store', store_id=ad.store_id) }}
+        {% else %}
+          {{ ad.external_url }}
+        {% endif %}
+      ">
+        <div class="card shadow-sm border-0 rounded-4 mx-auto"
+             style="max-width: 900px;">
+
+          <div class="d-flex align-items-center justify-content-center bg-light"
+               style="height: 280px;">
+
+            <img src="{{ ad.image }}"
+                 alt="{{ ad.title }}"
+                 class="img-fluid"
+                 style="
+                   max-height: 100%;
+                   max-width: 100%;
+                   object-fit: contain;
+                 ">
+          </div>
+
+          <div class="card-body text-center">
+            <h5 class="fw-bold mb-1">{{ ad.title }}</h5>
+            <span class="badge bg-success">Tap to view</span>
+          </div>
+
         </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <button class="carousel-control-prev" type="button"
+          data-bs-target="#adsCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon"></span>
+  </button>
+
+  <button class="carousel-control-next" type="button"
+          data-bs-target="#adsCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon"></span>
+  </button>
+</div>
+{% endif %}
+
+
+<style>
+  .soft-card {
+    border-radius: 1rem;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .soft-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1.2rem rgba(0,0,0,.12);
+  }
+</style>
+
+<div class="row g-4">
+
+  <!-- Getting Started -->
+  <div class="col-md-6">
+    <div class="card soft-card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="fw-bold text-success mb-3">🚀 Getting Started</h5>
+        <ol class="mb-0">
+          <li>Select a restaurant</li>
+          <li>Browse the menu</li>
+          <li>Add meals to cart</li>
+          <li><b>Checkout fast</b></li>
+        </ol>
       </div>
     </div>
   </div>
 
-  <div class="row g-4 mt-3">
-    <!-- User Stats Card -->
-    <div class="col-md-6">
-      <div class="card shadow-sm border-primary">
-        <div class="card-header bg-primary text-white">Your Stats</div>
-        <div class="card-body">
-          <p><b>Total Orders:</b> {{ user_orders_count or 0 }}</p>
-          <p><b>Peak Order Rate:</b> {{ peak_rate or "N/A" }}</p>
-          <p><b>Completed Orders:</b> {{ completed_orders_count or 0 }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notification Center Card -->
-    <div class="col-md-6">
-      <div class="card shadow-sm border-dark">
-        <div class="card-header bg-dark text-white">Notifications</div>
-        <div class="card-body">
-          <ul class="list-group" id="notification-list">
-            {% if notifications %}
-              {% for note in notifications %}
-                <li class="list-group-item">
-                  <strong>{{ note.type }}:</strong> {{ note.message }}
-                  <span class="text-muted float-end">{{ note.time }}</span>
-                </li>
-              {% endfor %}
-            {% else %}
-              <li class="list-group-item text-muted">No notifications at the moment.</li>
-            {% endif %}
-          </ul>
-        </div>
+  <!-- Cart Summary -->
+  <div class="col-md-6">
+    <div class="card soft-card shadow-sm border-0 bg-warning bg-opacity-10">
+      <div class="card-body">
+        <h6 class="text-uppercase text-muted">Your Cart</h6>
+        <h3 class="fw-bold mb-1">{{ total_count or 0 }} items</h3>
+        <p class="mb-3">
+          Total: <b>M{{ '%.2f'|format(total_amount or 0) }}</b>
+        </p>
+        <a href="{{ url_for('main.cart') }}"
+           class="btn btn-warning w-100 fw-bold">
+          View Cart
+        </a>
       </div>
     </div>
   </div>
+
 </div>
 
-<!-- Real-time Notification Script -->
+<div class="row g-4 mt-3">
+
+  <!-- User Stats -->
+  <div class="col-md-6">
+    <div class="card soft-card shadow-sm border-0">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3 text-primary">📊 Your Activity</h6>
+        <div class="d-flex justify-content-between">
+          <span>Total Orders</span>
+          <b>{{ user_orders_count or 0 }}</b>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Peak Rate</span>
+          <b>{{ peak_rate or "N/A" }}</b>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Completed</span>
+          <b>{{ completed_orders_count or 0 }}</b>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div class="col-md-6">
+    <div class="card soft-card shadow-sm border-0">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3">🔔 Notifications</h6>
+        <ul class="list-group list-group-flush" id="notification-list">
+          {% if notifications %}
+            {% for note in notifications %}
+            <li class="list-group-item px-0">
+              <small class="text-muted">{{ note.time }}</small><br>
+              <b>{{ note.type }}</b> – {{ note.message }}
+            </li>
+            {% endfor %}
+          {% else %}
+            <li class="list-group-item px-0 text-muted">
+              You’re all caught up 🎉
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Real-time Notifications -->
 <script>
   var socket = io();
 
-  // Join user-specific room
   {% if current_user.is_authenticated %}
     socket.emit('join', { room: 'user_{{ current_user.id }}' });
   {% endif %}
 
-  // Listen for new notifications
   socket.on('new_notification', function(data) {
     const list = document.getElementById('notification-list');
-
-    // Remove placeholder if it exists
     const placeholder = list.querySelector('.text-muted');
     if (placeholder) placeholder.remove();
 
-    // Create new notification item
     const li = document.createElement('li');
-    li.className = 'list-group-item';
-    li.innerHTML = `<strong>${data.type}:</strong> ${data.message} <span class="text-muted float-end">${data.time}</span>`;
-    
-    // Prepend to list
+    li.className = 'list-group-item px-0';
+    li.innerHTML = `
+      <small class="text-muted">${data.time}</small><br>
+      <b>${data.type}</b> – ${data.message}
+    `;
     list.prepend(li);
 
-    // Play notification sound
     const audio = document.getElementById('order_update');
     if (audio) audio.play();
   });
 
-  // Optional: listen for cart updates
   socket.on('cart_updated', function(data) {
-    // Example: update cart count in navbar
     const el = document.getElementById("cart-count");
     if (el) el.textContent = data.cart_count;
   });
 </script>
+
+<script>
+  const carousel = document.getElementById('adsCarousel');
+  if (carousel) {
+    new bootstrap.Carousel(carousel, { interval: 5000 });
+  }
+</script>
+
 {% endblock %}

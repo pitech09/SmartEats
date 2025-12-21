@@ -1,3 +1,4 @@
+from itertools import product
 from flask import render_template, redirect, url_for, request, flash, current_app, jsonify,session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, extract, or_
@@ -15,6 +16,8 @@ from PIL import Image
 from flask import current_app
 import plotly.graph_objs as go # type: ignore
 import plotly.offline as plot # type: ignore
+import cloudinary
+from cloudinary.uploader import upload
 
 
 
@@ -50,6 +53,19 @@ def save_product_picture(file):
         # If an error occurs during image processing, handle it
         print(f"Error saving image: {e}")
         return None
+
+def upload_to_cloudinary(file, folder='products'):
+    result = upload(
+        file,
+        folder=folder,
+        use_filename=True,
+        unique_filename=True,
+        resource_type='image',
+        transformation=[
+            {'width': 200, 'height': 200, 'crop': 'fill'}
+            ]
+    )
+    return result
 
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
@@ -162,3 +178,68 @@ def register_store():
 def pending_verification():
     stores = Store.query.filter(Store.verified == False).all()
     return render_template('admin/pendingpharmacies.html', stores=stores)
+@admin.route("/ads", methods=["GET", "POST"])
+@login_required
+def manage_ads():
+    form = AdForm()
+
+    # Populate product/store dropdowns
+    form.product_id.choices = [(0, "-- Select Product --")] + [(p.id, p.name) for p in Product.query.all()]
+    form.store_id.choices = [(0, "-- Select Store --")] + [(s.id, s.name) for s in Store.query.all()]
+
+    if form.validate_on_submit():
+        # Handle the selected IDs
+        product_id = form.product_id.data if form.link_type.data == "product" and form.product_id.data != 0 else None
+        store_id = form.store_id.data if form.link_type.data == "store" and form.store_id.data != 0 else None
+        external_url = form.external_url.data if form.link_type.data == "external" else None
+
+        # Upload image
+
+        # Save ad
+        ad = Ad(
+            title=form.title.data,
+            link_type=form.link_type.data,
+            product_id=product_id,
+            store_id=store_id,
+            external_url=external_url
+        )
+        file = form.image_file.data
+        print(current_app.config['USE_CLOUDINARY'])
+        if current_app.config['USE_CLOUDINARY']:
+            print("SAving to cloudinary.")
+            upload_result = upload_to_cloudinary(file)
+            image_url = upload_result['secure_url'] 
+            ad.image = image_url
+        else: 
+            print('Saving picture to sqlite db') 
+            _image = save_product_picture(file)
+            ad.image = _image
+        db.session.add(ad)
+        db.session.commit()
+        flash("Ad added successfully!", "success")
+        return redirect(url_for("admin.manage_ads"))
+
+    # GET request
+    ads = Ad.query.all()
+    products = Product.query.all()
+    stores = Store.query.all()
+    return render_template("admin/ads.html", form=form, ads=ads, products=products, stores=stores)
+
+@admin.route("/ads/delete/<int:ad_id>", methods=["POST"])
+@login_required
+def delete_ad(ad_id):
+    ad = Ad.query.get_or_404(ad_id)
+
+    # Optional: Delete from Cloudinary
+    try:
+        # assuming you store public_id in image_file without extension
+        public_id = ad.image_file.rsplit('.', 1)[0]
+        #delete_from_cloudinary(public_id)  # your Cloudinary delete helper
+    except Exception as e:
+        print(f"Cloudinary delete failed: {e}")
+
+    # Delete from database
+    db.session.delete(ad)
+    db.session.commit()
+    flash("Ad deleted successfully!", "success")
+    return redirect(url_for("admin.manage_ads"))

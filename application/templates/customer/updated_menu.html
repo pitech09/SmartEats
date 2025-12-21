@@ -23,15 +23,19 @@
     </form>
   </div>
 
+  <!-- Custom Meal Button -->
+  <div class="mb-4 text-center">
+    <a href="{{ url_for('main.custom_meal', store_id=store.id) }}" class="btn btn-outline-success rounded-pill">
+      Build Your Own Meal
+    </a>
+  </div>
+
   <!-- Product Grid -->
   <div class="row row-cols-1 row-cols-md-3 g-4">
     {% for product in products %}
     <div class="col">
       <div class="card h-100 shadow-sm border-0 product-card">
-
-        <!-- Image without forced crop -->
         <img src="{{ product.pictures }}" class="card-img-top" alt="{{ product.productname }}" loading="lazy">
-
         <div class="card-body d-flex flex-column">
           <h5 class="card-title text-success">{{ product.productname }}</h5>
           <p class="card-text text-muted mb-2">{{ product.description|truncate(80) }}</p>
@@ -46,7 +50,6 @@
             </button>
           </div>
         </div>
-
       </div>
     </div>
     {% endfor %}
@@ -65,11 +68,11 @@
 
 </div>
 
-<!-- AJAX Script -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const cartCountEl = document.getElementById("cart-count");
 
+    // Add Product to Cart
     document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             const productId = btn.dataset.id;
@@ -78,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch("/add_to_cart_ajax", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ product_id: productId })
+                    body: JSON.stringify({ product_id: productId, store_id: {{ store.id }} })
                 });
 
                 const data = await response.json();
@@ -86,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     cartCountEl.textContent = data.cart_count;
 
                     btn.classList.add('btn-success');
-                    btn.textContent = 'Added ✓';
+                    btn.innerHTML = 'Added ✓';
                     setTimeout(() => {
                         btn.innerHTML = '<i class="fas fa-cart-plus me-1"></i> Add';
                     }, 1200);
@@ -95,6 +98,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Error adding to cart:", err);
             }
         });
+    });
+
+    // Optional: Listen to SocketIO cart updates for other tabs
+    const socket = io();
+    socket.on("cart_updated", data => {
+        if (cartCountEl) cartCountEl.textContent = data.cart_count;
     });
 });
 </script>
@@ -112,8 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
   width: 60%;
   height: auto;
   margin: 0 auto;
-  align-items: center;
-  object-fit: contain; /* keeps image fully visible without cropping */
+  object-fit: contain;
   border-radius: 12px 12px 0 0;
 }
 

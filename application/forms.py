@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm # type: ignore
-from flask_wtf.file import FileField, FileAllowed # type: ignore
-from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField,IntegerField,SelectField, RadioField, EmailField# type: ignore
-from wtforms.validators import DataRequired, Length, Email # type: ignore
+from flask_wtf.recaptcha import RecaptchaField # type: ignore
+from flask_wtf.file import FileField, FileAllowed, FileRequired# type: ignore
+from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField,IntegerField,SelectField, RadioField, EmailField, URLField # type: ignore
+from wtforms.validators import DataRequired,Optional, Length, Email # type: ignore
 
 class PharmacyRegistrationForm(FlaskForm):
     pharmacy_name = StringField('Store Name', validators=[DataRequired()])
@@ -113,6 +114,23 @@ class ProductForm(FlaskForm):
     submit = SubmitField("Add Product")
 
 
+class AdForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    image_file = FileField("Upload Image", validators=[
+        FileRequired(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], "Images only!")
+    ])
+    link_type = SelectField("Link Type", choices=[
+        ('product', 'Product'),
+        ('store', 'Store'),
+        ('external', 'External URL')
+    ], validators=[DataRequired()])
+    product_id = IntegerField("Product ID", validators=[Optional()])
+    store_id = IntegerField("Store ID", validators=[Optional()])
+    external_url = URLField("External URL", validators=[Optional()])
+    submit = SubmitField("Add Ad")
+
+
 class updatestatusform(FlaskForm):
     status = SelectField('Status', validators=[DataRequired()], choices=[('Approved', 'Approved'),
                                                                         ('Ready ', 'Ready'),
@@ -164,3 +182,8 @@ class update_password(FlaskForm):
     confirm = SubmitField('Confirm')
 
 
+class IngredientForm(FlaskForm):
+    name = StringField("Ingredient Name", validators=[DataRequired()])
+    price = FloatField("Price (M)", validators=[DataRequired()])
+    category = StringField("Category", default="General")
+    submit = SubmitField("Add Ingredient")

@@ -8,14 +8,14 @@
 
             <!-- Restaurant Name -->
             <h2 class="text-success fw-bold mb-3">
-                {{ restaurant.name }}
+                {{ restuarant.name }}
             </h2>
 
             <!-- Image -->
-            {% if restaurant.image_url %}
+            {% if restuarant.image_url %}
                 <div class="text-center mb-4">
-                    <img src="{{ restaurant.image_url }}"
-                         alt="{{ restaurant.name }}"
+                    <img src="{{ restuarant.image_url }}"
+                         alt="{{ restuarant.name }}"
                          class="img-fluid rounded-4 shadow-sm"
                          style="max-height: 260px; object-fit: cover;">
                 </div>
@@ -25,19 +25,19 @@
             <ul class="list-group mb-4 rounded-4">
                 <li class="list-group-item py-3">
                     <strong class="text-success">Location:</strong>
-                    <span class="text-muted">{{ restaurant.address or "Not specified" }}</span>
+                    <span class="text-muted">{{ restuarant.address or "Not specified" }}</span>
                 </li>
                 <li class="list-group-item py-3">
                     <strong class="text-success">Contact:</strong>
-                    <span class="text-muted">{{ restaurant.phone or "N/A" }}</span>
+                    <span class="text-muted">{{ restuarant.phone or "N/A" }}</span>
                 </li>
                 <li class="list-group-item py-3">
                     <strong class="text-success">Email:</strong>
-                    <span class="text-muted">{{ restaurant.email or "N/A" }}</span>
+                    <span class="text-muted">{{ restuarant.email or "N/A" }}</span>
                 </li>
                 <li class="list-group-item py-3">
                     <strong class="text-success">Opening Hours:</strong>
-                    <span class="text-muted">{{ restaurant.openinghours or "Not available" }}</span>
+                    <span class="text-muted">{{ restuarant.openinghours or "Not available" }}</span>
                 </li>
                 <li class="list-group-item py-3">
                     <strong class="text-success">Registered:</strong>
@@ -52,7 +52,7 @@
                     Back to Stores
                 </a>
 
-                <a href="{{ url_for('main.set_storee', store_id=restaurant.id) }}"
+                <a href="{{ url_for('main.set_storee', store_id=restuarant.id) }}"
                    class="btn btn-success rounded-pill px-4">
                     Choose Store
                 </a>

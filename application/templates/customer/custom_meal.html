@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+{% block title %}Build Your Custom Meal - SmartEats{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="text-success mb-3">Build Your Custom Meal</h3>
+
+  <div class="row">
+    {% for ing in ingredients %}
+    <div class="col-md-3 mb-3">
+      <div class="card h-100 shadow-sm p-2">
+        <div class="card-body">
+          <h6>{{ ing.name }}</h6>
+          <p class="text-muted">M{{ "%.2f"|format(ing.price) }}</p>
+
+          <div class="d-flex align-items-center gap-2">
+            <input type="checkbox"
+                   class="ingredient-checkbox"
+                   data-id="{{ ing.id }}"
+                   data-price="{{ ing.price }}">
+            <input type="number"
+                   class="form-control form-control-sm ingredient-qty"
+                   value="1"
+                   min="1"
+                   style="width:70px;">
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-4 d-flex justify-content-between align-items-center">
+    <h5>Total: M<span id="total-price">0.00</span></h5>
+    <button class="btn btn-success rounded-pill" id="add-to-cart">
+      Add to Cart
+    </button>
+  </div>
+</div>
+
+<script>
+const checkboxes = document.querySelectorAll(".ingredient-checkbox");
+const totalPriceEl = document.getElementById("total-price");
+const addBtn = document.getElementById("add-to-cart");
+const cartCountEl = document.getElementById("cart-count"); // badge in navbar
+
+function updateTotal() {
+    let total = 0;
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            const price = parseFloat(cb.dataset.price);
+            const qty = parseInt(cb.closest(".card-body")
+                                  .querySelector(".ingredient-qty").value);
+            total += price * qty;
+        }
+    });
+    totalPriceEl.textContent = total.toFixed(2);
+}
+
+// Update total when checkbox or quantity changes
+checkboxes.forEach(cb => cb.addEventListener("change", updateTotal));
+document.querySelectorAll(".ingredient-qty").forEach(q => q.addEventListener("input", updateTotal));
+
+addBtn.addEventListener("click", async () => {
+    const selected = [];
+
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            const qty = cb.closest(".card-body")
+                          .querySelector(".ingredient-qty").value;
+            selected.push({
+                id: cb.dataset.id,
+                quantity: qty
+            });
+        }
+    });
+
+    if (selected.length === 0) {
+        alert("Select at least one ingredient!");
+        return;
+    }
+
+    try {
+        const response = await fetch("{{ url_for('main.custom_meal', store_id=store.id) }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ingredients: selected })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            // Update cart badge dynamically
+            if (cartCountEl) {
+                cartCountEl.textContent = parseInt(cartCountEl.textContent || 0) + 1;
+            }
+
+            // Button feedback
+            addBtn.textContent = 'Added ✓';
+            setTimeout(() => {
+                addBtn.textContent = 'Add to Cart';
+            }, 1200);
+        } else {
+            alert(data.message || "Failed to add custom meal!");
+        }
+    } catch (err) {
+        console.error("Error adding custom meal:", err);
+        alert("An error occurred. Try again!");
+    }
+});
+</script>
+{% endblock %}

@@ -91,6 +91,13 @@
                 <i class="fas fa-user"></i><span>Registered Users</span>
             </a>
         </li>
+                <hr class="sidebar-divider">
+        <div class="sidebar-heading">Ads Management</div>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('admin.manage_ads') }}">
+                <i class="fas fa-bullhorn"></i><span>Manage Ads</span>
+            </a>
+        </li>
 
         <hr class="sidebar-divider d-none d-md-block">
         <li class="nav-item">
@@ -98,6 +105,8 @@
                 <i class="fas fa-sign-out-alt"></i><span>Logout</span>
             </a>
         </li>
+
+
     </ul>
     <!-- End Sidebar -->
 

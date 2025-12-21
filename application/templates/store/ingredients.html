@@ -1,0 +1,78 @@
+{% extends "adminlayout.html" %}
+{% block title %}Ingredients - SmartEats{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="text-success">🧂 Ingredient Management</h3>
+  </div>
+
+  <!-- Add Ingredient -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Add New Ingredient</h5>
+
+      <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+          </div>
+
+          <div class="col-md-3">
+            {{ form.price.label(class="form-label") }}
+            {{ form.price(class="form-control") }}
+          </div>
+
+          <div class="col-md-3">
+            {{ form.category.label(class="form-label") }}
+            {{ form.category(class="form-control") }}
+          </div>
+
+          <div class="col-md-2 d-flex align-items-end">
+            {{ form.submit(class="btn btn-success w-100 rounded-pill") }}
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ingredient List -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <h5 class="mb-3">Available Ingredients</h5>
+
+      {% if ingredients %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-success">
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price (M)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ing in ingredients %}
+            <tr>
+              <td>{{ ing.name }}</td>
+              <td>{{ ing.category }}</td>
+              <td class="fw-bold">M{{ "%.2f"|format(ing.price) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="alert alert-info">
+          No ingredients added yet.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

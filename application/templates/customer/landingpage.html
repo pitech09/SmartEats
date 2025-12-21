@@ -1,138 +1,72 @@
 {% extends "layout.html" %}
-
-{% block title %}Welcome to SmartEats. {% endblock %}
+{% block title %}Welcome - SmartEats{% endblock %}
 
 {% block content %}
-<style>
-    .hero-section {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        padding: 60px 20px;
-        background: linear-gradient(135deg, #f8f9fa 30%, #eaf6f6 100%);
-        border-radius: 12px;
-    }
+<div class="container my-4">
 
-    .hero-text {
-        max-width: 500px;
-    }
+ {% if ads %}
+<div id="adsCarousel"
+     class="carousel slide mb-5"
+     data-bs-ride="carousel">
 
-    .hero-text h1 {
-        font-size: 2.8rem;
-        font-weight: 700;
-        color: #343a40;
-    }
+  <div class="carousel-inner">
+    {% for ad in ads %}
+    <div class="carousel-item {% if loop.first %}active{% endif %}">
+      <a class="text-decoration-none" href="
+        {% if ad.link_type == 'product' %}
+          {{ url_for('main.product_detail', product_id=ad.product_id) }}
+        {% elif ad.link_type == 'store' %}
+          {{ url_for('main.go_to_store', store_id=ad.store_id) }}
+        {% else %}
+          {{ ad.external_url }}
+        {% endif %}
+      ">
+        <div class="card shadow-sm border-0 rounded-4 mx-auto"
+             style="max-width: 900px;">
 
-    .hero-text p {
-        font-size: 1.2rem;
-        margin-top: 15px;
-        color: #555;
-    }
+          <div class="d-flex align-items-center justify-content-center bg-light"
+               style="height: 280px;">
 
-    .hero-image img {
-        width: 100%;
-        max-width: 500px;
-        border-radius: 12px;
-    }
+            <img src="{{ ad.image }}"
+                 alt="{{ ad.title }}"
+                 class="img-fluid"
+                 style="
+                   max-height: 100%;
+                   max-width: 100%;
+                   object-fit: contain;
+                 ">
+          </div>
 
-    .cta-button {
-        margin-top: 25px;
-        padding: 12px 28px;
-        font-size: 1rem;
-        background-color: #087191;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        transition: background-color 0.3s;
-    }
+          <div class="card-body text-center">
+            <h5 class="fw-bold mb-1">{{ ad.title }}</h5>
+            <span class="badge bg-success">Tap to view</span>
+          </div>
 
-    .cta-button:hover {
-        background-color: #055a74;
-    }
-
-    .features {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 30px;
-        justify-content: space-between;
-        margin-top: 60px;
-    }
-
-    .feature-card {
-        flex: 1;
-        min-width: 250px;
-        padding: 25px;
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-        text-align: center;
-    }
-
-    .feature-card i {
-        font-size: 2rem;
-        color: #087191;
-        margin-bottom: 10px;
-    }
-
-    .feature-card h4 {
-        margin-top: 10px;
-        font-size: 1.25rem;
-        font-weight: 600;
-    }
-
-    .feature-card p {
-        color: #666;
-    }
-
-    @media (max-width: 768px) {
-        .hero-section {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .hero-image img {
-            margin-top: 30px;
-        }
-
-        .features {
-            flex-direction: column;
-        }
-    }
-</style>
-
-<!-- Welcome Section -->
-<div class="container welcome-section">
-    <h1>Welcome to SmartEats</h1>
-    <p>Your platform for delicious food, fast delivery, and convenient online ordering.</p>
-</div>
-
-<!-- Call-to-Action Section -->
-<div class="container cta-section">
-  <div class="row g-3 text-center">
-    <div class="col-md-4">
-      <div class="cta-card cta-vendor">
-        <h4>Food Vendors</h4>
-        <p>Reach thousands of hungry customers. Register your store today.</p>
-        <a href="{{ url_for('auth.registerstore') }}" class="btn btn-custom btn-light">Register Store</a>
-      </div>
+        </div>
+      </a>
     </div>
-
-    <div class="col-md-4">
-      <div class="cta-card cta-customer">
-        <h4>Hungry?</h4>
-        <p>Browse menus and order delicious meals from your favorite stores.</p>
-        <a href="{{ url_for('main.menu', page_num=1) }}" class="btn btn-custom btn-light">Order Now</a>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="cta-card cta-delivery">
-        <h4>Delivery Agents</h4>
-        <p>To join as a delivery agent, please visit the store you wish to deliver for. The store will register you and provide your login credentials.</p>
-      </div>
-    </div>
+    {% endfor %}
   </div>
+
+  <button class="carousel-control-prev" type="button"
+          data-bs-target="#adsCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon"></span>
+  </button>
+
+  <button class="carousel-control-next" type="button"
+          data-bs-target="#adsCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon"></span>
+  </button>
+</div>
+{% endif %}
+
 </div>
 
+<!-- Auto slide every 5 seconds -->
+<script>
+  const landingCarousel = document.getElementById('landingAdsCarousel');
+  if (landingCarousel) {
+    const carouselInstance = new bootstrap.Carousel(landingCarousel, { interval: 5000 });
+  }
+</script>
 {% endblock %}

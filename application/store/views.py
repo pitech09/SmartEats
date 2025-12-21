@@ -30,6 +30,9 @@ from application import cache
 from datetime import datetime
 from application.notification import notify_customer
 from application.auth.views import send_sound
+from application.models import Ingredient
+from application.forms import IngredientForm
+
 mypharmacy_product = Store.products
 mypharmacy_orders = Store.orders
 bcrypt = Bcrypt()
@@ -845,3 +848,30 @@ def vendor_analytics():
         top_customers=top_customers
     )
 
+@store.route("/ingredients", methods=["GET", "POST"])
+@login_required
+def manage_ingredients():
+
+    form = IngredientForm()
+
+    if form.validate_on_submit():
+        ingredient = Ingredient(
+            name=form.name.data,
+            price=form.price.data,
+            category=form.category.data,
+            store_id=current_user.id
+        )
+        db.session.add(ingredient)
+        db.session.commit()
+        flash("Ingredient added successfully ✅", "success")
+        return redirect(url_for("store.manage_ingredients"))
+
+    ingredients = Ingredient.query.filter_by(
+        store_id=current_user.id
+    ).order_by(Ingredient.category.asc()).all()
+
+    return render_template(
+        "store/ingredients.html",
+        form=form,
+        ingredients=ingredients
+    )
