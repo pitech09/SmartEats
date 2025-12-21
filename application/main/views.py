@@ -141,8 +141,8 @@ def home():
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in pharmacies]
     store_id = session.get('store_id')
     cart = Cart.query.filter(Cart.user_id==current_user.id, Cart.store_id == store_id).first()
-    total_amount = sum(item.product.price * item.quantity for item in cart.cart_items) if cart else 0.00
-    total_count = sum(item.quantity for item in cart.cart_items) if cart else 0
+    total_amount = cart.total_amount() if cart else 0.0
+    total_count = cart.total_items() if cart else 0
     ads = Ad.query.all()
     return render_template("customer/home.html", user=current_user, total_count=total_count,
                            total_amount=total_amount, ads=ads, pharmacies=pharmacies, formpharm=formpharm)
