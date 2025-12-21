@@ -294,7 +294,7 @@ def custom_meal(store_id):
         ingredients=ingredients
     )
 
-#@main.route('/addorder/<int:total_amount>', methods=['POST', 'GET'])
+@main.route('/addorder/<int:total_amount>', methods=['POST', 'GET'])
 @login_required
 def addorder(total_amount):
     form = confirmpurchase()
