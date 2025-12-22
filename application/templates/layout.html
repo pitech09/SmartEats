@@ -76,19 +76,45 @@
 <audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
 <audio id="order_ready" preload="auto" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
 
-<script>
-    var socket = io();
-    let audioUnlocked = false;
-    document.body.addEventListener('click', () => { audioUnlocked = true; }, {once: true});
 
-    socket.on("play_sound", function(data) {
-        if (!audioUnlocked) return;
-        let audio = document.getElementById(data.sound);
-        if (audio) {
-            audio.currentTime = 0;
-            audio.play().catch(err => console.log("Audio playback error:", err));
-        }
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<script>
+  if (!window._socket) {
+    window._socket = io({
+      transports: ["polling"],
+      upgrade: false,
+      reconnection: true,
+      reconnectionAttempts: 5
     });
+  }
+
+  const socket = window._socket;
+
+  // Audio unlock (mobile-safe)
+  let audioUnlocked = false;
+  document.body.addEventListener(
+    "click",
+    () => { audioUnlocked = true; },
+    { once: true }
+  );
+
+  // Play sounds from server
+  socket.on("play_sound", function (data) {
+    if (!audioUnlocked) return;
+    const audio = document.getElementById(data.sound);
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+  });
+
+  // Cart updates
+  socket.on("cart_updated", function (data) {
+    const el = document.getElementById("cart-count");
+    if (el) el.textContent = data.cart_count;
+  });
 </script>
 
 <!-- Navbar -->
@@ -144,18 +170,7 @@
 <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
 <script src="{{ url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
 
-<script>
-    $(document).on('ajaxStart', function() { Pace.restart(); });
 
-    var socket = io();
-    socket.on("cart_updated", function(data) {
-        const el = document.getElementById("cart-count");
-        if (el) el.textContent = data.cart_count;
-
-        let sound = document.getElementById("new_order");
-        if (sound) sound.play();
-    });
-</script>
 
 </body>
 </html>
