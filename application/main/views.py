@@ -385,13 +385,13 @@ def myorders():
 
 @main.route('/complete_orders')
 @login_required
-def complete_orders():
+def completed_order():
     # Fetch all orders for current user where status is "Completed"
     completed_orders = Order.query.filter_by(user_id=current_user.id, status='Completed')\
                                   .order_by(Order.create_at.desc()).all()
     
     return render_template(
-        'updated_complete.html',
+        'customer/updated_complete.html',
         completed_orders=completed_orders
     )
 
