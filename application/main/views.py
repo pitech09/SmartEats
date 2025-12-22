@@ -13,7 +13,7 @@ from dateutil.relativedelta import relativedelta
 from . import main  # Blueprint is fine to import at top
 from ..forms import *
 from ..models import *
-
+from sqlalchemy.orm import joinedload
 from application.notification import *
 from application.auth.views import send_sound
 from application.utils.cache import *
@@ -366,7 +366,7 @@ def addorder(total_amount):
     flash("Invalid submission.", "warning")
     return redirect(url_for('main.cart'))
 
-# ---------------- MY ORDERS ----------------
+
 @main.route('/myorders')
 @login_required
 def myorders():
@@ -375,13 +375,17 @@ def myorders():
         flash("Please select a store first.")
         return redirect(url_for('main.home'))
 
-    # Fetch active/pending orders for current user in this store
-    orders = Order.query.filter_by(user_id=current_user.id, store_id=store_id).filter(
-        Order.status.in_(["Pending", "Processing", "Accepted"])
-    ).order_by(Order.create_at.desc()).all()
+    # Fetch active/pending orders with their items
+    orders = (
+        Order.query
+        .filter_by(user_id=current_user.id, store_id=store_id)
+        .filter(Order.status.in_(["Pending", "Processing", "Accepted"]))
+        .options(joinedload(Order.order_items))  # <-- load items
+        .order_by(Order.create_at.desc())
+        .all()
+    )
 
     return render_template('customer/myorder.html', order=orders)
-
 
 @main.route('/complete_orders')
 @login_required

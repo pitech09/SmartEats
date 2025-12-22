@@ -64,6 +64,16 @@
             border-bottom: none;
         }
     }
+
+    .custom-meal {
+        color: #d69e2e;
+        font-weight: 600;
+    }
+    .custom-ingredient {
+        font-size: 0.9rem;
+        color: #555;
+        margin-left: 15px;
+    }
 </style>
 
 <div class="container my-4">
@@ -87,18 +97,35 @@
         <table class="orders-table">
             <thead>
                 <tr>
-                    <th scope="col">Product Name</th>
+                    <th scope="col">Item</th>
                     <th scope="col">Quantity</th>
                     <th scope="col">Unit Price (M)</th>
                 </tr>
             </thead>
             <tbody>
+                <!-- Regular products -->
                 {% for item in user_order.order_items %}
                 <tr>
-                    <td data-label="Product">{{ item.product.productname }}</td>
+                    <td data-label="Item">{{ item.product_name }}</td>
                     <td data-label="Quantity">{{ item.quantity }}</td>
-                    <td data-label="Unit Price">M{{ item.product.price }}</td>
+                    <td data-label="Unit Price">M{{ '%.2f'|format(item.product_price) }}</td>
                 </tr>
+                {% endfor %}
+
+                <!-- Custom meals -->
+                {% for cm in user_order.custom_meals %}
+                <tr>
+                    <td data-label="Item" class="custom-meal">✍️ {{ cm.name }}</td>
+                    <td data-label="Quantity">1</td>
+                    <td data-label="Unit Price">M{{ '%.2f'|format(cm.total_price) }}</td>
+                </tr>
+                {% for ing in cm.ingredients %}
+                <tr>
+                    <td data-label="Item" class="custom-ingredient">- {{ ing.ingredient_name }}</td>
+                    <td data-label="Quantity">{{ ing.quantity }}</td>
+                    <td data-label="Unit Price">M{{ '%.2f'|format(ing.ingredient_price) }}</td>
+                </tr>
+                {% endfor %}
                 {% endfor %}
             </tbody>
         </table>

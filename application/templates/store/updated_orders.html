@@ -1,8 +1,9 @@
 {% extends "adminlayout.html" %}
 {% block title %}{{ store.name }} Orders - SmartEats{% endblock %}
-{% block content %}
 
+{% block content %}
 <section class="container py-4">
+
     <!-- Navigation Buttons -->
     <div class="text-center mb-4">
         <a href="{{ url_for('store.ready_orders') }}" class="btn btn-success btn-sm rounded-pill mx-1">Ready Orders</a>
@@ -18,40 +19,69 @@
         <table class="table table-striped table-hover align-middle">
             <thead class="table-success">
                 <tr>
-                    <th scope="col">Order-Id</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Location</th>
-                    <th scope="col">Actions</th>
+                    <th>Order ID</th>
+                    <th>Meals</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Location</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td>{{ order.order_id }}</td>
-                    <td>
-                        {{ order.status }}
-                        <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-2 d-flex flex-column gap-1">
-                            {% if order.location != 'pickup' %}
-                                {{ form.hidden_tag() }}
-                                {{ form.status(class='form-select form-select-sm') }}
-                                {{ form.submit(class='btn btn-success btn-sm rounded-pill') }}
-                            {% else %}
-                                {{ form1.hidden_tag() }}
-                                {{ form1.status(class='form-select form-select-sm') }}
-                                {{ form1.submit(class='btn btn-success btn-sm rounded-pill') }}
-                            {% endif %}
-                        </form>
-                    </td>
-                    <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
-                    <td>{{ order.location }}</td>
-                    <td>
-                        <a href="{{ url_for('store.userorders', order_id=order.id) }}" class="btn btn-primary btn-sm rounded-pill">
-                            View Details
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.order_id }}</td>
+
+                <!-- Meals column -->
+                <td style="max-width: 300px;">
+                    <ul class="list-unstyled mb-0 small">
+                        {% for item in order.order_items %}
+                            <li>
+                                🍔 {{ item.product_name }} × {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})
+                            </li>
+                        {% endfor %}
+
+                        {% for cm in order.custom_meals %}
+                            <li class="text-warning">
+                                ✍️ {{ cm.name }} (M{{ '%.2f'|format(cm.total_price) }})
+                                {% if cm.ingredients %}
+                                    <ul class="mb-0">
+                                        {% for ing in cm.ingredients %}
+                                            <li>{{ ing.ingredient_name }} × {{ ing.quantity }} (M{{ '%.2f'|format(ing.ingredient_price) }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </td>
+
+                <!-- Status -->
+                <td>
+                    <span class="badge badge-info mb-1">{{ order.status }}</span>
+                    <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-2">
+                        {% if order.location != 'pickup' %}
+                            {{ form.hidden_tag() }}
+                            {{ form.status(class='form-select form-select-sm') }}
+                            {{ form.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                        {% else %}
+                            {{ form1.hidden_tag() }}
+                            {{ form1.status(class='form-select form-select-sm') }}
+                            {{ form1.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                        {% endif %}
+                    </form>
+                </td>
+
+                <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
+                <td>{{ order.location }}</td>
+
+                <td>
+                    <a href="{{ url_for('store.userorders', order_id=order.id) }}" class="btn btn-primary btn-sm rounded-pill">
+                        View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
@@ -66,44 +96,73 @@
         <table class="table table-striped table-hover align-middle">
             <thead class="table-success">
                 <tr>
-                    <th scope="col">Order-Id</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Location</th>
-                    <th scope="col">Actions</th>
+                    <th>Order ID</th>
+                    <th>Meals</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Location</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for order in approved_order %}
-                <tr>
-                    <td>{{ order.order_id }}</td>
-                    <td>
-                        {{ order.status }}
-                        <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-2 d-flex flex-column gap-1">
-                            {% if order.location != 'pickup' %}
-                                {{ form.hidden_tag() }}
-                                {{ form.status(class='form-select form-select-sm') }}
-                                {{ form.submit(class='btn btn-success btn-sm rounded-pill') }}
-                            {% else %}
-                                {{ form1.hidden_tag() }}
-                                {{ form1.status(class='form-select form-select-sm') }}
-                                {{ form1.submit(class='btn btn-success btn-sm rounded-pill') }}
-                            {% endif %}
-                        </form>
-                    </td>
-                    <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
-                    <td>{{ order.location }}</td>
-                    <td>
-                        <a href="{{ url_for('store.userorders', order_id=order.id) }}" class="btn btn-primary btn-sm rounded-pill">
-                            View Details
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
+            {% for order in approved_order %}
+            <tr>
+                <td>{{ order.order_id }}</td>
+
+                <!-- Meals column -->
+                <td style="max-width: 300px;">
+                    <ul class="list-unstyled mb-0 small">
+                        {% for item in order.order_items %}
+                            <li>
+                                🍔 {{ item.product_name }} × {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})
+                            </li>
+                        {% endfor %}
+
+                        {% for cm in order.custom_meals %}
+                            <li class="text-warning">
+                                ✍️ {{ cm.name }} (M{{ '%.2f'|format(cm.total_price) }})
+                                {% if cm.ingredients %}
+                                    <ul class="mb-0">
+                                        {% for ing in cm.ingredients %}
+                                            <li>{{ ing.ingredient_name }} × {{ ing.quantity }} (M{{ '%.2f'|format(ing.ingredient_price) }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </td>
+
+                <!-- Status -->
+                <td>
+                    <span class="badge badge-info mb-1">{{ order.status }}</span>
+                    <form action="{{ url_for('store.updatestatus', order_id=order.id) }}" method="POST" class="mt-2">
+                        {% if order.location != 'pickup' %}
+                            {{ form.hidden_tag() }}
+                            {{ form.status(class='form-select form-select-sm') }}
+                            {{ form.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                        {% else %}
+                            {{ form1.hidden_tag() }}
+                            {{ form1.status(class='form-select form-select-sm') }}
+                            {{ form1.submit(class='btn btn-success btn-sm rounded-pill mt-1') }}
+                        {% endif %}
+                    </form>
+                </td>
+
+                <td>{{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</td>
+                <td>{{ order.location }}</td>
+
+                <td>
+                    <a href="{{ url_for('store.userorders', order_id=order.id) }}" class="btn btn-primary btn-sm rounded-pill">
+                        View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
     {% endif %}
-</section>
 
+</section>
 {% endblock %}
