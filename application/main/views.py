@@ -382,6 +382,31 @@ def myorders():
 
     return render_template('customer/myorder.html', order=orders)
 
+
+@main.route('/complete_orders')
+@login_required
+def complete_orders():
+    # Fetch all orders for current user where status is "Completed"
+    completed_orders = Order.query.filter_by(user_id=current_user.id, status='Completed')\
+                                  .order_by(Order.create_at.desc()).all()
+    
+    return render_template(
+        'updated_complete.html',
+        completed_orders=completed_orders
+    )
+
+
+@main.route('/cancelled_orders')
+@login_required
+def cancelled_orders():
+    cancelled_orders = Order.query.filter_by(user_id=current_user.id, status='Cancelled')\
+                                  .order_by(Order.create_at.desc()).all()
+    return render_template(
+        'customer/updated_cancelled.html',
+        orders=cancelled_orders,
+        title="Cancelled Orders"
+    )
+
 # ---------------- AJAX ----------------
 @main.route("/add_to_cart_ajax", methods=["POST"])
 @login_required
