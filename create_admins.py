@@ -1,20 +1,23 @@
 # create_admins.py
 from flask_bcrypt import Bcrypt
 from application import create_app, db
-from application.models import User, Administrater, Store  # Adjust path if your models file is elsewhere
+from application.models import User, Administrater, Store, DeliveryGuy  # Ensure DeliveryGuy is imported correctly
 from manage import app
+
 def create_admin_accounts():
     bcrypt = Bcrypt(app) 
 
     with app.app_context():
+        # Admins
         admins = [
             {
                 "username": "AdminOne1",
                 "email": "admin12@smarteats.com",
                 "password": "AdminPass123",
             },
-
         ]
+
+        # Stores
         stores = [
             {
                 "name": "SmartEat",
@@ -26,8 +29,22 @@ def create_admin_accounts():
             }
         ]
 
+        # Delivery Agents
+        delivery_agents = [
+            {
+                "name": "DeliveryGuyOne",
+                "email": "delivery1@smarteats.com",
+                "password": "DeliveryPass123"
+            },
+            {
+                "name": "DeliveryGuyTwo",
+                "email": "delivery2@smarteats.com",
+                "password": "DeliveryPass123"
+            }
+        ]
+
+        # Create Stores
         for store_data in stores:
-            # Check if already exists
             existing_store = Store.query.filter_by(email=store_data["email"]).first()
             if existing_store:
                 print(f"⚠️ Store {store_data['email']} already exists. Skipping.")
@@ -42,12 +59,11 @@ def create_admin_accounts():
                 openinghours=store_data["openinghours"],
                 phone=store_data["phone"]
             )
-
             db.session.add(new_store)
             print(f"✅ Created store: {store_data['email']}")
 
+        # Create Admins
         for admin_data in admins:
-            # Check if already exists
             existing = User.query.filter_by(email=admin_data["email"]).first()
             if existing:
                 print(f"⚠️ {admin_data['email']} already exists. Skipping.")
@@ -59,13 +75,27 @@ def create_admin_accounts():
                 email=admin_data["email"],
                 password=hashed_pw,     
             )
-
             db.session.add(new_admin)
             print(f"✅ Created admin: {admin_data['email']}")
 
-        db.session.commit()
-        print("🎉 All admin accounts created successfully!")
+        # Create Delivery Agents
+        for agent in delivery_agents:
+            existing_agent = DeliveryGuy.query.filter_by(email=agent["email"]).first()
+            if existing_agent:
+                print(f"⚠️ Delivery agent {agent['email']} already exists. Skipping.")
+                continue
 
+            hashed_pw = bcrypt.generate_password_hash(agent["password"]).decode("utf-8")
+            new_agent = DeliveryGuy(
+                names=agent["name"],
+                email=agent["email"],
+                password=hashed_pw
+            )
+            db.session.add(new_agent)
+            print(f"✅ Created delivery agent: {agent['email']}")
+
+        db.session.commit()
+        print("🎉 All admin and delivery agent accounts created successfully!")
 
 
 if __name__ == "__main__":

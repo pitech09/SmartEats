@@ -129,35 +129,63 @@ def dashboard():
                            formpharm=formpharm,
                            success_rate=round(success_rate, 2),
                           )
-@delivery.route('/takeorder/<int:order_id>', methods=["GET", "POST"])
+
+@delivery.route('/takeorder/<int:order_id>', methods=["POST","GET"])
 @login_required
 def takeorder(order_id):
-    order = Order.query.filter(Order.id==order_id, Order.store_id==session.get('store_id')).first()
-    existing_deliveries_count = db.session.query(Delivery).join(Order).filter(Delivery.delivery_guy_id == current_user.id, Order.status == "Out for Delivery").count()
-    if existing_deliveries_count >= 5:
-        flash('You cannot take more than 5 orders at a time.')
-        return redirect(url_for('delivery.dashboard'))
-    user = User.query.get_or_404(order.user_id)
-    cust_names= user.lastname
-    new_delivery = Delivery(customer_name = cust_names,
+    # Fetch order safely
+    order = Order.query.filter(
+        Order.id == order_id,
+        Order.store_id == session.get('store_id')
+    ).first()
+
+    if not order:
+        flash("Order not found.")
+        return redirect(url_for("delivery.dashboard"))
+
+    # Prevent taking an already assigned order
+    if order.delivery:
+        flash("This order has already been taken.")
+        return redirect(url_for("delivery.dashboard"))
+
+    # Count active deliveries for this rider
+    active_count = (
+        db.session.query(Delivery)
+        .join(Delivery.order)
+        .filter(
+            Delivery.delivery_guy_id == current_user.id,
+            Delivery.status == "Out for Delivery"
+        )
+        .count()
+    )
+
+    if active_count >= 5:
+        flash("You cannot take more than 5 active orders.")
+        return redirect(url_for("delivery.dashboard"))
+
+    user = User.query.get(order.user_id)
+
+    new_delivery = Delivery(
+        customer_name=user.lastname if user else "Customer",
         address=order.location,
-        delivery_guy_id=current_user.id,
-        order_id=order.order_id,
-        status="Out for Delivery")
+        status="Out for Delivery",
+        order_id=order.id,
+        delivery_guy_id=current_user.id
+    )
+
     order.status = "Out for Delivery"
     order.deliveryguy = current_user.names
-    order.taken_by = current_user.id
-    db.session.add(order)
+
     db.session.add(new_delivery)
+
     try:
         db.session.commit()
-        flash('Order taken successfully.')
+        flash("Order taken successfully.")
     except IntegrityError:
         db.session.rollback()
-        flash('An integrity error occurred.')
-        return redirect(url_for('delivery.dashboard'))
-
-    return redirect(url_for('delivery.dashboard'))
+        flash("This order was taken by someone else.")
+    
+    return redirect(url_for("delivery.dashboard"))
 
 
 from flask import jsonify
@@ -218,7 +246,7 @@ def update_delivery(delivery_id):
             return redirect(url_for('delivery.mydeliveries'))
 
         delivery.status = new_status
-        order = Order.query.filter(Order.order_id == delivery.order_id).first()
+        order = Order.query.filter(Order.id == delivery.order_id).first()
         order.status = form.status.data
         delivery.end_time = datetime.utcnow()
         if form.delivery_prove.data:

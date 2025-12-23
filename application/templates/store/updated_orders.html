@@ -97,7 +97,7 @@
             <thead class="table-success">
                 <tr>
                     <th>Order ID</th>
-                    <th>Meals</th>
+                 
                     <th>Status</th>
                     <th>Date</th>
                     <th>Location</th>
@@ -109,29 +109,7 @@
             <tr>
                 <td>{{ order.order_id }}</td>
 
-                <!-- Meals column -->
-                <td style="max-width: 300px;">
-                    <ul class="list-unstyled mb-0 small">
-                        {% for item in order.order_items %}
-                            <li>
-                                🍔 {{ item.product_name }} × {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})
-                            </li>
-                        {% endfor %}
-
-                        {% for cm in order.custom_meals %}
-                            <li class="text-warning">
-                                ✍️ {{ cm.name }} (M{{ '%.2f'|format(cm.total_price) }})
-                                {% if cm.ingredients %}
-                                    <ul class="mb-0">
-                                        {% for ing in cm.ingredients %}
-                                            <li>{{ ing.ingredient_name }} × {{ ing.quantity }} (M{{ '%.2f'|format(ing.ingredient_price) }})</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </td>
+               
 
                 <!-- Status -->
                 <td>

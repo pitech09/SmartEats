@@ -254,19 +254,30 @@ class DeliveryGuy(UserMixin, db.Model):
 
 class Delivery(db.Model):
     __tablename__ = "delivery"
-    id = db.Column(db.Integer, primary_key=True)
 
+    id = db.Column(db.Integer, primary_key=True)
     customer_name = db.Column(db.String(120))
     address = db.Column(db.String(100))
     status = db.Column(db.String(50))
+
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     end_time = db.Column(db.DateTime)
 
-    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
-    delivery_guy_id = db.Column(db.Integer, db.ForeignKey("deliveryguy.id"))
+    order_id = db.Column(
+        db.Integer,
+        db.ForeignKey("order.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True
+    )
 
+    delivery_guy_id = db.Column(db.Integer, db.ForeignKey("deliveryguy.id"))
     customer_pic = db.Column(db.Text)
 
+    order = db.relationship(
+        "Order",
+        backref=db.backref("delivery", uselist=False),
+        lazy=True
+    )
 
 # ----------------- Sales -----------------
 class Sales(db.Model):

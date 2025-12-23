@@ -96,38 +96,65 @@ def reg_users():
 
 @admin.route('/admindash', methods=["GET", "POST"])
 def admindash():
+    # Pending pharmacies
     pending_pharmacy = Store.query.filter(Store.verified == False).all()
     count = len(pending_pharmacy)
+
     today = datetime.today()
-    num_of_users = len(User.query.all())
-    num_of_delivery = len(DeliveryGuy.query.all())
-    num_of_stores = len(Store.query.all())
     current_month, current_year = today.month, today.year
+
+    # Basic counts
+    num_of_users = User.query.count()
+    num_of_delivery = DeliveryGuy.query.count()
+    num_of_stores = Store.query.count()
+
+    # Date ranges
     start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     next_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1)
     end_of_month = next_month - timedelta(seconds=1)
+
     start_of_year = today.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     end_of_year = today.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
 
-    total_sales = db.session.query(func.sum((Sales.price*0.18)*Sales.quantity)).scalar() or 0.0
+    # Commission percentage for admin
+    admin_commission = 0.10  # 10%
 
+    # Total commission earned by admin
+    total_sales = db.session.query(func.sum(Sales.price * Sales.quantity * admin_commission)).scalar() or 0.0
+
+    # Daily commission breakdown
     daily_sales = db.session.query(
-            func.date(Sales.date_).label('date'),
-            func.sum(((Sales.price *0.18)* Sales.quantity)).label('total')
-        ).group_by(func.date(Sales.date_)).order_by(
-            func.date(Sales.date_)).all() or 0.0
-    total_monthly_sales = db.session.query(func.sum((Sales.price *0.18) * Sales.quantity)).filter(
-            Sales.date_ >= start_of_month, Sales.date_ <= end_of_month).scalar() or 0.0
+        func.date(Sales.date_).label('date'),
+        func.sum(Sales.price * Sales.quantity * admin_commission).label('total')
+    ).group_by(func.date(Sales.date_)).order_by(func.date(Sales.date_)).all() or []
 
-    total_annual_sales = db.session.query(func.sum((Sales.price *0.18)* Sales.quantity)).filter(
-            Sales.date_ >= start_of_year, Sales.date_ <= end_of_year).scalar() or 0.0
+    # Monthly commission
+    total_monthly_sales = db.session.query(
+        func.sum(Sales.price * Sales.quantity * admin_commission)
+    ).filter(Sales.date_ >= start_of_month, Sales.date_ <= end_of_month).scalar() or 0.0
 
-    today_sales = db.session.query(func.sum((Sales.price *0.18)* Sales.quantity)).filter(
-            func.date(Sales.date_) == today.date()).scalar() or 0.0    
+    # Annual commission
+    total_annual_sales = db.session.query(
+        func.sum(Sales.price * Sales.quantity * admin_commission)
+    ).filter(Sales.date_ >= start_of_year, Sales.date_ <= end_of_year).scalar() or 0.0
 
-    return render_template('admin/admindash.html', count=count, daily_sales=daily_sales,
-                           total_annual_sales=total_annual_sales, total_monthly_sales=total_monthly_sales,
-                           today_sales=today_sales, total_sales=total_sales,num_of_delivery=num_of_delivery, num_of_users=num_of_users, num_of_stores=num_of_stores)
+    # Today's commission
+    today_sales = db.session.query(
+        func.sum(Sales.price * Sales.quantity * admin_commission)
+    ).filter(func.date(Sales.date_) == today.date()).scalar() or 0.0
+
+    return render_template(
+        'admin/admindash.html',
+        count=count,
+        daily_sales=daily_sales,
+        total_annual_sales=total_annual_sales,
+        total_monthly_sales=total_monthly_sales,
+        today_sales=today_sales,
+        total_sales=total_sales,
+        num_of_delivery=num_of_delivery,
+        num_of_users=num_of_users,
+        num_of_stores=num_of_stores
+    )
 
 @admin.route('/verify store/<int:pharmacy_id>', methods=["GET", "POST"])
 def verifypharmacy(pharmacy_id):

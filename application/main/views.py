@@ -1,6 +1,7 @@
 import os
 import secrets
 from datetime import datetime
+from typing import Self
 from flask import render_template, redirect, url_for, flash, session, jsonify, request, current_app
 from flask_login import login_required, current_user, logout_user
 from sqlalchemy.exc import IntegrityError
@@ -305,7 +306,7 @@ def addorder(total_amount):
     cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
     if not cart or not cart.cart_items:
         flash("Your cart is empty.", "warning")
-        return redirect(url_for('main.menu'))
+        return redirect(url_for('main.menu', page_num=1))
 
     # Prevent multiple pending orders
     existing_order = Order.query.filter_by(user_id=current_user.id, status='Pending', store_id=store_id).first()
@@ -349,16 +350,41 @@ def addorder(total_amount):
                 )
                 total_amount_calc += item.product.price * item.quantity
                 db.session.add(order_item)
+
+                # Record sale for this product
+                sale = Sales(
+                    order_id=neworder.id,
+                    user_id=current_user.id,
+                    product_id=item.product.id,
+                    product_name=item.product.productname,
+                    price=item.product.price,
+                    quantity=item.quantity,
+                    store_id=pharm.id
+                )
+                db.session.add(sale)
+
             elif item.custom_meal:
                 item.custom_meal.order_id = neworder.id
                 total_amount_calc += item.custom_meal.total_price
+
+                # Record sale for the custom meal
+                sale = Sales(
+                    order_id=neworder.id,
+                    user_id=current_user.id,
+                    product_id=None,
+                    product_name=item.custom_meal.name,
+                    price=item.custom_meal.total_price,
+                    quantity=1,
+                    store_id=pharm.id
+                )
+                db.session.add(sale)
 
         # Clear cart items
         CartItem.query.filter_by(cart_id=cart.id).delete()
         db.session.commit()
 
         # Clear cache if used
-        Cache_.clear_cache()
+        Cache_.clear_cache(Self, current_user.id)
 
         flash('Order successfully placed.', 'success')
         return redirect(url_for('main.myorders', total_amount=total_amount_calc))

@@ -112,49 +112,46 @@ def load_user(user_id):
 @store.route('/adminpage', methods=["POST", "GET"])
 @login_required
 def adminpage():
+    # Check if current user matches session
     if current_user.email != session.get('email'):
-        flash('You are not authorised to see contents on this page.')
+        flash('You are not authorised to see this page.')
         logout_user()
         return redirect(url_for('main.newlogin'))
 
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    store_id = session.get('store_id')
+    mypharmacy = Store.query.get_or_404(store_id)
 
-    # Notifications
+    # ------------------ Notifications ------------------
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store',
+        user_id=mypharmacy.id,
+        is_read=False
     ).order_by(Notification.timestamp.desc()).all()
-
     count = len(unread_notifications)
 
-    today = datetime.today()
+    # ------------------ Date Ranges ------------------
+    today = datetime.utcnow()
     current_month, current_year = today.month, today.year
 
     start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     next_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1)
     end_of_month = next_month - timedelta(seconds=1)
+
     start_of_year = today.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     end_of_year = today.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
 
-    store_id = session.get('store_id')
-
-    # Aggregate sales
-    sales_query = db.session.query(
+    # ------------------ Aggregate Sales ------------------
+    sales_totals = db.session.query(
         func.sum(case((func.date(Sales.date_) == today.date(), Sales.price * Sales.quantity), else_=0)).label('daily'),
-        func.sum(case(
-            ((Sales.date_ >= start_of_month) & (Sales.date_ <= end_of_month), Sales.price * Sales.quantity),
-            else_=0
-        )).label('monthly'),
-        func.sum(case(
-            ((Sales.date_ >= start_of_year) & (Sales.date_ <= end_of_year), Sales.price * Sales.quantity),
-            else_=0
-        )).label('annual')
+        func.sum(case(((Sales.date_ >= start_of_month) & (Sales.date_ <= end_of_month), Sales.price * Sales.quantity), else_=0)).label('monthly'),
+        func.sum(case(((Sales.date_ >= start_of_year) & (Sales.date_ <= end_of_year), Sales.price * Sales.quantity), else_=0)).label('annual')
     ).filter(Sales.store_id == store_id).first()
 
-    total_daily_sales = float(sales_query.daily or 0)
-    total_monthly_sales = float(sales_query.monthly or 0)
-    total_annual_sales = float(sales_query.annual or 0)
+    total_daily_sales = float(sales_totals.daily or 0)
+    total_monthly_sales = float(sales_totals.monthly or 0)
+    total_annual_sales = float(sales_totals.annual or 0)
 
-    # Pending orders
+    # ------------------ Pending Orders ------------------
     pending_orders = Order.query.filter(
         extract('month', Order.create_at) == current_month,
         extract('year', Order.create_at) == current_year,
@@ -162,45 +159,36 @@ def adminpage():
         Order.store_id == mypharmacy.id
     ).count()
 
-    # FIXED DAILY DATA FOR CHART
+    # ------------------ Daily Sales Chart ------------------
     daily_dates = []
     daily_totals = []
-
-    # Loop through each day of the current month
     current_day = start_of_month
     while current_day <= today:
         next_day = current_day + timedelta(days=1)
-
-        total = db.session.query(
-            func.sum(Sales.price * Sales.quantity)
-        ).filter(
+        total = db.session.query(func.sum(Sales.price * Sales.quantity)).filter(
             Sales.store_id == store_id,
             Sales.date_ >= current_day,
             Sales.date_ < next_day
         ).scalar() or 0
-
         daily_dates.append(current_day.strftime("%Y-%m-%d"))
         daily_totals.append(float(total))
-
         current_day = next_day
 
-    daily_data = {
-        "dates": daily_dates,
-        "totals": daily_totals
-    }
+    daily_data = {"dates": daily_dates, "totals": daily_totals}
 
+    # ------------------ Render ------------------
     return render_template(
         'store/updated_dashboard.html',
-        total_sales=total_monthly_sales,
-        total_annual_sales=total_annual_sales,
+        store=mypharmacy,
         total_daily_sales=total_daily_sales,
         total_monthly_sales=total_monthly_sales,
-        store=mypharmacy,
+        total_annual_sales=total_annual_sales,
         pending_orders=pending_orders,
         unread_notifications=unread_notifications,
         count=count,
-        daily_data=daily_data     # <-- FIXED
+        daily_data=daily_data
     )
+
 
 
 
@@ -208,7 +196,7 @@ def adminpage():
 @login_required
 #@role_required('Store')
 def search():
-    mypharmacy = Store.query.get(current_user.id)
+    store = Store.query.get(current_user.id)
     form = CartlistForm()
     form1 = updateorderpickup()
     form2 = Search()
@@ -218,7 +206,7 @@ def search():
     count = Cart.query.filter_by(user_id=current_user.id).first()
     if count:
         total_count = sum(item.quantity for item in count.cart_items)
-    products = Order.query.filter(Order.store_id == mypharmacy.id,
+    products = Order.query.filter(Order.store_id == store.id,
         Order.order_id.like(f'%{keyword}%')|
         Order.location.like(f'%{keyword}%') |
         Order.user_id.like(f'%{keyword}%') |
@@ -233,18 +221,18 @@ def search():
 @login_required
 #@role_required('Store')
 def updateproduct(item_id):
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    mystore = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
     form = update()
     if form.validate_on_submit():
 
-        product = Product.query.filter_by(id=item_id, store_id=mypharmacy.id).first()
+        product = Product.query.filter_by(id=item_id, store_id=mystore.id).first()
         if product:
             product.productname = form.newname.data
             product.description = form.newdescription.data
@@ -636,10 +624,11 @@ def register_delivery():
 def vendor_analytics():
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)
+
     if store.id != current_user.id:
         return "Unauthorized", 403
 
-    # Date filters (defaults to last 7 days)
+    # ------------------ Date Filters ------------------
     end_date = request.args.get('end_date', datetime.utcnow().date())
     start_date = request.args.get('start_date', (datetime.utcnow() - timedelta(days=7)).date())
 
@@ -648,10 +637,11 @@ def vendor_analytics():
     if isinstance(end_date, str):
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
-    period_length = (end_date - start_date).days or 1
+    period_length = max((end_date - start_date).days, 1)
     prev_start = start_date - timedelta(days=period_length)
     prev_end = start_date
 
+    # ------------------ Sales ------------------
     def sales_query(start, end):
         return db.session.query(func.sum(Sales.price * Sales.quantity))\
             .filter(Sales.store_id == store_id)\
@@ -684,12 +674,10 @@ def vendor_analytics():
         .order_by(func.date(Sales.date_))
         .all()
     )
-
     dates, revenues = zip(*sales_trend) if sales_trend else ([], [])
-    # Fix: convert to strings if necessary
     dates = [d.strftime('%Y-%m-%d') if hasattr(d, 'strftime') else str(d) for d in dates]
 
-    # ------------------ Product and Category ------------------
+    # ------------------ Product & Category Sales ------------------
     product_sales = (
         db.session.query(Product.productname, func.sum(Sales.price * Sales.quantity))
         .join(Sales, Sales.product_id == Product.id)
@@ -698,6 +686,7 @@ def vendor_analytics():
         .group_by(Product.productname)
         .order_by(func.sum(Sales.price * Sales.quantity).desc())
         .limit(5)
+        .all()
     )
     prod_names, prod_revenues = zip(*product_sales) if product_sales else ([], [])
 
@@ -723,19 +712,6 @@ def vendor_analytics():
         .all()
     )
 
-    # ------------------ Plotly Charts ------------------
-    import plotly.graph_objs as go
-    import plotly.io as pio
-
-    trend_fig = go.Figure([go.Scatter(x=dates, y=revenues, mode='lines+markers', name='Revenue')])
-    trend_fig.update_layout(title='Sales Over Time', xaxis_title='Date', yaxis_title='Revenue (M)', template='plotly_white')
-
-    prod_fig = go.Figure([go.Bar(x=prod_names, y=prod_revenues, marker_color='green')])
-    prod_fig.update_layout(title='Top 5 Products by Revenue', xaxis_title='Product', yaxis_title='Revenue (M)', template='plotly_white')
-
-    cat_fig = go.Figure([go.Pie(labels=categories, values=cat_revenue)])
-    cat_fig.update_layout(title='Sales by Category', template='plotly_white')
-
     # ------------------ Hourly, Weekday, Monthly ------------------
     hourly_sales = (
         db.session.query(func.extract('hour', Sales.date_), func.sum(Sales.price * Sales.quantity))
@@ -745,6 +721,7 @@ def vendor_analytics():
         .order_by(func.extract('hour', Sales.date_))
         .all()
     )
+    hours, hourly_revenue = zip(*hourly_sales) if hourly_sales else ([], [])
 
     weekday_sales = (
         db.session.query(func.extract('dow', Sales.date_), func.sum(Sales.price * Sales.quantity))
@@ -754,6 +731,9 @@ def vendor_analytics():
         .order_by(func.extract('dow', Sales.date_))
         .all()
     )
+    weekdays, weekday_revenue = zip(*weekday_sales) if weekday_sales else ([], [])
+    weekday_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    weekdays = [weekday_names[int(d)] for d in weekdays]
 
     monthly_sales = (
         db.session.query(func.extract('month', Sales.date_), func.sum(Sales.price * Sales.quantity))
@@ -762,27 +742,38 @@ def vendor_analytics():
         .order_by(func.extract('month', Sales.date_))
         .all()
     )
+    months, monthly_revenue = zip(*monthly_sales) if monthly_sales else ([], [])
 
-    hourly_fig = go.Figure([go.Bar(x=[int(h) for h, _ in hourly_sales], y=[r for _, r in hourly_sales])])
+    # ------------------ Plotly Charts ------------------
+    trend_fig = go.Figure([go.Scatter(x=dates, y=revenues, mode='lines+markers', name='Revenue')])
+    trend_fig.update_layout(title='Sales Over Time', xaxis_title='Date', yaxis_title='Revenue', template='plotly_white')
+
+    prod_fig = go.Figure([go.Bar(x=prod_names, y=prod_revenues, marker_color='green')])
+    prod_fig.update_layout(title='Top 5 Products by Revenue', xaxis_title='Product', yaxis_title='Revenue', template='plotly_white')
+
+    cat_fig = go.Figure([go.Pie(labels=categories, values=cat_revenue)])
+    cat_fig.update_layout(title='Sales by Category', template='plotly_white')
+
+    hourly_fig = go.Figure([go.Bar(x=[int(h) for h in hours], y=[r for r in hourly_revenue])])
     hourly_fig.update_layout(title='Hourly Sales Distribution', xaxis_title='Hour', yaxis_title='Revenue', template='plotly_white')
 
-    weekday_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    weekday_fig = go.Figure([go.Bar(
-        x=[weekday_names[int(w)] for w, _ in weekday_sales],
-        y=[r for _, r in weekday_sales],
-        marker_color='orange'
-    )])
+    weekday_fig = go.Figure([go.Bar(x=weekdays, y=[r for r in weekday_revenue], marker_color='orange')])
     weekday_fig.update_layout(title='Sales by Weekday', xaxis_title='Day', yaxis_title='Revenue', template='plotly_white')
 
-    monthly_fig = go.Figure([go.Scatter(
-        x=[int(m) for m, _ in monthly_sales],
-        y=[r for _, r in monthly_sales],
-        mode='lines+markers',
-        line=dict(color='purple')
-    )])
+    monthly_fig = go.Figure([go.Scatter(x=[int(m) for m in months], y=[r for r in monthly_revenue], mode='lines+markers', line=dict(color='purple'))])
     monthly_fig.update_layout(title='Monthly Sales Trend', xaxis_title='Month', yaxis_title='Revenue', template='plotly_white')
 
-    # ------------------ Customer Behavior ------------------
+    # ------------------ Inventory & Repeat Customers ------------------
+    total_sold = db.session.query(func.sum(Sales.quantity))\
+        .filter(Sales.store_id == store_id).scalar() or 0
+    total_stock = db.session.query(func.sum(Product.quantity))\
+        .filter(Product.store_id == store_id).scalar() or 1
+    stock_turnover_rate = round(total_sold / total_stock, 2)
+
+    days = max(1, (end_date - start_date).days)
+    avg_daily_sales = total_sold / days
+    days_left = round(total_stock / avg_daily_sales, 1) if avg_daily_sales > 0 else "N/A"
+
     repeat_customers = (
         db.session.query(User.username, func.count(Sales.order_id.distinct()).label('orders'))
         .join(Sales, Sales.user_id == User.id)
@@ -792,14 +783,10 @@ def vendor_analytics():
         .order_by(func.count(Sales.order_id.distinct()).desc())
         .all()
     )
-
     total_customers = db.session.query(func.count(User.id.distinct()))\
         .join(Sales, Sales.user_id == User.id)\
-        .filter(Sales.store_id == store_id)\
-        .scalar() or 1
-
-    repeat_customer_count = len(repeat_customers)
-    repeat_rate = round((repeat_customer_count / total_customers) * 100, 2)
+        .filter(Sales.store_id == store_id).scalar() or 1
+    repeat_rate = round((len(repeat_customers) / total_customers) * 100, 2)
 
     # ------------------ Product Performance ------------------
     product_contribution = (
@@ -810,19 +797,6 @@ def vendor_analytics():
         .order_by(func.sum(Sales.price * Sales.quantity).desc())
         .all()
     )
-
-    # ------------------ Inventory Analytics ------------------
-    total_sold = db.session.query(func.sum(Sales.quantity))\
-        .filter(Sales.store_id == store_id)\
-        .scalar() or 0
-    total_stock = db.session.query(func.sum(Product.quantity))\
-        .filter(Product.store_id == store_id)\
-        .scalar() or 1
-    stock_turnover_rate = round(total_sold / total_stock, 2)
-
-    days = max(1, (end_date - start_date).days)
-    avg_daily_sales = total_sold / days
-    days_left = round(total_stock / avg_daily_sales, 1) if avg_daily_sales > 0 else "N/A"
 
     # ------------------ Render ------------------
     return render_template(
