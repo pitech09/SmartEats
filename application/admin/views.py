@@ -211,7 +211,7 @@ def manage_ads():
     form = AdForm()
 
     # Populate product/store dropdowns
-    form.product_id.choices = [(0, "-- Select Product --")] + [(p.id, p.name) for p in Product.query.all()]
+    form.product_id.choices = [(0, "-- Select Product --")] + [(p.id, p.productname) for p in Product.query.all()]
     form.store_id.choices = [(0, "-- Select Store --")] + [(s.id, s.name) for s in Store.query.all()]
 
     if form.validate_on_submit():

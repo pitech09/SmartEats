@@ -26,6 +26,14 @@ def create_admin_accounts():
                 "password": "StorePass123",
                 "openinghours": "8am - 10pm",
                 "phone": "266 5853 8173"
+            },
+            {
+                "name": "Spicy Noodles Ls",
+                "address": "Maputsoe Pela borderGate",
+                "email": "spicynoodles@gmail.com",
+                "password": "SpicyLsPass123",
+                "openinghours": "24/7 Orders from 8am - 10pm",
+                "phone": "+26657130629"
             }
         ]
 
