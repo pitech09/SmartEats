@@ -16,7 +16,14 @@ def create_admin_accounts():
                 "password": "AdminPass123",
             },
         ]
-
+        customers = [
+            {
+                "username": "Skhau",
+                "lastname": "Makara",
+                "email": "customer1@smarteats.com",
+                "password": "CustomerPass123",
+            }
+        ]
         # Stores
         stores = [
             {
@@ -69,6 +76,23 @@ def create_admin_accounts():
             )
             db.session.add(new_store)
             print(f"✅ Created store: {store_data['email']}")
+
+        # Create Customers
+        for customer_data in customers:
+            existing_customer = User.query.filter_by(email=customer_data["email"]).first()
+            if existing_customer:
+                print(f"⚠️ Customer {customer_data['email']} already exists. Skipping.")
+                continue
+
+            hashed_pw = bcrypt.generate_password_hash(customer_data["password"]).decode("utf-8")
+            new_customer = User(
+                username=customer_data["username"],
+                lastname=customer_data["lastname"],
+                email=customer_data["email"],
+                password=hashed_pw,
+            )
+            db.session.add(new_customer)
+            print(f"✅ Created customer: {customer_data['email']}")
 
         # Create Admins
         for admin_data in admins:

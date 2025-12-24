@@ -70,7 +70,8 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    const cartCountEl = document.getElementById("cart-count");
+    const cartIcon = document.getElementById("cartIcon");
+    const cartCountEl = document.getElementById("cartCount");
 
     // Add Product to Cart
     document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
@@ -85,9 +86,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 const data = await response.json();
-                if (data.success && cartCountEl) {
-                    cartCountEl.textContent = data.cart_count;
+                if (data.success) {
+                    // Update cart count and show icon if hidden
+                    if (cartCountEl) cartCountEl.textContent = data.cart_count;
+                    if (cartIcon && cartIcon.classList.contains("d-none")) {
+                        cartIcon.classList.remove("d-none");
+                    }
 
+                    // Animate cart icon briefly
+                    if (cartIcon) {
+                        cartIcon.classList.add("scale-up");
+                        setTimeout(() => cartIcon.classList.remove("scale-up"), 300);
+                    }
+
+                    // Update button temporarily
                     btn.classList.add('btn-success');
                     btn.innerHTML = 'Added ✓';
                     setTimeout(() => {
@@ -100,10 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Optional: Listen to SocketIO cart updates for other tabs
+    // SocketIO: update cart from other tabs
     const socket = io();
     socket.on("cart_updated", data => {
         if (cartCountEl) cartCountEl.textContent = data.cart_count;
+        if (cartIcon && parseInt(data.cart_count) > 0) cartIcon.classList.remove("d-none");
     });
 });
 </script>
@@ -116,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
   box-shadow: 0 6px 16px rgba(0,0,0,0.1);
 }
 
-/* Product image: maintain original aspect ratio */
+/* Product image */
 .card-img-top {
   width: 60%;
   height: auto;
@@ -137,6 +150,12 @@ input.form-control {
   color: white;
   transform: scale(1.05);
   transition: 0.2s;
+}
+
+/* Cart animation */
+#cartIcon.scale-up {
+  transform: scale(1.2);
+  transition: transform 0.3s ease;
 }
 </style>
 {% endblock %}

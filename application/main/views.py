@@ -384,7 +384,7 @@ def addorder(total_amount):
         db.session.commit()
 
         # Clear cache if used
-        Cache_.clear_cache(Self, current_user.id)
+        cart_cache.clear_cache(current_user.id)
 
         flash('Order successfully placed.', 'success')
         return redirect(url_for('main.myorders', total_amount=total_amount_calc))
@@ -672,17 +672,38 @@ def viewproduct(product_id):
 @login_required
 def search(page_num=1):
     form2 = Search()
+
     if form2.validate_on_submit():
-        search_term = form2.search.data
-        products = Product.query.filter(Product.productname.ilike(f"%{search_term}%")).all()
+        search_term = form2.keyword.data.strip()
+
+        products = Product.query.filter(
+            or_(
+                Product.productname.ilike(f"%{search_term}%"),
+                Product.description.ilike(f"%{search_term}%")
+            )
+        ).all()
+
         start = (page_num - 1) * PRODUCTS_PER_PAGE
         end = start + PRODUCTS_PER_PAGE
         current_products = products[start:end]
-        total_pages = (len(products) // PRODUCTS_PER_PAGE) + (1 if len(products) % PRODUCTS_PER_PAGE > 0 else 0)
-        return render_template('customer/search.html', products=current_products, form2=form2,
-                               page_num=page_num, total_pages=total_pages)
-    return redirect(url_for('main.menu', page_num=1))
 
+        total_pages = (
+            len(products) // PRODUCTS_PER_PAGE
+            + (1 if len(products) % PRODUCTS_PER_PAGE > 0 else 0)
+        )
+
+        store = Store.query.get_or_404(session.get("store_id"))
+
+        return render_template(
+            "customer/updated_menu.html",
+            products=current_products,
+            form2=form2,
+            page_num=page_num,
+            store=store,
+            total_pages=total_pages
+        )
+
+    return redirect(url_for("main.menu", page_num=1))
 # ---------------- CONTACT / ABOUT / HEALTH ----------------
 @main.route("/about")
 def about():
