@@ -42,6 +42,15 @@ def create_admin_accounts():
                 "openinghours": "24/7 Orders from 8am - 10pm",
                 "phone": "+26657130629"
             }
+            ,
+                        {
+                "name": "Majezz Eatery",
+                "address": "Maputsoe Ha Maqele",
+                "email": "majezz@gmail.com",
+                "password": "MajezzPass123",
+                "openinghours": " Orders from 8am - 10pm",
+                "phone": "+26657863240"
+            }
         ]
 
         # Delivery Agents
