@@ -194,7 +194,7 @@ def menu(page_num=1):
     store_id = session.get("store_id")
     if not store_id:
         flash("Please select a store first", "warning")
-        return redirect(url_for("main.restaurants"))
+        return redirect(url_for("main.restuarants"))
 
     mystore = Store.query.get_or_404(session.get('store_id'))
 
@@ -664,8 +664,14 @@ def store_details(store_id):
 @main.route('/viewproduct/<int:product_id>')
 @login_required
 def viewproduct(product_id):
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+    if not store:
+        flash('Please select a store first.', 'warning')
+        return redirect(url_for('main.restuarants'))
+    
     product = Product.query.get_or_404(product_id)
-    return render_template('customer/viewproduct.html', product=product)
+    return render_template('customer/updated_productview.html', product=product, store=store)
 
 # ---------------- SEARCH ----------------
 @main.route("/search/<int:page_num>", methods=["POST", "GET"])
