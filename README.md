@@ -22,22 +22,22 @@ Cloudinary Storage – Food images, logos, and proof-of-delivery uploads
 
 📂 Project Structure
 application/
-│── admin/              # Admin blueprint
-│── auth/               # Authentication (login, register, roles)
-│── delivery/           # Delivery blueprint (driver interface)
-│── main/               # Main/public routes (landing, homepage)
-│── store/              # Store blueprint (restaurant UI)
-│── static/             # Static assets (CSS, JS, vendor libs)
+│── admin/              
+│── auth/               
+│── delivery/           
+│── main/              
+│── store/              
+│── static/             
 │   ├── css/
 │   ├── js/
-│   └── vendor/         # Bootstrap, jQuery, etc.
-│── templates/          # Jinja2 templates (HTML views)
-│── utils/              # Helpers (email, Cloudinary, forms, etc.)
+│   └── vendor/        
+│── templates/         
+│── utils/             
 │   ├── email.py
 │   ├── forms.py
-│   └── models.py       # Database models (Supabase)
-│── migrations/         # DB migrations / schema references
-│── config.py           # Flask app configuration
+│   └── models.py       
+│── migrations/         
+│── config.py          
 
 
 📊 Database (Supabase)
