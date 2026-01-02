@@ -1,10 +1,10 @@
-SmartEats 🍔🚴‍♂️
+SmartEats 
 
 SmartEats is a digital food ordering and delivery platform built with Flask, Supabase, and Cloudinary, focused on simplifying food ordering at Roma Campus.
 
 Local restaurants can onboard, customers can place orders, and delivery riders can manage and update deliveries through a mobile-friendly interface.
 
-🚀 Features
+Features
 
 User Authentication – Customer, Store, Delivery, and Admin roles
 
@@ -20,7 +20,7 @@ Supabase Database – Orders, users, deliveries, notifications
 
 Cloudinary Storage – Food images, logos, and proof-of-delivery uploads
 
-📂 Project Structure
+ Project Structure
 application/
 │── admin/              
 │── auth/               
@@ -40,7 +40,7 @@ application/
 │── config.py          
 
 
-📊 Database (Supabase)
+ Database (Supabase)
 
 Tables:
 
@@ -58,9 +58,9 @@ delivery – Delivery assignments & location updates
 
 notifications – Order & delivery notifications
 
-🔒 RLS Policies: Each role (customer, store, delivery, admin) should only see their own data.
+ RLS Policies: Each role (customer, store, delivery, admin) should only see their own data.
 
-☁️ Storage (Cloudinary)
+ Storage (Cloudinary)
 
 Used for:
 
@@ -79,11 +79,11 @@ upload_result = cloudinary.uploader.upload(
 )
 print(upload_result["secure_url"])
 
-📌 Roadmap
+ Roadmap
 Supabase Realtime for live order updates
 Push Notifications (for delivery and customer updates)
 
-👨‍💻 Author
+ Author
 
 Khauhelo Makara
 BSc Computer Science, National University of Lesotho
