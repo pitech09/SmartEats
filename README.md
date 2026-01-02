@@ -1,6 +1,6 @@
 SmartEats 
 
-SmartEats is a digital food ordering and delivery platform built with Flask, Supabase, and Cloudinary, focused on simplifying food ordering at Roma Campus.
+SmartEats is a digital food ordering and delivery platform built with Flask, Supabase, and Cloudinary, focused on simplifying food ordering and delivery.
 
 Local restaurants can onboard, customers can place orders, and delivery riders can manage and update deliveries through a mobile-friendly interface.
 
