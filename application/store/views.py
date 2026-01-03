@@ -674,6 +674,8 @@ def vendor_analytics():
     if store.id != current_user.id:
         return "Unauthorized", 403
 
+    COMMISSION_RATE = 0.10  # 10%
+
     # ------------------ Date Filters ------------------
     end_date = request.args.get('end_date', datetime.utcnow().date())
     start_date = request.args.get('start_date', (datetime.utcnow() - timedelta(days=7)).date())
@@ -687,133 +689,159 @@ def vendor_analytics():
     prev_start = start_date - timedelta(days=period_length)
     prev_end = start_date
 
+    # ------------------ Base NET Expression ------------------
+    net_amount = (Sales.price * Sales.quantity) * (1 - COMMISSION_RATE)
+
+    base_filter = [
+        Sales.store_id == store_id,
+        Order.status != "Cancelled"
+    ]
+
     # ------------------ Sales ------------------
     def sales_query(start, end):
-        return db.session.query(func.sum(Sales.price * Sales.quantity))\
-            .filter(Sales.store_id == store_id)\
-            .filter(func.date(Sales.date_).between(start, end))\
+        return (
+            db.session.query(func.sum(net_amount))
+            .join(Order, Order.id == Sales.order_id)
+            .filter(*base_filter)
+            .filter(func.date(Sales.date_).between(start, end))
             .scalar() or 0
+        )
 
     total_sales = sales_query(start_date, end_date)
     prev_sales = sales_query(prev_start, prev_end)
     sales_change = round(((total_sales - prev_sales) / prev_sales * 100), 2) if prev_sales else 100
 
-    total_orders = db.session.query(func.count(Sales.order_id.distinct()))\
-        .filter(Sales.store_id == store_id)\
-        .filter(func.date(Sales.date_).between(start_date, end_date))\
+    # ------------------ Orders & AOV ------------------
+    total_orders = (
+        db.session.query(func.count(Sales.order_id.distinct()))
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
+        .filter(func.date(Sales.date_).between(start_date, end_date))
         .scalar() or 1
+    )
+
     avg_order_value = total_sales / total_orders
 
-    prev_orders = db.session.query(func.count(Sales.order_id.distinct()))\
-        .filter(Sales.store_id == store_id)\
-        .filter(func.date(Sales.date_).between(prev_start, prev_end))\
+    prev_orders = (
+        db.session.query(func.count(Sales.order_id.distinct()))
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
+        .filter(func.date(Sales.date_).between(prev_start, prev_end))
         .scalar() or 1
+    )
+
     prev_aov = prev_sales / prev_orders if prev_orders else 0
     aov_change = round(((avg_order_value - prev_aov) / prev_aov * 100), 2) if prev_aov else 100
 
     # ------------------ Sales Trend ------------------
     sales_trend = (
-        db.session.query(func.date(Sales.date_), func.sum(Sales.price * Sales.quantity))
-        .filter(Sales.store_id == store_id)
+        db.session.query(func.date(Sales.date_), func.sum(net_amount))
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .filter(func.date(Sales.date_).between(start_date, end_date))
         .group_by(func.date(Sales.date_))
         .order_by(func.date(Sales.date_))
         .all()
     )
-    dates, revenues = zip(*sales_trend) if sales_trend else ([], [])
-    dates = [d.strftime('%Y-%m-%d') if hasattr(d, 'strftime') else str(d) for d in dates]
 
-    # ------------------ Product & Category Sales ------------------
+    dates, revenues = zip(*sales_trend) if sales_trend else ([], [])
+    dates = [d.strftime('%Y-%m-%d') for d in dates]
+
+    # ------------------ Product Sales ------------------
     product_sales = (
-        db.session.query(Product.productname, func.sum(Sales.price * Sales.quantity))
+        db.session.query(Product.productname, func.sum(net_amount))
         .join(Sales, Sales.product_id == Product.id)
-        .filter(Sales.store_id == store_id)
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .filter(func.date(Sales.date_).between(start_date, end_date))
         .group_by(Product.productname)
-        .order_by(func.sum(Sales.price * Sales.quantity).desc())
+        .order_by(func.sum(net_amount).desc())
         .limit(5)
         .all()
     )
+
     prod_names, prod_revenues = zip(*product_sales) if product_sales else ([], [])
 
+    # ------------------ Category Sales ------------------
     category_sales = (
-        db.session.query(Product.category, func.sum(Sales.price * Sales.quantity))
+        db.session.query(Product.category, func.sum(net_amount))
         .join(Sales, Sales.product_id == Product.id)
-        .filter(Sales.store_id == store_id)
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .filter(func.date(Sales.date_).between(start_date, end_date))
         .group_by(Product.category)
         .all()
     )
+
     categories, cat_revenue = zip(*category_sales) if category_sales else ([], [])
 
     # ------------------ Top Customers ------------------
     top_customers = (
-        db.session.query(User.username, func.sum(Sales.price * Sales.quantity).label('spent'))
+        db.session.query(User.username, func.sum(net_amount).label("spent"))
         .join(Sales, Sales.user_id == User.id)
-        .filter(Sales.store_id == store_id)
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .filter(func.date(Sales.date_).between(start_date, end_date))
         .group_by(User.username)
-        .order_by(func.sum(Sales.price * Sales.quantity).desc())
+        .order_by(func.sum(net_amount).desc())
         .limit(5)
         .all()
     )
 
-    # ------------------ Hourly, Weekday, Monthly ------------------
+    # ------------------ Hourly Sales ------------------
     hourly_sales = (
-        db.session.query(func.extract('hour', Sales.date_), func.sum(Sales.price * Sales.quantity))
-        .filter(Sales.store_id == store_id)
+        db.session.query(func.extract('hour', Sales.date_), func.sum(net_amount))
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .filter(func.date(Sales.date_).between(start_date, end_date))
         .group_by(func.extract('hour', Sales.date_))
         .order_by(func.extract('hour', Sales.date_))
         .all()
     )
+
     hours, hourly_revenue = zip(*hourly_sales) if hourly_sales else ([], [])
 
+    # ------------------ Weekday Sales ------------------
     weekday_sales = (
-        db.session.query(func.extract('dow', Sales.date_), func.sum(Sales.price * Sales.quantity))
-        .filter(Sales.store_id == store_id)
+        db.session.query(func.extract('dow', Sales.date_), func.sum(net_amount))
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .filter(func.date(Sales.date_).between(start_date, end_date))
         .group_by(func.extract('dow', Sales.date_))
         .order_by(func.extract('dow', Sales.date_))
         .all()
     )
-    weekdays, weekday_revenue = zip(*weekday_sales) if weekday_sales else ([], [])
+
     weekday_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    weekdays, weekday_revenue = zip(*weekday_sales) if weekday_sales else ([], [])
     weekdays = [weekday_names[int(d)] for d in weekdays]
 
+    # ------------------ Monthly Sales ------------------
     monthly_sales = (
-        db.session.query(func.extract('month', Sales.date_), func.sum(Sales.price * Sales.quantity))
-        .filter(Sales.store_id == store_id)
+        db.session.query(func.extract('month', Sales.date_), func.sum(net_amount))
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .group_by(func.extract('month', Sales.date_))
         .order_by(func.extract('month', Sales.date_))
         .all()
     )
+
     months, monthly_revenue = zip(*monthly_sales) if monthly_sales else ([], [])
 
-    # ------------------ Plotly Charts ------------------
-    trend_fig = go.Figure([go.Scatter(x=dates, y=revenues, mode='lines+markers', name='Revenue')])
-    trend_fig.update_layout(title='Sales Over Time', xaxis_title='Date', yaxis_title='Revenue', template='plotly_white')
-
-    prod_fig = go.Figure([go.Bar(x=prod_names, y=prod_revenues, marker_color='green')])
-    prod_fig.update_layout(title='Top 5 Products by Revenue', xaxis_title='Product', yaxis_title='Revenue', template='plotly_white')
-
-    cat_fig = go.Figure([go.Pie(labels=categories, values=cat_revenue)])
-    cat_fig.update_layout(title='Sales by Category', template='plotly_white')
-
-    hourly_fig = go.Figure([go.Bar(x=[int(h) for h in hours], y=[r for r in hourly_revenue])])
-    hourly_fig.update_layout(title='Hourly Sales Distribution', xaxis_title='Hour', yaxis_title='Revenue', template='plotly_white')
-
-    weekday_fig = go.Figure([go.Bar(x=weekdays, y=[r for r in weekday_revenue], marker_color='orange')])
-    weekday_fig.update_layout(title='Sales by Weekday', xaxis_title='Day', yaxis_title='Revenue', template='plotly_white')
-
-    monthly_fig = go.Figure([go.Scatter(x=[int(m) for m in months], y=[r for r in monthly_revenue], mode='lines+markers', line=dict(color='purple'))])
-    monthly_fig.update_layout(title='Monthly Sales Trend', xaxis_title='Month', yaxis_title='Revenue', template='plotly_white')
-
     # ------------------ Inventory & Repeat Customers ------------------
-    total_sold = db.session.query(func.sum(Sales.quantity))\
-        .filter(Sales.store_id == store_id).scalar() or 0
-    total_stock = db.session.query(func.sum(Product.quantity))\
-        .filter(Product.store_id == store_id).scalar() or 1
+    total_sold = (
+        db.session.query(func.sum(Sales.quantity))
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
+        .scalar() or 0
+    )
+
+    total_stock = (
+        db.session.query(func.sum(Product.quantity))
+        .filter(Product.store_id == store_id)
+        .scalar() or 1
+    )
+
     stock_turnover_rate = round(total_sold / total_stock, 2)
 
     days = max(1, (end_date - start_date).days)
@@ -821,26 +849,33 @@ def vendor_analytics():
     days_left = round(total_stock / avg_daily_sales, 1) if avg_daily_sales > 0 else "N/A"
 
     repeat_customers = (
-        db.session.query(User.username, func.count(Sales.order_id.distinct()).label('orders'))
+        db.session.query(User.username, func.count(Sales.order_id.distinct()))
         .join(Sales, Sales.user_id == User.id)
-        .filter(Sales.store_id == store_id)
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .group_by(User.username)
         .having(func.count(Sales.order_id.distinct()) > 1)
-        .order_by(func.count(Sales.order_id.distinct()).desc())
         .all()
     )
-    total_customers = db.session.query(func.count(User.id.distinct()))\
-        .join(Sales, Sales.user_id == User.id)\
-        .filter(Sales.store_id == store_id).scalar() or 1
+
+    total_customers = (
+        db.session.query(func.count(User.id.distinct()))
+        .join(Sales, Sales.user_id == User.id)
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
+        .scalar() or 1
+    )
+
     repeat_rate = round((len(repeat_customers) / total_customers) * 100, 2)
 
-    # ------------------ Product Performance ------------------
+    # ------------------ Product Contribution ------------------
     product_contribution = (
-        db.session.query(Product.productname, func.sum(Sales.price * Sales.quantity))
+        db.session.query(Product.productname, func.sum(net_amount))
         .join(Sales, Sales.product_id == Product.id)
-        .filter(Sales.store_id == store_id)
+        .join(Order, Order.id == Sales.order_id)
+        .filter(*base_filter)
         .group_by(Product.productname)
-        .order_by(func.sum(Sales.price * Sales.quantity).desc())
+        .order_by(func.sum(net_amount).desc())
         .all()
     )
 
@@ -848,13 +883,13 @@ def vendor_analytics():
     return render_template(
         'store/vendor_analystics.html',
         store=store,
-        trend_graph=pio.to_html(trend_fig, full_html=False),
-        product_graph=pio.to_html(prod_fig, full_html=False),
-        category_graph=pio.to_html(cat_fig, full_html=False),
-        hourly_graph=pio.to_html(hourly_fig, full_html=False),
-        weekday_graph=pio.to_html(weekday_fig, full_html=False),
-        monthly_graph=pio.to_html(monthly_fig, full_html=False),
-        total_sales=total_sales,
+        trend_graph=pio.to_html(go.Figure([go.Scatter(x=dates, y=revenues)]), full_html=False),
+        product_graph=pio.to_html(go.Figure([go.Bar(x=prod_names, y=prod_revenues)]), full_html=False),
+        category_graph=pio.to_html(go.Figure([go.Pie(labels=categories, values=cat_revenue)]), full_html=False),
+        hourly_graph=pio.to_html(go.Figure([go.Bar(x=hours, y=hourly_revenue)]), full_html=False),
+        weekday_graph=pio.to_html(go.Figure([go.Bar(x=weekdays, y=weekday_revenue)]), full_html=False),
+        monthly_graph=pio.to_html(go.Figure([go.Scatter(x=months, y=monthly_revenue)]), full_html=False),
+        total_sales=round(total_sales, 2),
         avg_order_value=round(avg_order_value, 2),
         sales_change=sales_change,
         aov_change=aov_change,
