@@ -18,7 +18,8 @@ from sqlalchemy.orm import joinedload
 from application.notification import *
 from application.auth.views import send_sound
 from application.utils.cache import *
-
+from application import socketio, db
+from flask_socketio import join_room
 PRODUCTS_PER_PAGE = 9
 
 # --------------------- USER LOADER ---------------------
@@ -109,6 +110,10 @@ def save_update_profile_picture(form_picture):
     return post_img_fn
 
 
+@socketio.on("join")
+def handle_join(data):
+    join_room(data["room"])
+    print(f"User joined room: {data['room']}")
 # --------------------- ROUTES ---------------------
 @main.route('/subscribe', methods=['POST'])
 @login_required
@@ -303,32 +308,49 @@ def addorder(total_amount):
     pharm = Store.query.get_or_404(store_id)
 
     # Get the user's cart for this store
-    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
+    cart = Cart.query.filter_by(
+        user_id=current_user.id,
+        store_id=store_id
+    ).first()
+
     if not cart or not cart.cart_items:
         flash("Your cart is empty.", "warning")
         return redirect(url_for('main.menu', page_num=1))
 
     # Prevent multiple pending orders
-    existing_order = Order.query.filter_by(user_id=current_user.id, status='Pending', store_id=store_id).first()
+    existing_order = Order.query.filter_by(
+        user_id=current_user.id,
+        status='Pending',
+        store_id=store_id
+    ).first()
+
     if existing_order:
         flash("You still have a pending order.", "unsuccessful")
         return redirect(url_for('main.myorders'))
 
     if form.validate_on_submit():
-        # Create new order
+
+        # 🧾 Create new order
         neworder = Order(
             user_id=current_user.id,
             payment=form.payment.data,
             user_email=current_user.email,
-            store_id=pharm.id
+            store_id=pharm.id,
+            status="Pending"
         )
-        neworder.location = 'pickup' if form.deliverymethod.data == 'pickup' else form.drop_address.data
 
-        # Handle payment screenshot
+        neworder.location = (
+            'pickup'
+            if form.deliverymethod.data == 'pickup'
+            else form.drop_address.data
+        )
+
+        # 📸 Payment screenshot
         file = form.payment_screenshot.data
         if not file:
             flash("Missing payment proof", "warning")
             return redirect(url_for('main.cart'))
+
         if current_app.config.get('USE_CLOUDINARY'):
             neworder.screenshot = upload_to_cloudinary(file)['secure_url']
         else:
@@ -337,9 +359,11 @@ def addorder(total_amount):
         db.session.add(neworder)
         db.session.commit()
 
-        # Process cart items and custom meals
+        # 🧮 Process cart items
         total_amount_calc = 0
+
         for item in cart.cart_items:
+
             if item.product:
                 order_item = OrderItem(
                     order_id=neworder.id,
@@ -348,10 +372,10 @@ def addorder(total_amount):
                     product_price=item.product.price,
                     quantity=item.quantity
                 )
-                total_amount_calc += item.product.price * item.quantity
                 db.session.add(order_item)
 
-                # Record sale for this product
+                total_amount_calc += item.product.price * item.quantity
+
                 sale = Sales(
                     order_id=neworder.id,
                     user_id=current_user.id,
@@ -367,7 +391,6 @@ def addorder(total_amount):
                 item.custom_meal.order_id = neworder.id
                 total_amount_calc += item.custom_meal.total_price
 
-                # Record sale for the custom meal
                 sale = Sales(
                     order_id=neworder.id,
                     user_id=current_user.id,
@@ -379,19 +402,32 @@ def addorder(total_amount):
                 )
                 db.session.add(sale)
 
-        # Clear cart items
+        # 🧹 Clear cart
         CartItem.query.filter_by(cart_id=cart.id).delete()
         db.session.commit()
 
-        # Clear cache if used
+        # 🧠 Clear cache if used
         cart_cache.clear_cache(current_user.id)
 
+        # 🔔 NOTIFY RESTAURANT (REAL-TIME)
+        socketio.emit(
+            'new_order',
+            {
+                'order_id': neworder.id,
+                'customer_email': current_user.email,
+                'total_amount': total_amount_calc,
+                'delivery_method': form.deliverymethod.data,
+                'location': neworder.location,
+                'created_at': neworder.create_at.strftime('%Y-%m-%d %H:%M')
+            },
+            room=f'store_{pharm.id}'
+        )
+
         flash('Order successfully placed.', 'success')
-        return redirect(url_for('main.myorders', total_amount=total_amount_calc))
+        return redirect(url_for('main.myorders'))
 
     flash("Invalid submission.", "warning")
     return redirect(url_for('main.cart'))
-
 
 @main.route('/myorders')
 @login_required

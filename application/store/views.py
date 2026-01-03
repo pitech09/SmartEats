@@ -330,28 +330,59 @@ def orders_on_delivery():
     return render_template('store/ondelivery.html', form=form, count=count, ondelivery=ondelivery,
                            store=mypharmacy, unread_notifications=unread_notifications)
 
-@cache.memoize(timeout=120)
+
 @store.route('/ActiveOrders')
 @login_required
+@cache.memoize(timeout=120)
 def ActiveOrders():
-    mypharmacy = Store.query.get_or_404(current_user.id)
-    unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
-    ).order_by(Notification.timestamp.desc()).all()
-    count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
-    ).order_by(Notification.timestamp.desc()).count()
+    # ✅ Correctly resolve store
+    store_id = session.get('store_id')
+    mypharmacy = Store.query.get_or_404(store_id)
 
+    # ---------------- Notifications ----------------
+    unread_notifications = Notification.query.filter_by(
+        user_type='store',
+        user_id=mypharmacy.id,
+        is_read=False
+    ).order_by(Notification.timestamp.desc()).all()
+
+    count = Notification.query.filter_by(
+        user_type='store',
+        user_id=mypharmacy.id,
+        is_read=False
+    ).count()
+
+    # ---------------- Forms ----------------
     form = updatestatusform()
     form1 = updateorderpickup()
-    orders = Order.query.filter(Order.status=="Pending", Order.store_id == current_user.id).all()
-    approved_order = Order.query.filter(Order.status=="Approved", Order.store_id == current_user.id).all()
-    store_id = session.get('store_id')
-    readyorder = Order.query.filter(Order.status=="Ready ", Order.store_id == current_user.id).all()
 
-    return render_template("store/updated_orders.html", readyorder=readyorder,
-                           form=form, orders=orders, approved_order=approved_order,
-                           unread_notifications=unread_notifications, store=store, count=count, form1=form1)
+    # ---------------- Orders ----------------
+    orders = Order.query.filter_by(
+        store_id=mypharmacy.id, status="Pending"
+    ).order_by(Order.create_at.desc()).all()
+
+    approved_order = Order.query.filter_by(
+        store_id=mypharmacy.id,
+        status="Approved"
+    ).order_by(Order.create_at.desc()).all()
+
+    readyorder = Order.query.filter_by(
+        store_id=mypharmacy.id,
+        status="Ready"
+    ).order_by(Order.create_at.desc()).all()
+
+    # ---------------- Render ----------------
+    return render_template(
+        "store/updated_orders.html",
+        store=mypharmacy,
+        orders=orders,
+        approved_order=approved_order,
+        readyorder=readyorder,
+        unread_notifications=unread_notifications,
+        count=count,
+        form=form,
+        form1=form1
+    )
 
 
 @store.route('/delivered')
@@ -466,7 +497,7 @@ def updatestatus(order_id):
             except Exception:
                 current_app.logger.debug("notify_customer failed during login (admin).")
             send_sound(order.user_id, "update_order")
-
+            print("Notification sent to customer.")
             # Also notify store dashboard if needed
             create_notification(user_type='store', user_id=order.store_id, message=message)
 

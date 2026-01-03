@@ -114,7 +114,60 @@
 <audio id="order_ready" preload="none" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
 
 <script>
-    var socket = io();
+    const socket = io();
+
+    const STORE_ID = "{{ store_id }}";
+
+    socket.on("connect", () => {
+        if (STORE_ID) {
+            socket.emit("join", { room: "store_" + STORE_ID });
+            console.log("Joined store room:", "store_" + STORE_ID);
+        }
+    });
+
+    // 🔔 New Order Event
+    socket.on("new_order", function (data) {
+
+        // 🔊 Play sound
+        const audio = document.getElementById("new_order");
+        if (audio) {
+            audio.currentTime = 0;
+            audio.play();
+        }
+
+        // 🔢 Update bell counter
+        let badge = document.querySelector(".badge-counter");
+        let count = parseInt(badge.innerText || "0");
+        badge.innerText = count + 1;
+
+        // 🧾 Inject notification into dropdown
+        const dropdown = document.querySelector(".dropdown-list");
+        const emptyState = dropdown.querySelector(".text-gray-500");
+
+        if (emptyState) emptyState.remove();
+
+        const item = document.createElement("a");
+        item.className = "dropdown-item d-flex align-items-center";
+        item.href = "/store/orders/" + data.order_id;
+
+        item.innerHTML = `
+            <div class="mr-3">
+                <div class="icon-circle bg-success">
+                    <i class="fas fa-receipt text-white"></i>
+                </div>
+            </div>
+            <div>
+                <div class="small text-gray-500">${data.created_at}</div>
+                <span class="font-weight-bold">
+                    New order placed (M${data.total_amount})
+                </span>
+            </div>
+        `;
+
+        dropdown.appendChild(item);
+    });
+
+    // 🔊 Generic sound events (optional reuse)
     socket.on("play_sound", function(data) {
         let audio = document.getElementById(data.sound);
         if (audio) {
@@ -123,6 +176,7 @@
         }
     });
 </script>
+
 
 <div id="wrapper">
 
