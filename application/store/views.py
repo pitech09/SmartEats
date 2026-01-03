@@ -140,12 +140,49 @@ def adminpage():
     start_of_year = today.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     end_of_year = today.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
 
-    # ------------------ Aggregate Sales ------------------
+    # ------------------ NET Sales (after 10% commission, exclude cancelled orders) ------------------
+    COMMISSION_RATE = 0.10
+    NET_MULTIPLIER = 1 - COMMISSION_RATE
+    VALID_ORDER_STATUSES = ["Completed", "Delivered", "Out for Delivery", "Collected"]
+
     sales_totals = db.session.query(
-        func.sum(case((func.date(Sales.date_) == today.date(), Sales.price * Sales.quantity), else_=0)).label('daily'),
-        func.sum(case(((Sales.date_ >= start_of_month) & (Sales.date_ <= end_of_month), Sales.price * Sales.quantity), else_=0)).label('monthly'),
-        func.sum(case(((Sales.date_ >= start_of_year) & (Sales.date_ <= end_of_year), Sales.price * Sales.quantity), else_=0)).label('annual')
-    ).filter(Sales.store_id == store_id).first()
+        func.sum(
+            case(
+                (
+                    (func.date(Sales.date_) == today.date()) &
+                    (Order.status.in_(VALID_ORDER_STATUSES)),
+                    (Sales.price * Sales.quantity) * NET_MULTIPLIER
+                ),
+                else_=0
+            )
+        ).label('daily'),
+
+        func.sum(
+            case(
+                (
+                    (Sales.date_ >= start_of_month) &
+                    (Sales.date_ <= end_of_month) &
+                    (Order.status.in_(VALID_ORDER_STATUSES)),
+                    (Sales.price * Sales.quantity) * NET_MULTIPLIER
+                ),
+                else_=0
+            )
+        ).label('monthly'),
+
+        func.sum(
+            case(
+                (
+                    (Sales.date_ >= start_of_year) &
+                    (Sales.date_ <= end_of_year) &
+                    (Order.status.in_(VALID_ORDER_STATUSES)),
+                    (Sales.price * Sales.quantity) * NET_MULTIPLIER
+                ),
+                else_=0
+            )
+        ).label('annual')
+    ).join(Order, Order.id == Sales.order_id)\
+     .filter(Sales.store_id == store_id)\
+     .first()
 
     total_daily_sales = float(sales_totals.daily or 0)
     total_monthly_sales = float(sales_totals.monthly or 0)
@@ -159,19 +196,27 @@ def adminpage():
         Order.store_id == mypharmacy.id
     ).count()
 
-    # ------------------ Daily Sales Chart ------------------
+    # ------------------ Daily NET Sales Chart ------------------
     daily_dates = []
     daily_totals = []
+
     current_day = start_of_month
     while current_day <= today:
         next_day = current_day + timedelta(days=1)
-        total = db.session.query(func.sum(Sales.price * Sales.quantity)).filter(
+
+        total = db.session.query(
+            func.sum((Sales.price * Sales.quantity) * NET_MULTIPLIER)
+        ).join(Order, Order.id == Sales.order_id)\
+         .filter(
             Sales.store_id == store_id,
             Sales.date_ >= current_day,
-            Sales.date_ < next_day
-        ).scalar() or 0
+            Sales.date_ < next_day,
+            Order.status.in_(VALID_ORDER_STATUSES)
+         ).scalar() or 0
+
         daily_dates.append(current_day.strftime("%Y-%m-%d"))
         daily_totals.append(float(total))
+
         current_day = next_day
 
     daily_data = {"dates": daily_dates, "totals": daily_totals}
@@ -186,7 +231,8 @@ def adminpage():
         pending_orders=pending_orders,
         unread_notifications=unread_notifications,
         count=count,
-        daily_data=daily_data
+        daily_data=daily_data,
+        commission_rate=COMMISSION_RATE * 100
     )
 
 

@@ -134,7 +134,7 @@ class AdForm(FlaskForm):
 class updatestatusform(FlaskForm):
     status = SelectField('Status', validators=[DataRequired()], choices=[('Approved', 'Approved'),
                                                                         ('Ready ', 'Ready'),
-                                                                        ('Out for Deliver', 'Out for Delivery'), 
+                                                                        ('Out for Delivery', 'Out for Delivery'), 
                                                                         ('Delivered', 'Delivered'),
                                                                         ('Cancelled', 'Cancelled')])
     submit = SubmitField('Update Status')
