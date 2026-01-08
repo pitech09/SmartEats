@@ -2,10 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' https://cdn.socket.io https://cdn.jsdelivr.net 'unsafe-inline';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data:;
+        connect-src 'self' ws: wss:;
+        media-src 'self';
+        frame-ancestors 'none';
+      ">
+
+    <!-- SEO & Compatibility -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <title>{% block title %}{{ current_user.name }}{% endblock %}</title>
+    <!-- SEO Control: Admin pages should not rank -->
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- SEO Description (still useful for previews & clarity) -->
+    <meta name="description" content="SmartEats vendor dashboard for managing orders, inventory, analytics, and staff.">
+    <meta name="author" content="Pi Technologies">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="{{ request.url }}">
+
+    <title>{% block title %}{{ current_user.name }} | SmartEats Vendor Dashboard{% endblock %}</title>
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sb-admin-2.min.css')}}">
@@ -13,6 +40,8 @@
     <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css')}}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
+
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png')}}">
 
     <!-- Google Fonts -->
@@ -22,22 +51,26 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
     <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
 
-    <style>
-    .pace {
-        pointer-events: none;
-        user-select: none;
+    <!-- Structured Data (Organization) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "SmartEats",
+      "url": "{{ request.url_root }}",
+      "logo": "{{ url_for('static', filename='worka.png', _external=True) }}",
+      "sameAs": []
     }
+    </script>
 
+    <style>
+    .pace { pointer-events: none; user-select: none; }
     .pace.pace-active {
         background: rgba(255, 255, 255, 0.85);
         position: fixed;
         z-index: 9999;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        inset: 0;
     }
-
     .pace .pace-progress {
         background: #00b37e;
         position: fixed;
@@ -47,9 +80,7 @@
         width: 100%;
         height: 3px;
     }
-
     .pace .pace-activity {
-        display: block;
         position: fixed;
         z-index: 2001;
         top: 50%;
@@ -62,50 +93,30 @@
         animation: pace-spinner 0.8s linear infinite;
         transform: translate(-50%, -50%);
     }
-
     @keyframes pace-spinner {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg); }
+        to { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    .bg-success {
-        background-color: #2da350 !important;
-    }
-
-    .sidebar .nav-link {
-        font-size: 14px;
-        padding: 10px 15px;
-    }
-
-    .sidebar .nav-link:hover {
-        background-color: #259443;
-    }
-
+    .bg-success { background-color: #2da350 !important; }
+    .sidebar .nav-link { font-size: 14px; padding: 10px 15px; }
+    .sidebar .nav-link:hover { background-color: #259443; }
     .sidebar .sidebar-heading {
         font-size: 12px;
         text-transform: uppercase;
         color: #d1e7dd;
         margin: 10px 0;
     }
-
     .custom-toggle {
         background-color: #2da350;
         border: none;
         color: white;
     }
-
-    .custom-toggle:hover {
-        background-color: #259443;
-        color: #fff;
-    }
-
-    .custom-toggle i {
-        font-size: 18px;
-    }
+    .custom-toggle:hover { background-color: #259443; }
     </style>
 </head>
 
 <body id="page-top">
+
 
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
@@ -364,10 +375,10 @@
 </a>
 
 <!-- Scripts -->
-<script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}" defer></script>
 
 <script>
     $(document).on('ajaxStart', function() { Pace.restart(); });

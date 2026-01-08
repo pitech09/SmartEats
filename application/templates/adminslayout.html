@@ -1,39 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' https://cdn.socket.io https://cdn.jsdelivr.net 'unsafe-inline';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data:;
+        connect-src 'self' ws: wss:;
+        media-src 'self';
+        frame-ancestors 'none';
+      ">
+
+    <!-- Compatibility & Viewport -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>{% block title %}{{ current_user.name }} {% endblock %}</title>
+
+    <!-- SEO CONTROL: Admin pages must not index -->
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Descriptive metadata -->
+    <meta name="description" content="SmartEats administrator dashboard for managing stores, users, ads, and system operations.">
+    <meta name="author" content="Pi Technologies">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="{{ request.url }}">
+
+    <title>
+        {% block title %}
+            {{ current_user.name }} | SmartEats Admin Dashboard
+        {% endblock %}
+    </title>
+
+    <!-- Performance: font preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png')}}">
 
     <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyle.css') }}">
-    <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css')}}"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css') }}">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
 
     <!-- Pace.js Loader -->
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
     <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
 
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "SmartEats",
+      "url": "{{ request.url_root }}",
+      "logo": "{{ url_for('static', filename='worka.png', _external=True) }}",
+      "description": "SmartEats food ordering and delivery platform administration panel."
+    }
+    </script>
+
     <style>
         /* Loader */
         .pace { pointer-events: none; user-select: none; }
-        .pace.pace-active { background: rgba(255,255,255,0.8); position: fixed; z-index:9999; top:0; left:0; width:100%; height:100%; }
-        .pace .pace-progress { background:#2da350; position:fixed; z-index:2000; top:0; right:100%; width:100%; height:3px; }
-        .pace .pace-activity { display:block; position:fixed; z-index:2001; top:50%; left:50%; width:40px; height:40px; border:4px solid #2da350; border-top-color:transparent; border-radius:50%; animation: pace-spinner 0.8s linear infinite; transform:translate(-50%, -50%); }
-        @keyframes pace-spinner { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        .pace.pace-active {
+            background: rgba(255,255,255,0.8);
+            position: fixed;
+            z-index: 9999;
+            inset: 0;
+        }
+        .pace .pace-progress {
+            background:#2da350;
+            position:fixed;
+            z-index:2000;
+            top:0;
+            right:100%;
+            width:100%;
+            height:3px;
+        }
+        .pace .pace-activity {
+            position:fixed;
+            z-index:2001;
+            top:50%;
+            left:50%;
+            width:40px;
+            height:40px;
+            border:4px solid #2da350;
+            border-top-color:transparent;
+            border-radius:50%;
+            animation: pace-spinner 0.8s linear infinite;
+            transform:translate(-50%, -50%);
+        }
+        @keyframes pace-spinner {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
         /* Sidebar color */
         .bg-success { background-color: #2da350 !important; }
     </style>
 </head>
 
-<body id="page-top">
+<body id="page-top" role="application">
 
 <!-- Socket.IO + Sounds -->
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
