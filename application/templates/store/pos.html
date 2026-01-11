@@ -1,0 +1,93 @@
+{% extends "adminlayout.html" %}
+{% block title %}POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-3"> In-Store POS</h3>
+
+    <div class="row">
+        <!-- Products -->
+        <div class="col-md-7">
+            <div class="row">
+                {% for p in products %}
+                <div class="col-4 mb-3">
+                    <button class="btn btn-light w-100"
+                        onclick="addItem({{ p.id }}, '{{ p.productname }}', {{ p.price }})">
+                        <strong>{{ p.productname }}</strong><br>
+                        M{{ p.price }}
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Order Panel -->
+        <div class="col-md-5">
+            <div class="card p-3">
+                <h5>Current Order</h5>
+
+                <ul id="cart" class="list-group mb-2"></ul>
+
+                <h4>Total: M<span id="total">0</span></h4>
+
+                <select class="form-control mb-2" id="payment">
+                    <option value="Cash">Cash</option>
+                    <option value="Mobile Money">Mobile Money</option>
+                    <option value="POS">POS</option>
+                </select>
+
+                <button class="btn btn-success w-100" onclick="submitOrder()">
+                    Complete Sale
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let cart = [];
+
+function addItem(id, name, price) {
+    let item = cart.find(i => i.product_id === id);
+    if (item) item.quantity++;
+    else cart.push({ product_id: id, name, price, quantity: 1 });
+    renderCart();
+}
+
+function renderCart() {
+    let ul = document.getElementById('cart');
+    let total = 0;
+    ul.innerHTML = '';
+
+    cart.forEach(i => {
+        total += i.price * i.quantity;
+        ul.innerHTML += `
+            <li class="list-group-item">
+                ${i.name} × ${i.quantity}
+                <span class="float-right">M${i.price * i.quantity}</span>
+            </li>`;
+    });
+
+    document.getElementById('total').innerText = total;
+}
+
+function submitOrder() {
+    fetch('{{ url_for("store.vendor_pos") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            items: cart,
+            payment: document.getElementById('payment').value
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            cart = [];
+            renderCart();
+            alert('Order completed');
+        }
+    });
+}
+</script>
+{% endblock %}

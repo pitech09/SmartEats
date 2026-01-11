@@ -181,13 +181,13 @@ class Order(db.Model):
     create_at = db.Column(db.DateTime, default=get_localTime)
     location = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(40), default="Pending")
-    payment = db.Column(db.String(40), default="None")
-    transactionID = db.Column(db.String(90), default="Cash")
+    payment = db.Column(db.String(40), default="Cash")
+    transactionID = db.Column(db.String(90), default="None")
     user_email = db.Column(db.String(120), nullable=False)
 
     deliveryguy = db.Column(db.String(50), default="Not Taken")
     screenshot = db.Column(db.Text)
-
+    is_pos = db.Column(db.Boolean, default=False)
     user = db.relationship("User", back_populates="orders")
     store = db.relationship("Store", back_populates="orders")
     order_items = db.relationship("OrderItem", back_populates="order", lazy=True)

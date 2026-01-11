@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import plotly.graph_objs as go # type: ignore
 import plotly.offline as plot #type: ignore
 from PIL import Image
-from flask import current_app # type: ignore
+from flask import current_app, jsonify # type: ignore
 from flask import render_template, redirect, url_for, session, request, flash
 from flask_bcrypt import Bcrypt
 from flask_login import login_required, current_user, logout_user, LoginManager # type: ignore
@@ -363,7 +363,7 @@ def ActiveOrders():
 
     approved_order = Order.query.filter_by(
         store_id=mypharmacy.id,
-        status="Approved"
+        status="Appproved"
     ).order_by(Order.create_at.desc()).all()
 
     readyorder = Order.query.filter_by(
@@ -961,3 +961,72 @@ def manage_ingredients():
         form=form,
         ingredients=ingredients
     )
+
+
+
+@store.route('/vendor/pos', methods=['GET', 'POST'])
+@login_required
+def vendor_pos():
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+
+    products = Product.query.filter_by(store_id=store.id).all()
+
+    if request.method == 'POST':
+        data = request.json
+        items = data.get('items', [])
+        payment = data.get('payment')
+
+        if not items:
+            return jsonify({'error': 'No items'}), 400
+
+        # ---- Create POS Order ----
+        order = Order(
+            store_id=store.id,
+            payment=payment,
+            status='Completed',
+            is_pos=True,
+            location='In-store'
+        )
+        db.session.add(order)
+        db.session.commit()
+
+        # ---- Items + Sales ----
+        for item in items:
+            product = Product.query.get(item['product_id'])
+            qty = int(item['quantity'])
+
+            if not product or qty <= 0:
+                continue
+            order_item = OrderItem(
+                order_id=order.id,
+                product_id=product.id,
+                quantity=qty,
+                price=product.price
+            )
+            db.session.add(order_item)
+            sale = Sales(
+                order_id=order.id,
+                product_id=product.id,
+                store_id=store.id,
+                user_id=None,
+                quantity=qty,
+                price=product.price,
+                date_=datetime.utcnow()
+            )
+            db.session.add(sale)
+
+
+
+
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    return render_template(
+        'store/pos.html',
+        store=store,
+        products=products
+    )
+ 
+        
