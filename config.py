@@ -47,7 +47,13 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    MAIL_DEFAULT_SENDER = 'khauhelo872@gmail.com'
+    MAIL_SERVER = 'smtp.smarteatsapp.online'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USE_SSL = False
+    MAIL_USERNAME = 'smarteat@smarteatsapp.online'
+    MAIL_PASSWORD = 'q:N7czFD7]Ky43'
+    MAIL_DEFAULT_SENDER = 'SmartEats <smarteat@smarteatsapp.online>'
     USE_CLOUDINARY = False
     # Upload paths
     UPLOAD_PATH = os.path.join(basedir, 'static/css/images/profiles')

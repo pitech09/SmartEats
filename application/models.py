@@ -56,9 +56,8 @@ class Product(db.Model):
     description = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(100), default="Uncategorized")
     warning = db.Column(db.String(100), default="Quantity Good")
-
+    is_active = db.Column(db.Boolean, default=True)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
-
     # Relationships
     cart_items = db.relationship("CartItem", backref="product", lazy=True)
     order_items = db.relationship("OrderItem", backref="product", lazy=True)
@@ -190,7 +189,7 @@ class Order(db.Model):
     is_pos = db.Column(db.Boolean, default=False)
     user = db.relationship("User", back_populates="orders")
     store = db.relationship("Store", back_populates="orders")
-    order_items = db.relationship("OrderItem", back_populates="order", lazy=True)
+    order_items = db.relationship("OrderItem", back_populates="order", lazy=True, cascade="all, delete-orphan")
     custom_meals = db.relationship("CustomMeal", backref="order", lazy=True)
 
     def local_time(self):

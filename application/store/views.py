@@ -282,7 +282,6 @@ def updateproduct(item_id):
         if product:
             product.productname = form.newname.data
             product.description = form.newdescription.data
-            product.category = form.category.data
             product.price = form.newprice.data
 
         try:
@@ -614,7 +613,7 @@ def products():
     form4 = Search()
     form3 = addmore()
     form = update()
-    product = Product.query.filter(Product.store_id==mypharmacy.id).all()
+    product = Product.query.filter(Product.store_id==mypharmacy.id, Product.is_active==True).all()
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)
     return render_template('store/updated_products.html', product=product, form4=form4, form=form, 
@@ -627,13 +626,13 @@ def products():
 def remove_product(item_id):
     product = Product.query.get_or_404(item_id)
     try:
-        db.session.delete(product)
+        product.is_active = False
         db.session.commit()
         flash('Product deleted successfully.', 'success')
     except IntegrityError as e:
         db.session.rollback()
         flash('Cannot delete product: it is referenced in existing orders.', 'danger')
-
+            
     return redirect(url_for('store.products'))
 
 

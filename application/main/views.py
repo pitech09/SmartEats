@@ -206,7 +206,7 @@ def menu(page_num=1):
     formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
     form = CartlistForm()
     form2 = Search()
-    products = Product.query.filter_by(store_id=session.get('store_id')).all()
+    products = Product.query.filter_by(store_id=session.get('store_id'), is_active=True).all()
     start = (page_num - 1) * PRODUCTS_PER_PAGE
     end = start + PRODUCTS_PER_PAGE
     current_products = products[start:end]
