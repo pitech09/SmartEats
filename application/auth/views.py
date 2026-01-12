@@ -136,7 +136,7 @@ def register():
             email=form.Email.data,
             password=bcrypt.generate_password_hash(form.Password.data).decode("utf-8")
         )
-
+        user.confirmed = True
         db.session.add(user)
         try:
             db.session.commit()
