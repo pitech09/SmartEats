@@ -27,8 +27,7 @@ class Store(UserMixin, db.Model):
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(50), nullable=False)
-    country = db.Column(db.String(50), default='Lesotho')
-    town = db.Column(db.String(50))
+
     openinghours = db.Column(db.String(100), default="09:00 to 18:30")
     password = db.Column(db.String(200), nullable=False)
 
@@ -85,9 +84,7 @@ class User(UserMixin, db.Model):
     image_file = db.Column(db.Text, default="account.png")
     password = db.Column(db.String(200), nullable=False)
 
-    district = db.Column(db.String(50))
-    town = db.Column(db.String(50))
-    
+
     confirmed = db.Column(db.Boolean, default=False)
     loyalty_points = db.Column(db.Integer, default=0)
 
