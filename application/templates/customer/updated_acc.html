@@ -90,6 +90,21 @@
                         <small class="text-danger">{{ error }}</small>
                     {% endfor %}
                 </div>
+
+                <div class="col-md-6">
+                    {{ form.district.label(class="form-label") }}
+                    {{ form.district(class="form-control") }}
+                    {% for error in form.district.errors %}
+                        <small class="text-danger">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6">
+                    {{ form.town.label(class="form-label") }}
+                    {{ form.town(class="form-control") }}
+                    {% for error in form.town.errors %}
+                        <small class="text-danger">{{ error }}</small>
+                    {% endfor %}
+                </div>
                 <div class="col-md-6">
                     {{ form.phonenumber.label(class="form-label") }}
                     {{ form.phonenumber(class="form-control") }}

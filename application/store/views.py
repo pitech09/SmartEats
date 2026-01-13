@@ -334,7 +334,7 @@ def orders_on_delivery():
 @login_required
 @cache.memoize(timeout=120)
 def ActiveOrders():
-    # ✅ Correctly resolve store
+
     store_id = session.get('store_id')
     mypharmacy = Store.query.get_or_404(store_id)
 
@@ -362,12 +362,10 @@ def ActiveOrders():
 
     approved_order = Order.query.filter_by(
         store_id=mypharmacy.id,
-        status="Appproved"
-    ).order_by(Order.create_at.desc()).all()
-
-    readyorder = Order.query.filter_by(
+        status="Approved"
+    ).order_by(Order.create_at.desc()).all() or Order.query.filter_by(
         store_id=mypharmacy.id,
-        status="Ready"
+        status="Appproved"
     ).order_by(Order.create_at.desc()).all()
 
     # ---------------- Render ----------------
@@ -376,7 +374,6 @@ def ActiveOrders():
         store=mypharmacy,
         orders=orders,
         approved_order=approved_order,
-        readyorder=readyorder,
         unread_notifications=unread_notifications,
         count=count,
         form=form,

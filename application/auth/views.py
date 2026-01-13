@@ -16,7 +16,7 @@ from . import auth
 from .. import db, socketio
 from ..models import User, Store, DeliveryGuy, Staff, Administrater
 from ..forms import (
-    RegistrationForm, PharmacyRegistrationForm,
+    RegistrationForm, StoreRegistrationForm,
     LoginForm, emailform, resetpassword, Set_StoreForm
 )
 from application.notification import notify_customer
@@ -155,7 +155,7 @@ def register():
 # --------------------------------------------------
 @auth.route("/registerstore", methods=["GET", "POST"])
 def registerstore():
-    form = PharmacyRegistrationForm()
+    form = StoreRegistrationForm()
     formpharm = Set_StoreForm()
 
     if form.validate_on_submit():
@@ -168,6 +168,8 @@ def registerstore():
             email=form.email.data,
             phone=form.phone.data,
             address=form.address.data,
+            town=form.town.data,
+            district = form.district.data,
             openinghours=form.opening_hours_and_days.data,
             password=bcrypt.generate_password_hash(form.password.data).decode("utf-8")
         )

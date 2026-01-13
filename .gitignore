@@ -3,6 +3,7 @@ activate_user.py
 create_admins.py
 reset-db.py
 reset.py
+fix_products.py
 migrations/
 *.jpg
 *.jpeg

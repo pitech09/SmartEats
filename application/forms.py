@@ -4,11 +4,12 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired# type: ignore
 from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField,IntegerField,SelectField, RadioField, EmailField, URLField # type: ignore
 from wtforms.validators import DataRequired,Optional, Length, Email # type: ignore
 
-class PharmacyRegistrationForm(FlaskForm):
-    pharmacy_name = StringField('Store Name', validators=[DataRequired()])
+class StoreRegistrationForm(FlaskForm):
+    storename = StringField('Store Name', validators=[DataRequired()])
     email = EmailField('Email', validators=[DataRequired()])
     phone = StringField('Phone Number', validators=[DataRequired()])
-    address = StringField('Address', validators=[DataRequired()])
+    town = StringField("Town", validators=[DataRequired()])
+    district = StringField("District", validators=[DataRequired()]),
     opening_hours_and_days = StringField('Opening Hours', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=16)])
     submit = SubmitField('Register Store')
@@ -28,8 +29,8 @@ class UpdateForm(FlaskForm):
                                        Length(min=2, max=16)])
     phonenumber = StringField('Phone Number', validators=[DataRequired(), Length(min=8, max=15)])
 
-    residence = StringField('Place of Residence', validators=[DataRequired()])
-
+    town = StringField("Town", validators=[DataRequired()])
+    district = StringField("District", validators=[DataRequired()])
     Email = EmailField('Email',
                         validators=[DataRequired(),
                                     Length(min=5, max=30)])
@@ -59,7 +60,6 @@ class RegistrationForm(FlaskForm):
 class Set_StoreForm(FlaskForm):
     store = SelectField('Choose Store', choices=[], coerce=int, validators=[DataRequired()], default=-1)
     submit = SubmitField('Continue')
-
 
 
 class LoginForm(FlaskForm):
@@ -152,6 +152,8 @@ class updatedeliveryform(FlaskForm):
                                                                             ('Cancelled', 'Cancelled')])
     delivery_prove = FileField('Customer Photo With their Order',
                                validators=[FileAllowed(['jpg', 'jpeg', 'png'])])
+    town = StringField("Town", validators=[DataRequired()])
+    district = StringField("District", validators=[DataRequired()])
     submit = SubmitField('Update Delivery Status')
 
 
@@ -164,7 +166,9 @@ class addstaffform(FlaskForm):
     submit = SubmitField('Add Staff')
 
 class UpdatePharmacyForm(FlaskForm):
+    mpesaname = StringField("Names: ", validators=[DataRequired()])
     mpesacode = StringField("Mpesa Till No.", validators=[DataRequired()])
+    ecocashname = StringField("Ecocash Name: ")
     ecocashcode = StringField("Ecocash Till No.", validators=[DataRequired()])
     submit = SubmitField('Save')
 
