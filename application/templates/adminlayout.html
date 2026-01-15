@@ -1,434 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy"
-      content="
-        default-src 'self';
-        script-src 'self' https://cdn.socket.io https://cdn.jsdelivr.net 'unsafe-inline';
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        font-src 'self' https://fonts.gstatic.com;
-        img-src 'self' data:;
-        connect-src 'self' ws: wss:;
-        media-src 'self';
-        frame-ancestors 'none';
-      ">
-    <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="SmartEats Vendor Dashboard">
+<meta name="author" content="Pi Technologies">
 
-    <!-- SEO & Compatibility -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>{% block title %}{{ current_user.name }} | SmartEats Vendor Dashboard{% endblock %}</title>
 
-    <!-- SEO Control: Admin pages should not rank -->
-    <meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="{{ url_for('static', filename='worka.png') }}">
 
-    <!-- SEO Description (still useful for previews & clarity) -->
-    <meta name="description" content="SmartEats vendor dashboard for managing orders, inventory, analytics, and staff.">
-    <meta name="author" content="Pi Technologies">
+<!-- Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css') }}">
 
-    <!-- Canonical -->
-    <link rel="canonical" href="{{ request.url }}">
-
-    <title>{% block title %}{{ current_user.name }} | SmartEats Vendor Dashboard{% endblock %}</title>
-
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/sb-admin-2.min.css')}}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyle.css') }}">
-    <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css')}}"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png')}}">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,900" rel="stylesheet">
-
-    <!-- Pace.js Loader -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
-    <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
-
-    <!-- Structured Data (Organization) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "SmartEats",
-      "url": "{{ request.url_root }}",
-      "logo": "{{ url_for('static', filename='worka.png', _external=True) }}",
-      "sameAs": []
-    }
-    </script>
-
-    <style>
-          #map {
-    height: 400px;   /* required */
-    width: 100%;     /* optional but recommended */
-    border: 1px solid #ccc;
-    border-radius: 8px;
-  }
-    .pace { pointer-events: none; user-select: none; }
-    .pace.pace-active {
-        background: rgba(255, 255, 255, 0.85);
-        position: fixed;
-        z-index: 9999;
-        inset: 0;
-    }
-    .pace .pace-progress {
-        background: #00b37e;
-        position: fixed;
-        z-index: 2000;
-        top: 0;
-        right: 100%;
-        width: 100%;
-        height: 3px;
-    }
-    .pace .pace-activity {
-        position: fixed;
-        z-index: 2001;
-        top: 50%;
-        left: 50%;
-        width: 45px;
-        height: 45px;
-        border: 4px solid #00b37e;
-        border-top-color: transparent;
-        border-radius: 50%;
-        animation: pace-spinner 0.8s linear infinite;
-        transform: translate(-50%, -50%);
-    }
-    @keyframes pace-spinner {
-        to { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-
-    .bg-success { background-color: #2da350 !important; }
-    .sidebar .nav-link { font-size: 14px; padding: 10px 15px; }
-    .sidebar .nav-link:hover { background-color: #259443; }
-    .sidebar .sidebar-heading {
-        font-size: 12px;
-        text-transform: uppercase;
-        color: #d1e7dd;
-        margin: 10px 0;
-    }
-    .custom-toggle {
-        background-color: #2da350;
-        border: none;
-        color: white;
-    }
-    .custom-toggle:hover { background-color: #259443; }
-    </style>
+<style>
+#map{height:300px;width:100%;border:1px solid #ccc;border-radius:8px;}
+.bg-success{background-color:#2da350!important;}
+.sidebar .nav-link{font-size:14px;padding:10px 15px;}
+.sidebar .sidebar-heading{font-size:12px;text-transform:uppercase;color:#d1e7dd;}
+.custom-toggle{background:#2da350;border:none;color:#fff;}
+</style>
 </head>
 
 <body id="page-top">
 
+<!-- Socket.IO (LOCAL) -->
+<script src="{{ url_for('static', filename='lib/socket.io/socket.io.min.js') }}"></script>
 
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
-<audio id="new_order" preload="none" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
-<audio id="order_update" preload="none" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
-<audio id="order_ready" preload="none" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
+<audio id="new_order" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
+<audio id="order_update" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
+<audio id="order_ready" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
 
 <script>
-    const socket = io();
+const socket = io();
+const STORE_ID = "{{ store_id }}";
 
-    const STORE_ID = "{{ store_id }}";
-
-    socket.on("connect", () => {
-        if (STORE_ID) {
-            socket.emit("join", { room: "store_" + STORE_ID });
-            console.log("Joined store room:", "store_" + STORE_ID);
-        }
-    });
-
-    // 🔔 New Order Event
-    socket.on("new_order", function (data) {
-
-        // 🔊 Play sound
-        const audio = document.getElementById("new_order");
-        if (audio) {
-            audio.currentTime = 0;
-            audio.play();
-        }
-
-        // 🔢 Update bell counter
-        let badge = document.querySelector(".badge-counter");
-        let count = parseInt(badge.innerText || "0");
-        badge.innerText = count + 1;
-
-        // 🧾 Inject notification into dropdown
-        const dropdown = document.querySelector(".dropdown-list");
-        const emptyState = dropdown.querySelector(".text-gray-500");
-
-        if (emptyState) emptyState.remove();
-
-        const item = document.createElement("a");
-        item.className = "dropdown-item d-flex align-items-center";
-        item.href = "/store/orders/" + data.order_id;
-
-        item.innerHTML = `
-            <div class="mr-3">
-                <div class="icon-circle bg-success">
-                    <i class="fas fa-receipt text-white"></i>
-                </div>
-            </div>
-            <div>
-                <div class="small text-gray-500">${data.created_at}</div>
-                <span class="font-weight-bold">
-                    New order placed (M${data.total_amount})
-                </span>
-            </div>
-        `;
-
-        dropdown.appendChild(item);
-    });
-
-    // 🔊 Generic sound events (optional reuse)
-    socket.on("play_sound", function(data) {
-        let audio = document.getElementById(data.sound);
-        if (audio) {
-            audio.currentTime = 0;
-            audio.play();
-        }
-    });
+socket.on("connect", () => {
+  if (STORE_ID) socket.emit("join",{room:"store_"+STORE_ID});
+});
 </script>
-
 
 <div id="wrapper">
 
-    <!-- Sidebar -->
-    <ul class="navbar-nav bg-success sidebar sidebar-dark accordion" id="accordionSidebar">
+<!-- SIDEBAR -->
+<ul class="navbar-nav bg-success sidebar sidebar-dark accordion" id="accordionSidebar">
 
-        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
-            <div class="sidebar-brand-text mx-3">{{ current_user.name }}</div>
-        </a>
-
-        <hr class="sidebar-divider my-0">
-
-        <li class="nav-item active">
-            <a class="nav-link" href="{{ url_for('store.adminpage') }}">
-                <i class="fas fa-fw fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-
-        <hr class="sidebar-divider">
-
-        <div class="sidebar-heading">Order Management</div>
-        <!--
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.vendor_pos') }}">
-                <i class="fas fa-cash-register"></i>
-                <span>Open POS</span>
-            </a>
-        </li>
-        -->
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.ActiveOrders') }}">
-                <i class="fas fa-receipt"></i>
-                <span>Active Orders</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.delivered_orders') }}">
-                <i class="fa fa-check-circle"></i>
-                <span>Complete Orders</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.cancelled_orders') }}">
-                <i class="fas fa-times-circle"></i>
-                <span>Cancelled Orders</span>
-            </a>
-        </li>
-
-        <hr class="sidebar-divider">
-        <div class="sidebar-heading">Inventory Management</div>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.vendor_analytics') }}">
-                <i class="fas fa-chart-line"></i>
-                <span>Analytics</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.products') }}">
-                <i class="fas fa-th-list"></i>
-                <span>View Products</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.manage_ingredients') }}">
-                🧂 Ingredients
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.addproducts') }}">
-                <i class="fas fa-plus-circle"></i>
-                <span>Add Products</span>
-            </a>
-        </li>
-        <hr class="sidebar-divider">
-
-        <div class="sidebar-heading">User & Profile</div>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.addstaff') }}">
-                <i class="fas fa-user-plus"></i>
-                <span>Add Staff</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.register_delivery') }}">
-                <i class="fas fa-truck"></i>
-                <span>Register Delivery</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.updatestore') }}">
-                <i class="fas fa-wallet"></i>
-                <span>Update Payment Options</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('store.update_store_location') }}">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Update Store Location</span>
-            </a>
-
-        <hr class="sidebar-divider d-none d-md-block">
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.logout') }}">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-        </li>
-    </ul>
-
-    <!-- Content Wrapper -->
-    <div id="content-wrapper" class="d-flex flex-column">
-        <div id="content">
-            {% if not store.latitude or not store.longitude %}
-            <div class="alert alert-warning d-flex align-items-center">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <div>
-                <strong>Store location not set.</strong><br>
-                Delivery distance and fees cannot be calculated until you update your location.
-            </div>
-            </div>
-            {% else %}
-            <div class="alert alert-success d-flex align-items-center">
-            <i class="fas fa-map-marker-alt me-2"></i>
-            <div>
-                Store location is set and active for deliveries.
-            </div>
-            </div>
-            {% endif %}
-
-            <button id="sidebarToggleTop" class="btn btn-success d-md-none rounded-circle mr-3 custom-toggle">
-                <i class="fa fa-bars"></i>
-            </button>
-
-            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
-                <ul class="navbar-nav ml-auto">
-
-                    <li class="nav-item dropdown no-arrow mx-1">
-                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" data-toggle="dropdown">
-                            <i class="fas fa-bell fa-fw"></i>
-                            <span class="badge badge-danger badge-counter">{{ count }}</span>
-                        </a>
-
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                            <h6 class="dropdown-header">Notification Center</h6>
-
-                            {% if unread_notifications %}
-                                {% for note in unread_notifications %}
-                                <a class="dropdown-item d-flex align-items-center" 
-                                   href="{{ url_for('store.mark_notification_read', notification_id=note.id) }}">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">
-                                            {{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}
-                                        </div>
-                                        <span class="font-weight-bold">{{ note.message }}</span>
-                                    </div>
-                                </a>
-                                {% endfor %}
-                            {% else %}
-                                <a class="dropdown-item text-center small text-gray-500">No new notifications</a>
-                            {% endif %}
-                        </div>
-                    </li>
-
-                    <div class="topbar-divider d-none d-sm-block"></div>
-
-                    <li class="nav-item dropdown no-arrow">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown">
-                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ current_user.name }}</span>
-                            <img class="img-profile rounded-circle"
-                                 src="{{ url_for('static', filename='css/images/undraw_profile_1.svg') }}">
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <div class="row">
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        <div class="alert alert-success w-100" role="alert">
-                            {{ messages[0] }}
-                        </div>
-                    {% endif %}
-                {% endwith %}
-
-                {% block content %}{% endblock %}
-            </div>
-        </div>
-
-        <footer class="sticky-footer bg-white">
-            <div class="container my-auto">
-                <div class="text-center my-auto">
-                    <span>Copyright &copy; SmartEats 2025</span>
-                </div>
-            </div>
-        </footer>
-    </div>
-</div>
-
-<a class="scroll-to-top rounded" href="#page-top">
-    <i class="fas fa-angle-up"></i>
+<a class="sidebar-brand d-flex align-items-center justify-content-center">
+  <div class="sidebar-brand-text mx-3">{{ current_user.name }}</div>
 </a>
 
-<!-- Scripts -->
-<script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}" defer></script>
-<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}" defer></script>
-<script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}" defer></script>
-<script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}" defer></script>
+<hr class="sidebar-divider my-0">
 
-<script>
-    $(document).on('ajaxStart', function() { Pace.restart(); });
-</script>
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.adminpage') }}">
+    <i class="fas fa-fw fa-tachometer-alt"></i> <span>Dashboard</span>
+  </a>
+</li>
 
-<!-- Chart.js (needed for analytics dashboard) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<hr class="sidebar-divider">
 
-<!-- Per-page scripts -->
+<div class="sidebar-heading">Order Management</div>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.ActiveOrders') }}">
+    <i class="fas fa-receipt"></i> <span>Active Orders</span>
+  </a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.delivered_orders') }}">
+    <i class="fa fa-check-circle"></i> <span>Complete Orders</span>
+  </a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.cancelled_orders') }}">
+    <i class="fas fa-times-circle"></i> <span>Cancelled Orders</span>
+  </a>
+</li>
+
+<hr class="sidebar-divider">
+
+<div class="sidebar-heading">Inventory Management</div>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.vendor_analytics') }}">
+    <i class="fas fa-chart-line"></i> <span>Analytics</span>
+  </a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.products') }}">
+    <i class="fas fa-th-list"></i> <span>View Products</span>
+  </a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.manage_ingredients') }}">🧂 Ingredients</a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.addproducts') }}">
+    <i class="fas fa-plus-circle"></i> <span>Add Products</span>
+  </a>
+</li>
+
+<hr class="sidebar-divider">
+
+<div class="sidebar-heading">User & Profile</div>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.addstaff') }}">
+    <i class="fas fa-user-plus"></i> <span>Add Staff</span>
+  </a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.register_delivery') }}">
+    <i class="fas fa-truck"></i> <span>Register Delivery</span>
+  </a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.updatestore') }}">
+    <i class="fas fa-wallet"></i> <span>Update Payment Options</span>
+  </a>
+</li>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.update_store_location') }}">
+    <i class="fas fa-map-marker-alt"></i> <span>Update Store Location</span>
+  </a>
+</li>
+
+<hr class="sidebar-divider d-none d-md-block">
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('main.logout') }}">
+    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+  </a>
+</li>
+
+</ul>
+
+<!-- CONTENT -->
+<div id="content-wrapper" class="d-flex flex-column">
+<div id="content">
+
+<nav class="navbar navbar-expand navbar-light bg-white shadow mb-4">
+  <ul class="navbar-nav ml-auto">
+    <li class="nav-item">
+      <span class="nav-link">{{ current_user.name }}</span>
+    </li>
+  </ul>
+</nav>
+
+<div class="container-fluid">
+{% block content %}{% endblock %}
+</div>
+
+</div>
+
+<footer class="sticky-footer bg-white">
+  <div class="container text-center">
+    © SmartEats 2025
+  </div>
+</footer>
+
+</div>
+</div>
+
+<!-- JS (ORDER IS CRITICAL) -->
+<script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+
 {% block scripts %}{% endblock %}
-
 </body>
 </html>

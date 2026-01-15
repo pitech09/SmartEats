@@ -24,13 +24,14 @@
       </button>
     </div>
 
-    <div id="map" style="height: 500px; border:1px solid #ccc; border-radius:8px;"></div>
+    <!-- Small map below the form -->
+    <div id="map" style="height:300px; border:1px solid #ccc; border-radius:8px;"></div>
 
     <button type="submit" class="btn btn-success mt-3">Save Location</button>
   </form>
 </div>
 
-<!-- Local Leaflet files to avoid CSP issues -->
+<!-- Local Leaflet files -->
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}">
 <script src="{{ url_for('static', filename='lib/leaflet.js') }}"></script>
 
@@ -40,54 +41,58 @@ document.addEventListener('DOMContentLoaded', () => {
   const lngInput = document.getElementById('longitude');
   const useBtn = document.getElementById('use-location');
 
-  // Default map center (if no coordinates)
-  let defaultLat = latInput.value ? parseFloat(latInput.value) : -28.895383;
-  let defaultLng = lngInput.value ? parseFloat(lngInput.value) : 27.907324;
-  let zoomLevel = latInput.value && lngInput.value ? 16 : 5;
+  // Default coordinates (fallback)
+  let lat = latInput.value ? parseFloat(latInput.value) : -28.895383;
+  let lng = lngInput.value ? parseFloat(lngInput.value) : 24.767190;
+  let zoom = latInput.value && lngInput.value ? 16 : 5;
 
   // Initialize map
-  const map = L.map('map').setView([defaultLat, defaultLng], zoomLevel);
+  const map = L.map('map').setView([lat, lng], zoom);
 
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Add marker
-  let marker = L.marker([defaultLat, defaultLng], {draggable:true}).addTo(map);
+  // Marker
+  let marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
-  marker.on('dragend', function(e){
+  // Sync marker → inputs
+  marker.on('dragend', e => {
     const pos = e.target.getLatLng();
     latInput.value = pos.lat.toFixed(6);
     lngInput.value = pos.lng.toFixed(6);
   });
 
-  // Autofill inputs if coordinates exist
-  latInput.value = defaultLat.toFixed(6);
-  lngInput.value = defaultLng.toFixed(6);
+  // Sync inputs → marker
+  function updateMarker(latitude, longitude) {
+    latInput.value = latitude.toFixed(6);
+    lngInput.value = longitude.toFixed(6);
+    marker.setLatLng([latitude, longitude]);
+    map.setView([latitude, longitude], 16);
+  }
 
-  // Use browser geolocation
-  useBtn.addEventListener('click', () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
-      return;
-    }
+  // Fetch user location (auto)
+  function fetchCurrentLocation() {
+    if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const {latitude, longitude} = position.coords;
-        latInput.value = latitude.toFixed(6);
-        lngInput.value = longitude.toFixed(6);
-        marker.setLatLng([latitude, longitude]);
-        map.setView([latitude, longitude], 16);
+      position => {
+        updateMarker(
+          position.coords.latitude,
+          position.coords.longitude
+        );
       },
-      (error) => {
-        alert('Unable to retrieve your location: ' + error.message);
-      },
-      {enableHighAccuracy:true}
+      () => console.warn('Geolocation permission denied')
     );
-  });
+  }
 
-  console.log('Map initialized at:', defaultLat, defaultLng);
+  // Button click
+  useBtn.addEventListener('click', fetchCurrentLocation);
+
+  // Auto-fetch on load if inputs empty
+  if (!latInput.value || !lngInput.value) {
+    fetchCurrentLocation();
+  }
 });
 </script>
 {% endblock %}
