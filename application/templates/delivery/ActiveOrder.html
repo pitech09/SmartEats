@@ -22,7 +22,7 @@
             <tbody>
                 {% for delivery in deliveries %}
                 <tr>
-                    <td>{{ delivery.order_id }}</td>
+                    <td>{{ delivery.order.order_id }}</td>
                     <td>{{ delivery.customer_name }}</td>
                     <td>{{ delivery.address }}</td>
                     <td>

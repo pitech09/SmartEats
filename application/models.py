@@ -37,6 +37,9 @@ class Store(UserMixin, db.Model):
     confirmed = db.Column(db.Boolean, default=False)
     verified = db.Column(db.Boolean, default=False)
 
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+
     registered_on = db.Column(db.DateTime, server_default=db.func.now())
 
     users = db.relationship("User", back_populates="store")
@@ -184,6 +187,10 @@ class Order(db.Model):
     payment = db.Column(db.String(40), default="Cash")
     transactionID = db.Column(db.String(90), default="None")
     user_email = db.Column(db.String(120), nullable=False)
+
+    customer_lat = db.Column(db.Float)
+    customer_lng = db.Column(db.Float)
+
 
     deliveryguy = db.Column(db.String(50), default="Not Taken")
     screenshot = db.Column(db.Text)

@@ -6,6 +6,7 @@
   <h2 class="text-center text-success mb-4">Your Cart</h2>
 
   <div class="row g-4">
+
     <!-- Payment Codes -->
     <div class="col-md-4">
       <div class="card shadow-sm border-success h-100">
@@ -15,7 +16,9 @@
         <div class="card-body">
           <p><strong>Mpesa:</strong> {{ store.mpesa_shortcode }}</p>
           <p><strong>Ecocash:</strong> {{ store.ecocash_short_code }}</p>
-          <p class="text-muted small">Use these codes for secure payment. Enter your number correctly during checkout.</p>
+          <p class="text-muted small">
+            Use these codes for secure payment. Location will be used to calculate delivery fee.
+          </p>
         </div>
       </div>
     </div>
@@ -27,6 +30,7 @@
           <h5>Cart Items</h5>
         </div>
         <div class="card-body">
+
           {% if not cart or cart.cart_items|length == 0 %}
             <p class="text-center text-muted">Your cart is empty!</p>
           {% else %}
@@ -35,9 +39,9 @@
               <tr>
                 <th>Item</th>
                 <th>Price</th>
-                <th>Quantity</th>
+                <th>Qty</th>
                 <th>Total</th>
-                <th>Remove</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="cart-items">
@@ -45,7 +49,7 @@
               <tr data-item-id="{{ item.id }}">
                 <td>{{ item.get_name() }}</td>
                 <td>M{{ '%.2f'|format(item.get_price()) }}</td>
-                <td class="item-qty">{{ item.quantity }}</td>
+                <td>{{ item.quantity }}</td>
                 <td>M{{ '%.2f'|format(item.get_total()) }}</td>
                 <td>
                   <button class="btn btn-outline-danger btn-sm remove-item" data-id="{{ item.id }}">
@@ -58,23 +62,58 @@
           </table>
           {% endif %}
 
-          <!-- Total & Checkout -->
-          <div class="d-flex justify-content-between align-items-center mt-3">
-            <h5>Total: <span id="total-price" data-base="{{ '%.2f'|format(total_amount) }}">M{{ '%.2f'|format(total_amount) }}</span></h5>
-            <p class="text-muted mb-0 small">M6.00 will be added if delivery agent is selected.</p>
+          <!-- Totals -->
+          <div class="d-flex justify-content-between mt-3">
+            <h5>
+              Subtotal:
+              <span id="subtotal" data-base="{{ '%.2f'|format(total_amount) }}">
+                M{{ '%.2f'|format(total_amount) }}
+              </span>
+            </h5>
+          </div>
+
+          <div class="d-flex justify-content-between mt-2">
+            <h5>
+              Delivery Fee:
+              <span id="delivery-fee">M0.00</span>
+            </h5>
+          </div>
+
+          <div class="d-flex justify-content-between mt-2">
+            <h5>
+              Total:
+              <span id="grand-total">{{ '%.2f'|format(total_amount) }}</span>
+            </h5>
           </div>
 
           <hr>
 
-          <!-- Order Form -->
-          <form id="order-form" action="{{ url_for('main.addorder', total_amount=total_amount) }}" method="POST" enctype="multipart/form-data">
+          <!-- Map for accurate location -->
+          <div class="mb-3">
+            <label class="form-label">Drag the marker to your location:</label>
+            <div id="cart-map" style="height:300px; border:1px solid #ccc; border-radius:8px;"></div>
+          </div>
+
+          <!-- Checkout Form -->
+          <form id="order-form"
+                action="{{ url_for('main.addorder', total_amount=total_amount) }}"
+                method="POST"
+                enctype="multipart/form-data">
+
             {{ form3.hidden_tag() }}
 
+            <!-- GPS hidden fields -->
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+
             <div class="mb-3">
-              {{ form3.payment.label }} {{ form3.payment(class='form-control') }}
+              {{ form3.payment.label }}
+              {{ form3.payment(class="form-control") }}
             </div>
+
             <div class="mb-3">
-              {{ form3.payment_number.label }} {{ form3.payment_number(class='form-control') }}
+              {{ form3.payment_number.label }}
+              {{ form3.payment_number(class="form-control") }}
             </div>
 
             <div class="mb-3">
@@ -88,64 +127,145 @@
             </div>
 
             <div class="mb-3">
-              {{ form3.drop_address.label }} {{ form3.drop_address(class='form-control') }}
+              {{ form3.drop_address.label }}
+              {{ form3.drop_address(class="form-control") }}
             </div>
 
             <div class="mb-3">
-              {{ form3.payment_screenshot.label }} {{ form3.payment_screenshot(class='form-control') }}
+              {{ form3.payment_screenshot.label }}
+              {{ form3.payment_screenshot(class="form-control") }}
             </div>
 
-            <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill">Place Order</button>
+            <button type="submit"
+                    class="btn btn-success btn-lg w-100 rounded-pill">
+              Place Order
+            </button>
+
           </form>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const totalPriceEl = document.getElementById('total-price');
-    let baseTotal = parseFloat(totalPriceEl.dataset.base);
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    function updateTotal() {
-        const selectedOption = document.querySelector('.delivery-option:checked');
-        let newTotal = baseTotal;
-        if (selectedOption && selectedOption.value === 'agent') {
-            newTotal += 6;
-        }
-        totalPriceEl.textContent = `M${newTotal.toFixed(2)}`;
+<!-- JS -->
+<script>
+// Haversine formula to calculate distance in KM
+function distanceKm(lat1, lon1, lat2, lon2){
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLon = (lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+              Math.sin(dLon/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const subtotalEl = document.getElementById('subtotal');
+    const deliveryEl = document.getElementById('delivery-fee');
+    const grandEl = document.getElementById('grand-total');
+
+    let baseTotal = parseFloat(subtotalEl.dataset.base);
+
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+
+    // Store coordinates
+    const storeLat = {{ store.latitude }};
+    const storeLng = {{ store.longitude }};
+
+    function calculateDeliveryFee(custLat, custLng){
+        const km = distanceKm(storeLat, storeLng, custLat, custLng);
+        let fee = km * 4; // M4 per km
+        if(fee < 6) fee = 6; // minimum M6
+        return fee;
     }
 
-    document.querySelectorAll('.delivery-option').forEach(opt => opt.addEventListener('change', updateTotal));
+    function updateTotals(){
+        if(latInput.value && lngInput.value){
+            const fee = calculateDeliveryFee(parseFloat(latInput.value), parseFloat(lngInput.value));
+            deliveryEl.textContent = `M${fee.toFixed(2)}`;
+            grandEl.textContent = (baseTotal + fee).toFixed(2);
+        }
+    }
 
-    document.querySelectorAll('.remove-item').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const itemId = btn.dataset.id;
-            try {
-                const res = await fetch(`/remove_from_cart_ajax/${itemId}`, { method: 'POST' });
-                const result = await res.json();
-                if (result.success) {
-                    document.querySelector(`tr[data-item-id="${itemId}"]`).remove();
-                    baseTotal = parseFloat(result.cart_total);
-                    totalPriceEl.dataset.base = baseTotal;
-                    updateTotal();
-                }
-            } catch (err) {
-                console.error('Error removing item:', err);
+    // Initialize map
+    let map = L.map('cart-map').setView([storeLat, storeLng], 12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Marker draggable
+    let marker = L.marker([storeLat, storeLng], {draggable:true}).addTo(map);
+    latInput.value = storeLat;
+    lngInput.value = storeLng;
+
+    marker.on('dragend', function(e){
+        const pos = e.target.getLatLng();
+        latInput.value = pos.lat;
+        lngInput.value = pos.lng;
+        updateTotals();
+    });
+
+    // Auto locate user
+    if("geolocation" in navigator){
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const {latitude, longitude} = pos.coords;
+                marker.setLatLng([latitude, longitude]);
+                map.setView([latitude, longitude], 14);
+                latInput.value = latitude;
+                lngInput.value = longitude;
+                updateTotals();
+            },
+            () => console.log("User location not allowed or available."),
+            { enableHighAccuracy:true, timeout:10000 }
+        );
+    }
+
+    // Capture GPS on selecting delivery agent
+    document.querySelectorAll('.delivery-option').forEach(opt => {
+        opt.addEventListener('change', () => {
+            if(opt.value !== 'agent' || !opt.checked){
+                deliveryEl.textContent = "M0.00";
+                grandEl.textContent = baseTotal.toFixed(2);
+            } else {
+                updateTotals();
             }
         });
     });
 
-    updateTotal();
+    // Remove item AJAX
+    document.querySelectorAll('.remove-item').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const itemId = btn.dataset.id;
+            const res = await fetch(`/remove_from_cart_ajax/${itemId}`, {method:'POST'});
+            const result = await res.json();
+            if(result.success){
+                document.querySelector(`tr[data-item-id="${itemId}"]`).remove();
+                baseTotal = parseFloat(result.cart_total);
+                subtotalEl.dataset.base = baseTotal;
+                subtotalEl.textContent = `M${baseTotal.toFixed(2)}`;
+                updateTotals();
+            }
+        });
+    });
 });
 </script>
 
 <style>
+.card { border-radius: 15px; }
+.card-header { font-weight: bold; }
 .table-hover tbody tr:hover { background-color: #e6f7f1; }
 .remove-item:hover { transform: scale(1.1); transition: 0.2s; }
-.card { border-radius: 15px; }
-.card-header { font-weight: bold; font-size: 1.1rem; }
-#total-price { font-weight: bold; color: #00b37e; }
+#subtotal, #grand-total { font-weight: bold; color: #00b37e; }
+#delivery-fee { font-weight: bold; color: #ff7f50; }
 </style>
 {% endblock %}

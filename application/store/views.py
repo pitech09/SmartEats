@@ -31,7 +31,7 @@ from datetime import datetime
 from application.notification import notify_customer
 from application.auth.views import send_sound
 from application.models import Ingredient
-from application.forms import IngredientForm
+from application.forms import IngredientForm, StoreLocationForm
 
 mypharmacy_product = Store.products
 mypharmacy_orders = Store.orders
@@ -109,7 +109,7 @@ def load_user(user_id):
 
 
 
-@store.route('/adminpage', methods=["POST", "GET"])
+@store.route('/dashboard/adminpage', methods=["POST", "GET"])
 @login_required
 def adminpage():
     # Check if current user matches session
@@ -238,7 +238,7 @@ def adminpage():
 
 
 
-@store.route('/search', methods=['POST', 'GET'])
+@store.route('/dashboard/search', methods=['POST', 'GET'])
 @login_required
 #@role_required('Store')
 def search():
@@ -263,7 +263,32 @@ def search():
     return render_template('store/updated_orders.html', form=form, item_picture=item_picture,
                            total_count=total_count, products=products, form2=form2, form1=form1)
 
-@store.route('/updateproduct/<int:item_id>', methods=['GET', 'POST'])
+@store.route('/dashboard/location', methods=['GET', 'POST'])
+@login_required
+def update_store_location():
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+
+    form = StoreLocationForm(
+        latitude=store.latitude,
+        longitude=store.longitude
+    )
+
+    if form.validate_on_submit():
+        store.latitude = form.latitude.data
+        store.longitude = form.longitude.data
+        db.session.commit()
+        flash("Store location updated successfully.", "success")
+        return redirect(url_for('store.update_store_location'))
+
+    return render_template(
+        'store/update_location.html',
+        store=store,
+        form=form
+    )
+
+
+@store.route('/dashboard/updateproduct/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 #@role_required('Store')
 def updateproduct(item_id):
@@ -296,7 +321,7 @@ def updateproduct(item_id):
     return render_template('store/updated_updateproduct.html', form=form, item_id=item_id,
                            count=count, unread_notifications=unread_notifications, store=store)
 
-@store.route('/ready_orders')
+@store.route('/dashboard/ready_orders')
 @login_required
 def ready_orders():
     form1 = updateorderpickup()
@@ -313,7 +338,7 @@ def ready_orders():
     return render_template('store/readyorder.html',form=form, readyorders=readyorders, store=mypharmacy,
                         unread_notifications=unread_notifications, count=count, form1=form1)
 
-@store.route('/Orders on Delivery')
+@store.route('/dashboard/orders_on_delivery')
 @login_required
 def orders_on_delivery():
     mypharmacy = Store.query.get_or_404(current_user.id)
@@ -330,7 +355,7 @@ def orders_on_delivery():
                            store=mypharmacy, unread_notifications=unread_notifications)
 
 
-@store.route('/ActiveOrders')
+@store.route('/dashboard/active_orders')
 @login_required
 @cache.memoize(timeout=120)
 def ActiveOrders():
@@ -381,7 +406,7 @@ def ActiveOrders():
     )
 
 
-@store.route('/delivered')
+@store.route('/dashboard/delivered')
 @login_required
 def delivered_orders():
     mypharmacy = Store.query.get_or_404(current_user.id)
@@ -413,7 +438,7 @@ def delivered_orders():
         count=count
     )
 
-@store.route('/cancelled')
+@store.route('/dashboard/cancelled')
 @login_required
 #@role_required('Store')
 def cancelled_orders():
@@ -434,7 +459,7 @@ def cancelled_orders():
                            unread_notifications=unread_notifications,store=store, count=count)
 
 
-@store.route('updatestore', methods=["POST", "GET"])
+@store.route('/dashboard/updatestore', methods=["POST", "GET"])
 @login_required
 def updatestore():
     mypharmacy = Store.query.get_or_404(current_user.id)
@@ -462,7 +487,7 @@ def updatestore():
                            unread_notifications=unread_notifications, count=count, store=store)
 
 
-@store.route('/orders/updatestatus/<int:order_id>', methods=['POST'])
+@store.route('/dashboard/orders/updatestatus/<int:order_id>', methods=['POST'])
 @login_required
 def updatestatus(order_id):
     form = updatestatusform(request.form)
@@ -516,7 +541,7 @@ def logout():
 
 
 @cache.memoize(timeout=300)
-@store.route('/addproducts', methods=["POST", "GET"])
+@store.route('/dashboard/addproducts', methods=["POST", "GET"])
 @login_required
 #@role_required('Store')
 def addproducts():
@@ -566,7 +591,7 @@ def addproducts():
                             unread_notifications=unread_notifications, count=count, store=store)
 
 @cache.memoize(timeout=300)
-@store.route('/userorders/<int:order_id>', methods=['post', 'get'])
+@store.route('/dashboard/userorders/<int:order_id>', methods=['post', 'get'])
 @login_required
 #@role_required('Store')
 def userorders(order_id):
@@ -595,7 +620,7 @@ def userorders(order_id):
 
 
 @cache.memoize(timeout=300)
-@store.route('/products')
+@store.route('/dashboard/products')
 @login_required
 def products():
     mypharmacy = Store.query.get(current_user.id)
@@ -618,7 +643,7 @@ def products():
 
 
 @cache.memoize(timeout=300)
-@store.route('/remove_from_products/<int:item_id>', methods=['POST', 'GET'])
+@store.route('/dashboard/remove_from_products/<int:item_id>', methods=['POST', 'GET'])
 @login_required
 def remove_product(item_id):
     product = Product.query.get_or_404(item_id)
@@ -634,7 +659,7 @@ def remove_product(item_id):
 
 
 
-@store.route('/notifications/read/<int:notification_id>', methods=['POST','GET'])
+@store.route('/dashboard/notifications/read/<int:notification_id>', methods=['POST','GET'])
 @login_required
 def mark_notification_read(notification_id):
     notification = Notification.query.get_or_404(notification_id)
@@ -642,7 +667,7 @@ def mark_notification_read(notification_id):
     db.session.commit()
     return redirect(url_for('store.adminpage'))
 
-@store.route('/addstaff', methods=["post", "get"])
+@store.route('/dashboard/addstaff', methods=["post", "get"])
 @login_required
 def addstaff():
     form = addstaffform()
@@ -673,7 +698,7 @@ def addstaff():
     return render_template('store/addstaff.html',
                            store=store,form=form, count=count, unread_notifications=unread_notifications)
 
-@store.route('/register delivery', methods=["POST", "GET"])
+@store.route('/dashboard/register_delivery', methods=["POST", "GET"])
 @login_required
 def register_delivery():
     form = deliveryregistrationform()  
@@ -692,7 +717,7 @@ def register_delivery():
             return redirect(url_for('store.register_delivery'))   
     return render_template('store/add_delivery.html', form=form)
 
-@store.route('/vendor/analytics')
+@store.route('/dashboard/analytics')
 @login_required
 def vendor_analytics():
     store_id = session.get('store_id')

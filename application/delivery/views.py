@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from PIL import Image
-from flask import render_template, redirect, url_for, flash, session, request # type: ignore
+from flask import abort, render_template, redirect, url_for, flash, session, request # type: ignore
 from flask_login import login_required, current_user, logout_user  # type: ignore
 from sqlalchemy import desc, func #type: ignore
 from sqlalchemy.exc import IntegrityError #type: ignore
@@ -200,21 +200,6 @@ def get_delivery_status(order_id):
 
 
 
-@delivery.route('/mydeliveries', methods=["POST", "GET"])
-@login_required
-def mydeliveries():
-    store = Store.query.get_or_404(session.get('store_id'))
-    myform = updatedeliveryform()
-    delivery_update = updatedeliveryform()
-    deliveries = Delivery.query.filter(
-        Delivery.delivery_guy_id == current_user.id,
-        Delivery.status == "Out for Delivery"
-    ).all()
-    formpharm=Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
-  
-    return render_template('delivery/ActiveOrder.html', myform=myform, store=store,
-                           deliveries=deliveries, delivery_update=delivery_update,formpharm=formpharm)
 
 @delivery.route('/ready orders')
 @login_required
@@ -231,59 +216,85 @@ def ready_orders():
     return render_template('delivery/deliverydashboard.html', ready_orders=ready, myform=myform, store=store,
                            delivery_update=delivery_update,formpharm=formpharm)
 
+@delivery.route('/mydeliveries', methods=["POST", "GET"])
+@login_required
+def mydeliveries():
+    store = Store.query.get_or_404(session.get('store_id'))
+    myform = updatedeliveryform()
+    delivery_update = updatedeliveryform()
+    deliveries = Delivery.query.filter(
+        Delivery.delivery_guy_id == current_user.id,
+        Delivery.status == "Out for Delivery"
+    ).all()
+    formpharm=Set_StoreForm()
+    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+  
+    return render_template('delivery/ActiveOrder.html', myform=myform, store=store,
+                           deliveries=deliveries, delivery_update=delivery_update,formpharm=formpharm)
 
-@delivery.route('/update_delivery/<int:delivery_id>', methods=["GET", "POST"])
+
+@delivery.route('/update_delivery/<int:delivery_id>', methods=["POST"])
 @login_required
 def update_delivery(delivery_id):
     form = updatedeliveryform()
     delivery = Delivery.query.get_or_404(delivery_id)
-    if form.validate_on_submit():
-        new_status = form.status.data
-        old_status = delivery.status
 
-        if old_status == new_status:
-            flash('Status is already up to date.')
-            return redirect(url_for('delivery.mydeliveries'))
+    # Ownership check
+    if delivery.delivery_guy_id != current_user.id:
+        flash("Not authorised")
+        abort(403)
 
-        delivery.status = new_status
-        order = Order.query.filter(Order.id == delivery.order_id).first()
-        order.status = form.status.data
-        delivery.end_time = datetime.utcnow()
-        if form.delivery_prove.data:
-            if current_app.config['USE_CLOUDINARY']:
-                image_filename = upload_to_cloudinary(form.delivery_prove.data)
-                image_url = image_filename['secure_url'] 
-                delivery.customer_pic = image_url
-                db.session.add(delivery)
-            else:
-                pic = save_product_picture(form.delivery_prove.data)
-                delivery.customer_pic = pic
-                db.session.add(delivery)
-        db.session.add(order)
-        try:
-            db.session.commit()
-            difference = delivery.end_time - delivery.timestamp
-            flash(f"Delivery took {difference} minutes")
-            flash(f" End time {delivery.end_time.strftime('%H:%M')}, Start time{delivery.timestamp.strftime('%H:%M')}")
-            # 🔔 Message
-            message = f"Delivery #{delivery.id} status changed from {old_status} to {new_status}"
-
-            create_notification(user_type='customer', user_id=order.user_id, message=message)
-
-            # 🔔 Notify store & emit event
-
-            create_notification(user_type='store', user_id=order.store_id, message=message)
-            notify_customer(order.user_id)
-            notify_store(order.store_id)
-            flash('Delivery status successfully updated.')
-
-        except IntegrityError:
-            db.session.rollback()
-            flash('An error occurred while updating the delivery. Please try again.')
-
+    if not form.validate_on_submit():
+        flash("Form failed to validate.")
         return redirect(url_for('delivery.mydeliveries'))
 
-    flash("Form failed to validate.")
+    new_status = form.status.data
+    old_status = delivery.status
+
+    if old_status == new_status:
+        flash('Status is already up to date.')
+        return redirect(url_for('delivery.mydeliveries'))
+
+    delivery.status = new_status
+    order = Order.query.get_or_404(delivery.order_id)
+    order.status = new_status
+
+    # Only set end_time when delivery is completed
+    if new_status in ["Delivered", "Completed"]:
+        delivery.end_time = datetime.utcnow()
+        difference = delivery.end_time - delivery.timestamp
+        duration_minutes = int(difference.total_seconds() // 60)
+        flash(f"Delivery took {duration_minutes} minutes")
+        flash(
+            f"End time {delivery.end_time.strftime('%H:%M')}, "
+            f"Start time {delivery.timestamp.strftime('%H:%M')}"
+        )
+
+    # Proof upload
+    if form.delivery_prove.data:
+        if current_app.config['USE_CLOUDINARY']:
+            image = upload_to_cloudinary(form.delivery_prove.data)
+            delivery.customer_pic = image['secure_url']
+        else:
+            delivery.customer_pic = save_product_picture(form.delivery_prove.data)
+
+    try:
+        db.session.commit()
+
+        message = f"Delivery #{delivery.id} status changed from {old_status} to {new_status}"
+
+        create_notification('customer', order.user_id, message)
+        create_notification('store', order.store_id, message)
+
+        notify_customer(order.user_id)
+        notify_store(order.store_id)
+
+        flash('Delivery status successfully updated.')
+
+    except IntegrityError:
+        db.session.rollback()
+        flash('An error occurred while updating the delivery. Please try again.')
+
     return redirect(url_for('delivery.mydeliveries'))
 
 

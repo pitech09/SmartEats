@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm # type: ignore
 from flask_wtf.recaptcha import RecaptchaField # type: ignore
 from flask_wtf.file import FileField, FileAllowed, FileRequired# type: ignore
-from wtforms import StringField, HiddenField,FloatField, PasswordField, SubmitField, BooleanField, TextAreaField,IntegerField,SelectField, RadioField, EmailField, URLField # type: ignore
+from wtforms import StringField,FloatField, PasswordField, SubmitField,IntegerField,SelectField, RadioField, EmailField, URLField # type: ignore
 from wtforms.validators import DataRequired,Optional, Length, Email # type: ignore
 
 class StoreRegistrationForm(FlaskForm):
@@ -152,10 +152,12 @@ class updatedeliveryform(FlaskForm):
                                                                             ('Cancelled', 'Cancelled')])
     delivery_prove = FileField('Customer Photo With their Order',
                                validators=[FileAllowed(['jpg', 'jpeg', 'png'])])
-    town = StringField("Town", validators=[DataRequired()])
-    district = StringField("District", validators=[DataRequired()])
     submit = SubmitField('Update Delivery Status')
 
+class StoreLocationForm(FlaskForm):
+    latitude = FloatField("Latitude", validators=[Optional()])
+    longitude = FloatField("Longitude", validators=[Optional()])
+    submit = SubmitField("Update Location")
 
 
 class addstaffform(FlaskForm):

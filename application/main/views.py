@@ -10,6 +10,7 @@ from PIL import Image
 import cloudinary
 from cloudinary.uploader import upload
 from dateutil.relativedelta import relativedelta
+from math import radians, cos, sin, asin, sqrt
 
 from . import main  # Blueprint is fine to import at top
 from ..forms import *
@@ -51,6 +52,25 @@ def calculate_loyalty_points(user, sale_amount):
     user.loyalty_points = points_earned + int(user.loyalty_points or 0)
     db.session.commit()
     return points_earned
+
+# --- Helper functions ---
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great-circle distance between two points (km)
+    """
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371  # Earth radius in km
+    return c * r
+
+def calculate_delivery_fee(store_lat, store_lng, cust_lat, cust_lng, rate_per_km=4, min_fee=6):
+    distance = haversine(store_lat, store_lng, cust_lat, cust_lng)
+    fee = distance * rate_per_km
+    return round(max(fee, min_fee), 2)
+
 
 def upload_to_cloudinary(file, folder='payment_proofs'):
     result = upload(
@@ -300,14 +320,15 @@ def custom_meal(store_id):
         ingredients=ingredients
     )
 
-@main.route('/addorder/<int:total_amount>', methods=['POST', 'GET'])
+@main.route('/addorder', methods=['POST'])
 @login_required
-def addorder(total_amount):
+def addorder():
     form = confirmpurchase()
-    store_id = session.get('store_id')
-    pharm = Store.query.get_or_404(store_id)
 
-    # Get the user's cart for this store
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+
+    # Get cart
     cart = Cart.query.filter_by(
         user_id=current_user.id,
         store_id=store_id
@@ -320,114 +341,178 @@ def addorder(total_amount):
     # Prevent multiple pending orders
     existing_order = Order.query.filter_by(
         user_id=current_user.id,
-        status='Pending',
-        store_id=store_id
+        store_id=store_id,
+        status='Pending'
     ).first()
 
     if existing_order:
-        flash("You still have a pending order.", "unsuccessful")
+        flash("You still have a pending order.", "warning")
         return redirect(url_for('main.myorders'))
 
-    if form.validate_on_submit():
+    if not form.validate_on_submit():
+        flash("Invalid submission.", "warning")
+        return redirect(url_for('main.cart'))
 
-        # 🧾 Create new order
-        neworder = Order(
-            user_id=current_user.id,
-            payment=form.payment.data,
-            user_email=current_user.email,
-            store_id=pharm.id,
-            status="Pending"
-        )
+    # -----------------------------
+    # Get customer coordinates
+    # -----------------------------
+    try:
+        customer_lat = float(request.form.get('latitude')) if request.form.get('latitude') else None
+        customer_lng = float(request.form.get('longitude')) if request.form.get('longitude') else None
+    except ValueError:
+        customer_lat = None
+        customer_lng = None
 
-        neworder.location = (
-            'pickup'
-            if form.deliverymethod.data == 'pickup'
-            else form.drop_address.data
-        )
+    # -----------------------------
+    # Create Order
+    # -----------------------------
+    neworder = Order(
+        user_id=current_user.id,
+        user_email=current_user.email,
+        store_id=store.id,
+        payment=form.payment.data,
+        status="Pending",
+        customer_lat=customer_lat,
+        customer_lng=customer_lng
+    )
 
-        # 📸 Payment screenshot
-        file = form.payment_screenshot.data
-        if not file:
-            flash("Missing payment proof", "warning")
+    # Delivery location
+    if form.deliverymethod.data == 'pickup':
+        neworder.location = 'pickup'
+    else:
+        if not form.drop_address.data:
+            flash("Delivery address is required.", "warning")
+            return redirect(url_for('main.cart'))
+        neworder.location = form.drop_address.data
+
+    # -----------------------------
+    # Payment Screenshot
+    # -----------------------------
+    file = form.payment_screenshot.data
+    if not file:
+        flash("Payment proof is required.", "warning")
+        return redirect(url_for('main.cart'))
+
+    if current_app.config.get('USE_CLOUDINARY'):
+        neworder.screenshot = upload_to_cloudinary(file)['secure_url']
+    else:
+        neworder.screenshot = save_product_picture(file)
+
+    # -----------------------------
+    # Distance + Delivery Fee
+    # -----------------------------
+    delivery_fee = 0
+    distance_km = 0
+
+    if form.deliverymethod.data == 'agent':
+        if not all([customer_lat, customer_lng, store.latitude, store.longitude]):
+            flash("Location access required for delivery.", "warning")
             return redirect(url_for('main.cart'))
 
-        if current_app.config.get('USE_CLOUDINARY'):
-            neworder.screenshot = upload_to_cloudinary(file)['secure_url']
-        else:
-            neworder.screenshot = save_product_picture(file)
+        from math import radians, sin, cos, sqrt, atan2
 
-        db.session.add(neworder)
-        db.session.commit()
+        def calculate_distance(lat1, lon1, lat2, lon2):
+            R = 6371
+            dlat = radians(lat2 - lat1)
+            dlon = radians(lon2 - lon1)
+            a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+            return 2 * R * atan2(sqrt(a), sqrt(1 - a))
 
-        # 🧮 Process cart items
-        total_amount_calc = 0
-
-        for item in cart.cart_items:
-
-            if item.product:
-                order_item = OrderItem(
-                    order_id=neworder.id,
-                    product_id=item.product.id,
-                    product_name=item.product.productname,
-                    product_price=item.product.price,
-                    quantity=item.quantity
-                )
-                db.session.add(order_item)
-
-                total_amount_calc += item.product.price * item.quantity
-
-                sale = Sales(
-                    order_id=neworder.id,
-                    user_id=current_user.id,
-                    product_id=item.product.id,
-                    product_name=item.product.productname,
-                    price=item.product.price,
-                    quantity=item.quantity,
-                    store_id=pharm.id
-                )
-                db.session.add(sale)
-
-            elif item.custom_meal:
-                item.custom_meal.order_id = neworder.id
-                total_amount_calc += item.custom_meal.total_price
-
-                sale = Sales(
-                    order_id=neworder.id,
-                    user_id=current_user.id,
-                    product_id=None,
-                    product_name=item.custom_meal.name,
-                    price=item.custom_meal.total_price,
-                    quantity=1,
-                    store_id=pharm.id
-                )
-                db.session.add(sale)
-
-        # 🧹 Clear cart
-        CartItem.query.filter_by(cart_id=cart.id).delete()
-        db.session.commit()
-
-        # 🧠 Clear cache if used
-        cart_cache.clear_cache(current_user.id)
-
-        # 🔔 NOTIFY RESTAURANT (REAL-TIME)
-        socketio.emit(
-            'new_order',
-            {
-                'order_id': neworder.id,
-                'customer_email': current_user.email,
-                'total_amount': total_amount_calc,
-                'delivery_method': form.deliverymethod.data,
-                'location': neworder.location,
-                'created_at': neworder.create_at.strftime('%Y-%m-%d %H:%M')
-            },
-            room=f'store_{pharm.id}'
+        distance_km = calculate_distance(
+            store.latitude,
+            store.longitude,
+            customer_lat,
+            customer_lng
         )
 
-        flash('Order successfully placed.', 'success')
-        return redirect(url_for('main.myorders'))
+        BASE_FEE = 10
+        PER_KM = 5
 
-    flash("Invalid submission.", "warning")
-    return redirect(url_for('main.cart'))
+        delivery_fee = round(BASE_FEE + (distance_km * PER_KM), 2)
+
+    neworder.delivery_fee = delivery_fee
+    neworder.distance_km = round(distance_km, 2)
+
+    db.session.add(neworder)
+    db.session.commit()
+
+    # -----------------------------
+    # Process Cart Items
+    # -----------------------------
+    total_amount = 0
+
+    for item in cart.cart_items:
+        if item.product:
+            order_item = OrderItem(
+                order_id=neworder.id,
+                product_id=item.product.id,
+                product_name=item.product.productname,
+                product_price=item.product.price,
+                quantity=item.quantity
+            )
+            db.session.add(order_item)
+
+            item_total = item.product.price * item.quantity
+            total_amount += item_total
+
+            sale = Sales(
+                order_id=neworder.id,
+                user_id=current_user.id,
+                product_id=item.product.id,
+                product_name=item.product.productname,
+                price=item.product.price,
+                quantity=item.quantity,
+                store_id=store.id
+            )
+            db.session.add(sale)
+
+        elif item.custom_meal:
+            item.custom_meal.order_id = neworder.id
+            total_amount += item.custom_meal.total_price
+
+            sale = Sales(
+                order_id=neworder.id,
+                user_id=current_user.id,
+                product_id=None,
+                product_name=item.custom_meal.name,
+                price=item.custom_meal.total_price,
+                quantity=1,
+                store_id=store.id
+            )
+            db.session.add(sale)
+
+    total_amount += delivery_fee
+    neworder.total_amount = round(total_amount, 2)
+
+    # -----------------------------
+    # Clear Cart
+    # -----------------------------
+    CartItem.query.filter_by(cart_id=cart.id).delete()
+    db.session.commit()
+
+    cart_cache.clear_cache(current_user.id)
+
+    # -----------------------------
+    # Notify Store (SocketIO)
+    # -----------------------------
+    socketio.emit(
+        'new_order',
+        {
+            'order_id': neworder.id,
+            'customer_email': current_user.email,
+            'total_amount': neworder.total_amount,
+            'delivery_fee': delivery_fee,
+            'distance_km': neworder.distance_km,
+            'delivery_method': form.deliverymethod.data,
+            'location': neworder.location,
+            'created_at': neworder.create_at.strftime('%Y-%m-%d %H:%M')
+        },
+        room=f'store_{store.id}'
+    )
+
+    flash("Order successfully placed.", "success")
+    return redirect(url_for('main.myorders'))
+
 
 @main.route('/myorders')
 @login_required

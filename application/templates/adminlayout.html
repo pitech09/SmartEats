@@ -13,6 +13,12 @@
         media-src 'self';
         frame-ancestors 'none';
       ">
+    <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- SEO & Compatibility -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -64,6 +70,12 @@
     </script>
 
     <style>
+          #map {
+    height: 400px;   /* required */
+    width: 100%;     /* optional but recommended */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
     .pace { pointer-events: none; user-select: none; }
     .pace.pace-active {
         background: rgba(255, 255, 255, 0.85);
@@ -288,6 +300,11 @@
                 <span>Update Payment Options</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('store.update_store_location') }}">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Update Store Location</span>
+            </a>
 
         <hr class="sidebar-divider d-none d-md-block">
 
@@ -302,6 +319,22 @@
     <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
         <div id="content">
+            {% if not store.latitude or not store.longitude %}
+            <div class="alert alert-warning d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <div>
+                <strong>Store location not set.</strong><br>
+                Delivery distance and fees cannot be calculated until you update your location.
+            </div>
+            </div>
+            {% else %}
+            <div class="alert alert-success d-flex align-items-center">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            <div>
+                Store location is set and active for deliveries.
+            </div>
+            </div>
+            {% endif %}
 
             <button id="sidebarToggleTop" class="btn btn-success d-md-none rounded-circle mr-3 custom-toggle">
                 <i class="fa fa-bars"></i>
