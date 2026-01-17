@@ -124,6 +124,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
 <audio id="order_ready" preload="auto" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
 
+ <!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/696a87f31165b2197f616788/default';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+
 <script>
   if (!window._socket) {
     window._socket = io({ transports:["polling"], upgrade:false, reconnection:true, reconnectionAttempts:5 });
@@ -143,6 +157,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if(el) el.textContent = data.cart_count;
   });
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FoodEstablishment",
+  "name": "SmartEats",
+  "areaServed": {
+    "@type": "Place",
+    "name": "Maputsoe, Leribe, Maseru, Roma Lesotho"
+  },
+  "servesCuisine": ["Local", "Fast Food"],
+  "url": "https://www.smarteatsapp.online"
+}
+</script>
+
 
 <header>
   <nav class="navbar navbar-expand-sm navbar-light border-bottom box-shadow mb-3">
