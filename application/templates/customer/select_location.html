@@ -1,0 +1,33 @@
+{%extends "layout.html"%}
+
+<form method="POST">
+  <label>District</label>
+  <select id="district" name="district_id" required>
+    <option value="">Select District</option>
+    {% for d in districts %}
+      <option value="{{ d.id }}">{{ d.name }}</option>
+    {% endfor %}
+  </select>
+
+  <label>Town</label>
+  <select id="town" name="town_id" required>
+    <option value="">Select Town</option>
+  </select>
+
+  <button type="submit">Continue</button>
+</form>
+
+<script>
+document.getElementById('district').addEventListener('change', function () {
+  fetch(`/api/towns/${this.value}`)
+    .then(res => res.json())
+    .then(data => {
+      let town = document.getElementById('town');
+      town.innerHTML = '<option value="">Select Town</option>';
+      data.forEach(t => {
+        town.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+      });
+    });
+});
+</script>
+{%endblock%}

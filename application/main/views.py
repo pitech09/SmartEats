@@ -5,7 +5,7 @@ from typing import Self
 from flask import render_template, redirect, url_for, flash, session, jsonify, request, current_app
 from flask_login import login_required, current_user, logout_user
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import desc, or_
+from sqlalchemy import desc, or_, case
 from PIL import Image
 import cloudinary
 from cloudinary.uploader import upload
@@ -221,20 +221,52 @@ def menu(page_num=1):
         flash("Please select a store first", "warning")
         return redirect(url_for("main.restuarants"))
 
-    mystore = Store.query.get_or_404(session.get('store_id'))
+    mystore = Store.query.get_or_404(store_id)
 
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+    # Populate store choices
+    formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+
+    # Forms
     form = CartlistForm()
     form2 = Search()
-    products = Product.query.filter_by(store_id=session.get('store_id'), is_active=True).all()
+
+    # Get all active categories for this store
+    categories = Category.query.filter_by(store_id=mystore.id, is_active=True).all()
+
+    # Get selected category from query params (optional)
+    selected_category_id = request.args.get("category", type=int)
+
+    # Query products
+    query = Product.query.filter_by(store_id=mystore.id, is_active=True)
+    if selected_category_id:
+        query = query.filter_by(category_name=selected_category_id)
+
+    products = query.all()
+
+    # Pagination
     start = (page_num - 1) * PRODUCTS_PER_PAGE
     end = start + PRODUCTS_PER_PAGE
     current_products = products[start:end]
     total_pages = (len(products) // PRODUCTS_PER_PAGE) + (1 if len(products) % PRODUCTS_PER_PAGE > 0 else 0)
-    total_count = sum(item.quantity for item in Cart.query.filter_by(user_id=current_user.id, store_id=mystore.id).first().cart_items) if Cart.query.filter_by(user_id=current_user.id, store_id=mystore.id).first() else 0
-    return render_template('customer/updated_menu.html', form=form, formpharm=formpharm, form2=form2,
-                           products=current_products, page_num=page_num, total_pages=total_pages,
-                           total_count=total_count, user=current_user, store=mystore)
+
+    # Cart count
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=mystore.id).first()
+    total_count = sum(item.quantity for item in cart.cart_items) if cart else 0
+
+    return render_template(
+        "customer/updated_menu.html",
+        form=form,
+        formpharm=formpharm,
+        form2=form2,
+        products=current_products,
+        categories=categories,
+        selected_category_id=selected_category_id,
+        page_num=page_num,
+        total_pages=total_pages,
+        total_count=total_count,
+        user=current_user,
+        store=mystore
+    )
 
 # ---------------- CUSTOM MEAL ----------------
 @main.route("/custom_meal/<int:store_id>", methods=["GET", "POST"])
@@ -514,6 +546,8 @@ def addorder():
     return redirect(url_for('main.myorders'))
 
 
+
+
 @main.route('/myorders')
 @login_required
 def myorders():
@@ -683,23 +717,48 @@ def cart_status():
 @login_required
 def account():
     form = UpdateForm()
-    formpharm = Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+
     user = current_user
+
     if form.validate_on_submit():
+        print(request.form)
+
+        # Handle profile picture
         if form.picture.data:
             image_file = save_product_picture(form.picture.data)
             current_user.image_file = image_file
-        current_user.email = form.Email.data
-        current_user.phonenumber = form.phonenumber.data
-        current_user.lastname = form.lastName.data
-        current_user.username = form.username.data
+
+        # Update user info
+        current_user.email = form.Email.data.strip()
+        current_user.phonenumber = form.phonenumber.data.strip()
+        current_user.lastname = form.lastName.data.strip()
+        current_user.username = form.username.data.strip()
+        current_user.district = form.district.data.strip()
+        current_user.town = form.town.data.strip()
+
         db.session.commit()
         flash("Account Details Updated Successfully.", "success")
-        return redirect(url_for('main.account'))
-    image_file = url_for('static', filename='static/images/profiles/' + user.image_file)
-    return render_template('customer/updated_acc.html', user=user, formpharm=formpharm, store=session.get('store_id'),
-                           image_file=image_file, form=form)
+        return redirect(url_for('main.home'))
+
+    elif request.method == 'GET':
+        form.Email.data = user.email
+        form.phonenumber.data = user.phonenumber
+        form.lastName.data = user.lastname
+        form.username.data = user.username
+        form.district.data = user.district
+        form.town.data = user.town  
+
+        return redirect(url_for('main.home'))
+
+    image_file = url_for('static', filename='images/profiles/' + user.image_file)
+
+    return render_template(
+        'customer/updated_acc.html',
+        user=user,
+        store=session.get('store_id'),
+        image_file=image_file,
+        form=form
+    )
 
 # ---------------- LOGOUT ----------------
 @main.route('/logout')
@@ -745,12 +804,26 @@ def set_storee(store_id):
     flash(f'You are now viewing {store.name}', 'success')
     return redirect(url_for('main.home', store_id=store.id))
 
-@main.route('/restuarants', methods=['POST', 'GET'])
+@main.route('/stores')
 def restuarants():
-    formpharm = Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
-    stores = Store.query.all()
-    return render_template('customer/restuarants.html', stores=stores, formpharm=formpharm)
+    form2 = Search()
+    user_district = current_user.district
+    user_town = current_user.town
+
+    rank_case = case(
+        (Store.town == user_town, 0),
+        (Store.district == user_district, 1),
+        else_=2
+    )
+
+    stores = Store.query.filter(
+        Store.is_active == True
+    ).order_by(
+        rank_case,  # prioritize rank
+        Store.name.asc()  # then alphabetical by name
+    ).all()
+
+    return render_template('customer/restuarants.html', stores=stores, form2=form2)
 
 @main.route("/store/<int:store_id>")
 @login_required
@@ -831,6 +904,58 @@ def search(page_num=1):
         )
 
     return redirect(url_for("main.menu", page_num=1))
+
+@main.route("/search/store/<int:page_num>", methods=["POST", "GET"])
+def searcher(page_num=1):
+    form2 = Search()
+    current_stores = []
+
+    if form2.validate_on_submit():
+        search_term = form2.keyword.data.strip()
+
+        # Filter stores by name, district, or town
+        stores = Store.query.filter(
+            Store.is_active == True,
+            or_(
+                Store.district.ilike(f"%{search_term}%"),
+                Store.town.ilike(f"%{search_term}%"),
+                Store.name.ilike(f"%{search_term}%")
+            )
+        ).all()
+
+        # Pagination
+        start = (page_num - 1) * PRODUCTS_PER_PAGE
+        end = start + PRODUCTS_PER_PAGE
+        current_stores = stores[start:end]
+
+        total_pages = (len(stores) // PRODUCTS_PER_PAGE) + (1 if len(stores) % PRODUCTS_PER_PAGE > 0 else 0)
+
+        return render_template(
+            "customer/restuarants.html",
+            stores=current_stores,
+            form2=form2,
+            page_num=page_num,
+            total_pages=total_pages,
+            search_term=search_term
+        )
+
+    # GET request or empty search: just show all stores
+    all_stores = Store.query.filter_by(is_active=True).all()
+    start = (page_num - 1) * PRODUCTS_PER_PAGE
+    end = start + PRODUCTS_PER_PAGE
+    current_stores = all_stores[start:end]
+
+    total_pages = (len(all_stores) // PRODUCTS_PER_PAGE) + (1 if len(all_stores) % PRODUCTS_PER_PAGE > 0 else 0)
+
+    return render_template(
+        "customer/restuarants.html",
+        stores=current_stores,
+        form2=form2,
+        page_num=page_num,
+        total_pages=total_pages
+    )
+
+
 # ---------------- CONTACT / ABOUT / HEALTH ----------------
 @main.route("/about")
 def about():

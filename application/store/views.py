@@ -21,10 +21,10 @@ from cloudinary.uploader import upload
 
 from . import store
 from ..forms import addmore, removefromcart, ProductForm, \
-    updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdatePharmacyForm, updateorderpickup, deliveryregistrationform
+    updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdateStoreForm, updateorderpickup, deliveryregistrationform
 from ..models import (User, Product, Sales, DeliveryGuy,
                       Order, Cart, OrderItem, db, Store,
-                      Notification, Staff, Administrater)
+                      Notification, Staff, Administrater, Category)
 from ..utils.notification import create_notification
 from application import cache
 from datetime import datetime
@@ -33,8 +33,8 @@ from application.auth.views import send_sound
 from application.models import Ingredient
 from application.forms import IngredientForm, StoreLocationForm
 
-mypharmacy_product = Store.products
-mypharmacy_orders = Store.orders
+mystore_product = Store.products
+mystore_orders = Store.orders
 bcrypt = Bcrypt()
 
 
@@ -89,6 +89,17 @@ login_manager = LoginManager()
 login_manager.session_protection = 'strong'
 login_manager.login_view = 'auth.newlogin'
 
+def get_stores(district_id, town_id):
+    return Store.query.filter(
+        Store.is_active == True,
+        Store.district_id == district_id
+    ).order_by(
+        db.case(
+            (Store.town_id == town_id, 0),
+            else_=1
+        )
+    ).all()
+
 
 
 @login_manager.user_loader
@@ -119,12 +130,12 @@ def adminpage():
         return redirect(url_for('main.newlogin'))
 
     store_id = session.get('store_id')
-    mypharmacy = Store.query.get_or_404(store_id)
+    mystore = Store.query.get_or_404(store_id)
 
     # ------------------ Notifications ------------------
     unread_notifications = Notification.query.filter_by(
         user_type='store',
-        user_id=mypharmacy.id,
+        user_id=mystore.id,
         is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = len(unread_notifications)
@@ -193,7 +204,7 @@ def adminpage():
         extract('month', Order.create_at) == current_month,
         extract('year', Order.create_at) == current_year,
         Order.status == "Pending",
-        Order.store_id == mypharmacy.id
+        Order.store_id == mystore.id
     ).count()
 
     # ------------------ Daily NET Sales Chart ------------------
@@ -224,7 +235,7 @@ def adminpage():
     # ------------------ Render ------------------
     return render_template(
         'store/updated_dashboard.html',
-        store=mypharmacy,
+        store=mystore,
         total_daily_sales=total_daily_sales,
         total_monthly_sales=total_monthly_sales,
         total_annual_sales=total_annual_sales,
@@ -301,6 +312,10 @@ def updateproduct(item_id):
     ).order_by(Notification.timestamp.desc()).count()
 
     form = update()
+    form.category.choices = [
+        (c.id, c.name)
+        for c in Category.query.filter_by(store_id=store.id).all()
+    ]
     if form.validate_on_submit():
 
         product = Product.query.filter_by(id=item_id, store_id=mystore.id).first()
@@ -325,34 +340,34 @@ def updateproduct(item_id):
 @login_required
 def ready_orders():
     form1 = updateorderpickup()
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    mystore = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
     form = updatestatusform()
     readyorders = Order.query.filter(Order.status=="Ready ", Order.store_id == current_user.id).all()
-    return render_template('store/readyorder.html',form=form, readyorders=readyorders, store=mypharmacy,
+    return render_template('store/readyorder.html',form=form, readyorders=readyorders, store=mystore,
                         unread_notifications=unread_notifications, count=count, form1=form1)
 
 @store.route('/dashboard/orders_on_delivery')
 @login_required
 def orders_on_delivery():
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    mystore = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
     form = updatestatusform()
     ondelivery = Order.query.filter(Order.status == "Out for Delivery", Order.store_id == current_user.id).all()
     return render_template('store/ondelivery.html', form=form, count=count, ondelivery=ondelivery,
-                           store=mypharmacy, unread_notifications=unread_notifications)
+                           store=mystore, unread_notifications=unread_notifications)
 
 
 @store.route('/dashboard/active_orders')
@@ -361,18 +376,18 @@ def orders_on_delivery():
 def ActiveOrders():
 
     store_id = session.get('store_id')
-    mypharmacy = Store.query.get_or_404(store_id)
+    mystore = Store.query.get_or_404(store_id)
 
     # ---------------- Notifications ----------------
     unread_notifications = Notification.query.filter_by(
         user_type='store',
-        user_id=mypharmacy.id,
+        user_id=mystore.id,
         is_read=False
     ).order_by(Notification.timestamp.desc()).all()
 
     count = Notification.query.filter_by(
         user_type='store',
-        user_id=mypharmacy.id,
+        user_id=mystore.id,
         is_read=False
     ).count()
 
@@ -382,21 +397,21 @@ def ActiveOrders():
 
     # ---------------- Orders ----------------
     orders = Order.query.filter_by(
-        store_id=mypharmacy.id, status="Pending"
+        store_id=mystore.id, status="Pending"
     ).order_by(Order.create_at.desc()).all()
 
     approved_order = Order.query.filter_by(
-        store_id=mypharmacy.id,
+        store_id=mystore.id,
         status="Approved"
     ).order_by(Order.create_at.desc()).all() or Order.query.filter_by(
-        store_id=mypharmacy.id,
+        store_id=mystore.id,
         status="Appproved"
     ).order_by(Order.create_at.desc()).all()
 
     # ---------------- Render ----------------
     return render_template(
         "store/updated_orders.html",
-        store=mypharmacy,
+        store=mystore,
         orders=orders,
         approved_order=approved_order,
         unread_notifications=unread_notifications,
@@ -409,14 +424,14 @@ def ActiveOrders():
 @store.route('/dashboard/delivered')
 @login_required
 def delivered_orders():
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    mystore = Store.query.get_or_404(current_user.id)
     # Notifications
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).count()
 
     store_id = session.get('store_id')
@@ -444,12 +459,12 @@ def delivered_orders():
 def cancelled_orders():
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    mystore = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
     form = updatestatusform()
@@ -462,15 +477,15 @@ def cancelled_orders():
 @store.route('/dashboard/updatestore', methods=["POST", "GET"])
 @login_required
 def updatestore():
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    mystore = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
-    updateForm = UpdatePharmacyForm()
+    updateForm = UpdateStoreForm()
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)
     if updateForm.validate_on_submit():
@@ -546,20 +561,32 @@ def logout():
 #@role_required('Store')
 def addproducts():
     form = ProductForm()
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    
+    mystore = Store.query.get_or_404(current_user.id)
+    form.category.choices = [
+        (c.id, c.name)
+        for c in Category.query.filter_by(store_id=mystore.id).all()
+    ]
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
+    category = Category.query.filter_by(store_id=mystore.id, is_active=True).first()
+    categories = Category.query.filter_by(store_id=mystore.id, is_active=True).all()
     if request.method == 'POST':
         if form.is_submitted():
             if form.validate_on_submit:
+
+
                 product = Product(productname=form.product_name.data, price=form.product_price.data,
-                                  description=form.product_description.data
+                                  description=form.product_description.data,
+                                  category_name=form.category.data
                                   )
+                print(request.form)
+                print(f'Category selected: {form.category.data}')
                 file = form.product_pictures.data
                 print(current_app.config['USE_CLOUDINARY'])
                 if current_app.config['USE_CLOUDINARY']:
@@ -572,7 +599,7 @@ def addproducts():
                     _image = save_product_picture(file)
                     product.pictures = _image
 
-                product.store_id = mypharmacy.id
+                product.store_id = mystore.id
                 db.session.add(product)
                 try:
                     db.session.commit()
@@ -587,7 +614,7 @@ def addproducts():
             flash('form was not submitted successfully.try again later.')
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)    
-    return render_template("store/updated_addProduct.html", form=form,
+    return render_template("store/updated_addProduct.html", form=form, category=category, categories=categories,
                             unread_notifications=unread_notifications, count=count, store=store)
 
 @cache.memoize(timeout=300)
@@ -595,12 +622,12 @@ def addproducts():
 @login_required
 #@role_required('Store')
 def userorders(order_id):
-    mypharmacy = Store.query.get_or_404(current_user.id)
+    mystore = Store.query.get_or_404(current_user.id)
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
     store_id = session.get('store_id')
@@ -623,19 +650,19 @@ def userorders(order_id):
 @store.route('/dashboard/products')
 @login_required
 def products():
-    mypharmacy = Store.query.get(current_user.id)
+    mystore = Store.query.get(current_user.id)
     unread_notifications = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
     count = Notification.query.filter_by(
-        user_type='store', user_id=mypharmacy.id, is_read=False
+        user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).count()
 
     form2 = removefromcart()
     form4 = Search()
     form3 = addmore()
     form = update()
-    product = Product.query.filter(Product.store_id==mypharmacy.id, Product.is_active==True).all()
+    product = Product.query.filter(Product.store_id==mystore.id, Product.is_active==True).all()
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)
     return render_template('store/updated_products.html', product=product, form4=form4, form=form, 
@@ -1050,4 +1077,83 @@ def vendor_pos():
         products=products
     )
  
+
+@store.route('/categories', methods=['GET', 'POST'])
+@login_required
+def manage_categories():
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+
+    if request.method == 'POST':
+        name = request.form.get('name').strip()
+        if not name:
+            flash("Category name is required.", "danger")
+            return redirect(request.referrer)
         
+        exists = Category.query.filter_by(
+            name=name,
+            store_id=store.id
+        ).first()
+        if exists:
+            flash("Category already exists.", "warning")
+            return redirect(request.referrer)
+        else:
+            category = Category(
+                name=name,
+                store_id=store.id
+            )
+            db.session.add(category)
+            db.session.commit()
+            flash("Category added successfully.", "success")
+            return redirect(request.referrer)
+        
+    categories = Category.query.filter_by(
+            store_id=store.id, is_active=True
+        ).order_by(Category.name.asc()).all()
+    
+    return render_template(
+        'store/categories.html',
+        store=store,
+        categories=categories
+    )
+
+@store.route('/categories/delete/<int:category_id>', methods=['POST'])
+@login_required
+def delete_category(category_id):
+    store_id = current_user.id
+    store = Store.query.get_or_404(store_id)
+
+    category = Category.query.filter_by(
+        id=category_id,
+        store_id=store.id
+    ).first_or_404()
+
+    category.is_active = False
+    db.session.commit()
+    flash("Category deleted successfully.", "success")
+    return redirect(request.referrer)
+
+@store.route('/view_categories/<int:category_id>', methods=['GET'])
+@login_required
+def view_categories(category_id):
+    store_id = current_user.id  
+    store = Store.query.get_or_404(store_id)
+
+    categories = Category.query.filter_by(
+        store_id=store.id,
+        is_active=True,
+        id=category_id
+    ).order_by(Category.name.asc()).all()
+
+    products = Product.query.filter_by(
+        store_id=store.id,
+        category_name=category_id,
+        is_active=True
+    ).order_by(Product.productname.asc()).all()
+
+    return render_template(
+        'store/view_categories.html',
+        store=store,
+        categories=categories,
+        products=products
+    )

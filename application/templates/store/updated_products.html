@@ -20,6 +20,7 @@
                     <tr>
                         <th style="width:25%">Product Name</th>
                         <th style="width:45%">Description</th>
+                        <th style="width:45%">Category</th>
                         <th style="width:15%">Price (M)</th>
                         <th style="width:15%">Action</th>
                     </tr>
@@ -30,6 +31,7 @@
                     <tr>
                         <td class="fw-semibold">{{ item.productname }}</td>
                         <td style="white-space: normal;">{{ item.description }}</td>
+                        <td class="fw-bold">{{ item.category_name }}</td>
                         <td class="fw-bold">M {{ item.price }}</td>
 
                         <td>

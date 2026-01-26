@@ -133,6 +133,8 @@ def register():
         user = User(
             username=form.username.data,
             lastname=form.lastName.data,
+            district=form.district.data,
+            town=form.town.data,
             email=form.Email.data,
             password=bcrypt.generate_password_hash(form.Password.data).decode("utf-8")
         )
@@ -157,33 +159,33 @@ def register():
 def registerstore():
     form = StoreRegistrationForm()
     formpharm = Set_StoreForm()
-
-    if form.validate_on_submit():
+    if form.validate():
         if Store.query.filter_by(email=form.email.data).first():
             flash("Email already exists", "danger")
             return redirect(url_for("auth.registerstore"))
 
         store = Store(
-            name=form.pharmacy_name.data,
+            name=form.storename.data,
             email=form.email.data,
             phone=form.phone.data,
-            address=form.address.data,
-            town=form.town.data,
             district = form.district.data,
+            town = form.town.data,
             openinghours=form.opening_hours_and_days.data,
             password=bcrypt.generate_password_hash(form.password.data).decode("utf-8")
         )
-
+        print("Store registered")
         db.session.add(store)
         try:
             db.session.commit()
+            print('Committing to database')
             send_confirmation_email(store.email)
             flash("Store registered. Check email to confirm.", "success")
             return redirect(url_for("auth.newlogin"))
         except IntegrityError:
             db.session.rollback()
+            print("error occured")
             flash("Registration failed.", "danger")
-
+    print("bluh bluh")
     return render_template("auth/registerphar.html", form=form, formpharm=formpharm)
 
 

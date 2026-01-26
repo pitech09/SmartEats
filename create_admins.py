@@ -49,7 +49,7 @@ def create_admin_accounts():
                 "phone": "+26657130629"
             }
             ,
-                        {
+            {
                 "name": "Majezz Eatery",
                 "address": "Maputsoe Ha Maqele",
                 "email": "majezz@gmail.com",
@@ -77,26 +77,25 @@ def create_admin_accounts():
         for store_data in stores:
             existing_store = Store.query.filter_by(email=store_data["email"]).first()
             if existing_store:
-                print(f"⚠️ Store {store_data['email']} already exists. Skipping.")
+                print(f"Store {store_data['email']} already exists. Skipping.")
                 continue
 
             hashed_pw = bcrypt.generate_password_hash(store_data["password"]).decode("utf-8")
             new_store = Store(
                 name=store_data["name"],
-                address=store_data["address"],
                 email=store_data["email"],
                 password=hashed_pw,
                 openinghours=store_data["openinghours"],
                 phone=store_data["phone"]
             )
             db.session.add(new_store)
-            print(f"✅ Created store: {store_data['email']}")
+            print(f"Created store: {store_data['email']}")
 
         # Create Customers
         for customer_data in customers:
             existing_customer = User.query.filter_by(email=customer_data["email"]).first()
             if existing_customer:
-                print(f"⚠️ Customer {customer_data['email']} already exists. Skipping.")
+                print(f"Customer {customer_data['email']} already exists. Skipping.")
                 continue
 
             hashed_pw = bcrypt.generate_password_hash(customer_data["password"]).decode("utf-8")
@@ -107,13 +106,13 @@ def create_admin_accounts():
                 password=hashed_pw,
             )
             db.session.add(new_customer)
-            print(f"✅ Created customer: {customer_data['email']}")
+            print(f"Created customer: {customer_data['email']}")
 
         # Create Admins
         for admin_data in admins:
             existing = User.query.filter_by(email=admin_data["email"]).first()
             if existing:
-                print(f"⚠️ {admin_data['email']} already exists. Skipping.")
+                print(f"{admin_data['email']} already exists. Skipping.")
                 continue
 
             hashed_pw = bcrypt.generate_password_hash(admin_data["password"]).decode("utf-8")
@@ -123,13 +122,13 @@ def create_admin_accounts():
                 password=hashed_pw,     
             )
             db.session.add(new_admin)
-            print(f"✅ Created admin: {admin_data['email']}")
+            print(f"Created admin: {admin_data['email']}")
 
         # Create Delivery Agents
         for agent in delivery_agents:
             existing_agent = DeliveryGuy.query.filter_by(email=agent["email"]).first()
             if existing_agent:
-                print(f"⚠️ Delivery agent {agent['email']} already exists. Skipping.")
+                print(f"Delivery agent {agent['email']} already exists. Skipping.")
                 continue
 
             hashed_pw = bcrypt.generate_password_hash(agent["password"]).decode("utf-8")
@@ -139,10 +138,10 @@ def create_admin_accounts():
                 password=hashed_pw
             )
             db.session.add(new_agent)
-            print(f"✅ Created delivery agent: {agent['email']}")
+            print(f"Created delivery agent: {agent['email']}")
 
         db.session.commit()
-        print("🎉 All admin and delivery agent accounts created successfully!")
+        print("All admin and delivery agent accounts created successfully!")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,13 @@
     <h2 class="text-success">{{ store.name }} Menu</h2>
     <p class="text-muted">Browse and add your favorite meals to the cart!</p>
   </div>
+    {% if missing_location %}
+  <div class="alert alert-warning text-center rounded-pill">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      Please update your <strong>district</strong> and <strong>town</strong> to get personalized store listings.
+  </div>
+  {% endif %}
+
 
   <!-- Search Bar -->
   <div class="mb-4">
@@ -23,13 +30,20 @@
     </form>
   </div>
 
-  <!-- Custom Meal Button 
-  <div class="mb-4 text-center">
-    <a href="{{ url_for('main.custom_meal', store_id=store.id) }}" class="btn btn-outline-success rounded-pill">
-      Build Your Own Meal
+  <!-- Category Filters -->
+  <div class="mb-4 d-flex flex-wrap justify-content-center gap-2">
+    <a href="{{ url_for('main.menu', page_num=page_num) }}"
+       class="btn {% if not selected_category_id %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill">
+        All
     </a>
+    {% for cat in categories %}
+    <a href="{{ url_for('main.menu', page_num=page_num, category=cat.id) }}"
+       class="btn {% if selected_category_id == cat.id %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill">
+        {{ cat.name }}
+    </a>
+    {% endfor %}
   </div>
--->
+
   <!-- Product Grid -->
   <div class="row row-cols-1 row-cols-md-3 g-4">
     {% for product in products %}
@@ -58,11 +72,11 @@
   <!-- Pagination -->
   <div class="d-flex justify-content-center align-items-center mt-4">
     {% if page_num > 1 %}
-      <a href="{{ url_for('main.menu', page_num=page_num - 1) }}" class="btn btn-outline-secondary me-2">Previous</a>
+      <a href="{{ url_for('main.menu', page_num=page_num - 1, category=selected_category_id) }}" class="btn btn-outline-secondary me-2">Previous</a>
     {% endif %}
     <span class="mx-2">Page {{ page_num }} of {{ total_pages }}</span>
     {% if page_num < total_pages %}
-      <a href="{{ url_for('main.menu', page_num=page_num + 1) }}" class="btn btn-outline-secondary ms-2">Next</a>
+      <a href="{{ url_for('main.menu', page_num=page_num + 1, category=selected_category_id) }}" class="btn btn-outline-secondary ms-2">Next</a>
     {% endif %}
   </div>
 
@@ -87,24 +101,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const data = await response.json();
                 if (data.success) {
-                    // Update cart count and show icon if hidden
+                    // Update cart count
                     if (cartCountEl) cartCountEl.textContent = data.cart_count;
                     if (cartIcon && cartIcon.classList.contains("d-none")) {
                         cartIcon.classList.remove("d-none");
                     }
 
-                    // Animate cart icon briefly
+                    // Animate cart icon
                     if (cartIcon) {
                         cartIcon.classList.add("scale-up");
                         setTimeout(() => cartIcon.classList.remove("scale-up"), 300);
                     }
 
-                    // Update button temporarily
+                    // Button feedback
                     btn.classList.add('btn-success');
-                    btn.innerHTML = 'Added ✓';
+                    btn.innerHTML = 'Added <i class="fas fa-check-circle ms-1"></i>';
                     setTimeout(() => {
                         btn.innerHTML = '<i class="fas fa-cart-plus me-1"></i> Add';
-                    }, 1200);
+                    }, 800);
                 }
             } catch (err) {
                 console.error("Error adding to cart:", err);

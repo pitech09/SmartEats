@@ -18,7 +18,6 @@ def get_localTime():
 def get_orderid():
     return "ORD-" + secrets.token_hex(4).upper()
 
-
 # ----------------- Store -----------------
 class Store(UserMixin, db.Model):
     __tablename__ = "store"
@@ -40,8 +39,12 @@ class Store(UserMixin, db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
 
+    district = db.Column(db.String(60), nullable=False, default="None")
+    town = db.Column(db.String(60),nullable=False, default="None")
+    is_active = db.Column(db.Boolean, default=True)
     registered_on = db.Column(db.DateTime, server_default=db.func.now())
-
+    
+    
     users = db.relationship("User", back_populates="store")
     products = db.relationship("Product", backref="store", lazy=True)
     orders = db.relationship("Order", back_populates="store")
@@ -57,13 +60,14 @@ class Product(db.Model):
     pictures = db.Column(db.Text, nullable=False)
     quantity = db.Column(db.Integer)
     description = db.Column(db.Text, nullable=False)
-    category = db.Column(db.String(100), default="Uncategorized")
+    category_name = db.Column(db.String(100), db.ForeignKey("category.name", name="fk_product_category"), nullable=True)
     warning = db.Column(db.String(100), default="Quantity Good")
     is_active = db.Column(db.Boolean, default=True)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
     # Relationships
     cart_items = db.relationship("CartItem", backref="product", lazy=True)
     order_items = db.relationship("OrderItem", backref="product", lazy=True)
+    category = db.relationship("Category", back_populates="products")
 
 
 # ----------------- Ingredient -----------------
@@ -93,6 +97,8 @@ class User(UserMixin, db.Model):
 
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
 
+    district = db.Column(db.String(60), default="None")
+    town = db.Column(db.String(60), default="None")
     # Relationships
     store = db.relationship("Store", back_populates="users")
     carts = db.relationship("Cart", backref="user", lazy=True)
@@ -190,7 +196,6 @@ class Order(db.Model):
 
     customer_lat = db.Column(db.Float)
     customer_lng = db.Column(db.Float)
-
 
     deliveryguy = db.Column(db.String(50), default="Not Taken")
     screenshot = db.Column(db.Text)
@@ -358,3 +363,17 @@ class Ad(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         user_id = db.Column(db.Integer, nullable=False)  # link to your User table
         subscription_info = db.Column(JSON, nullable=False)
+
+
+class Category(db.Model):
+    __tablename__ = "category"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    products = db.relationship("Product", back_populates="category", lazy=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("store_id", "name", name="uq_store_category"),
+    )

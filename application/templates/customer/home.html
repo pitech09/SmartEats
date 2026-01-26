@@ -106,53 +106,6 @@
   </div>
 
 </div>
-
-<div class="row g-4 mt-3">
-
-  <!-- User Stats -->
-  <div class="col-md-6">
-    <div class="card soft-card shadow-sm border-0">
-      <div class="card-body">
-        <h6 class="fw-bold mb-3 text-primary">📊 Your Activity</h6>
-        <div class="d-flex justify-content-between">
-          <span>Total Orders</span>
-          <b>{{ user_orders_count or 0 }}</b>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span>Peak Rate</span>
-          <b>{{ peak_rate or "N/A" }}</b>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span>Completed</span>
-          <b>{{ completed_orders_count or 0 }}</b>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Notifications -->
-  <div class="col-md-6">
-    <div class="card soft-card shadow-sm border-0">
-      <div class="card-body">
-        <h6 class="fw-bold mb-3">🔔 Notifications</h6>
-        <ul class="list-group list-group-flush" id="notification-list">
-          {% if notifications %}
-            {% for note in notifications %}
-            <li class="list-group-item px-0">
-              <small class="text-muted">{{ note.time }}</small><br>
-              <b>{{ note.type }}</b> – {{ note.message }}
-            </li>
-            {% endfor %}
-          {% else %}
-            <li class="list-group-item px-0 text-muted">
-              You’re all caught up 🎉
-            </li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <!-- Real-time Notifications -->

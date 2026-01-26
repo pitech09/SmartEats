@@ -8,8 +8,12 @@ class StoreRegistrationForm(FlaskForm):
     storename = StringField('Store Name', validators=[DataRequired()])
     email = EmailField('Email', validators=[DataRequired()])
     phone = StringField('Phone Number', validators=[DataRequired()])
-    town = StringField("Town", validators=[DataRequired()])
-    district = StringField("District", validators=[DataRequired()]),
+    town = StringField("Town, Village", validators=[DataRequired()])
+    district = SelectField("Operating District", validators=[DataRequired()], choices=[('Leribe', 'Leribe'), ('ButhaButhe', 'ButhaButhe'),
+                                                                                       ('Berea', 'Berea'), ('Maseru', 'Maseru'), ('Mafeteng', 'Mafeteng'),
+                                                                                       ("Mohale's Hoek", "Mohale's Hoek"), ('Quthing', 'Quthing'), ("Qacha's Nek","Qacha's Nek"),
+                                                                                       ('Thaba-Tseka', 'Thaba-Tseka'), ('Mokhotlong', 'Mokhotlong') ])
+
     opening_hours_and_days = StringField('Opening Hours', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=16)])
     submit = SubmitField('Register Store')
@@ -30,7 +34,7 @@ class UpdateForm(FlaskForm):
     phonenumber = StringField('Phone Number', validators=[DataRequired(), Length(min=8, max=15)])
 
     town = StringField("Town", validators=[DataRequired()])
-    district = StringField("District", validators=[DataRequired()])
+    district = SelectField("Operating District", validators=[DataRequired()], choices=[('ButhaButhe', 'ButhaButhe'), ('Leribe', 'Leribe'), ('Berea', 'Berea'), ('Maseru', 'Maseru'), ('Mafeteng', 'Mafeteng'), ("Mohale's Hoek", "Mohale's Hoek"), ('Quthing', 'Quthing'), ("Qacha's Nek", "Qacha's Nek"), ('Thaba-Tseka', 'Thaba-Tseka'), ('Mokhotlong', 'Mokhotlong')])
     Email = EmailField('Email',
                         validators=[DataRequired(),
                                     Length(min=5, max=30)])
@@ -51,7 +55,13 @@ class RegistrationForm(FlaskForm):
     Email = EmailField('Email',
                         validators=[DataRequired(),
                                     Length(min=5, max=30)])
+    town = StringField("Town, Village", validators=[DataRequired()])
+    district = SelectField("Operating District", validators=[DataRequired()], choices=[('Leribe', 'Leribe'), ('ButhaButhe', 'ButhaButhe'),
+                                                                                       ('Berea', 'Berea'), ('Maseru', 'Maseru'), ('Mafeteng', 'Mafeteng'),
+                                                                                       ("Mohale's Hoek", "Mohale's Hoek"), ('Quthing', 'Quthing'), ("Qacha's Nek","Qacha's Nek"),
+                                                                                       ('Thaba-Tseka', 'Thaba-Tseka'), ('Mokhotlong', 'Mokhotlong')])
 
+   
     Password = PasswordField('Password',
                              validators=[DataRequired(), Length(min=8, max=16)])
 
@@ -89,6 +99,11 @@ class update(FlaskForm):
     newprice = FloatField("New Price: ")
     quantity = IntegerField("Quantity")
     newdescription = StringField("New Description: ")
+    category = SelectField(
+        "Category",
+        coerce=int,
+        validators=[DataRequired()]
+    )
     picture = FileField('Upload Product Picture', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif'])])
 
     submit = SubmitField("Commit Update")
@@ -111,6 +126,11 @@ class ProductForm(FlaskForm):
     product_description = StringField("Description", validators=[DataRequired()])
     product_price = FloatField("Price", validators=[DataRequired()])
     product_pictures = FileField('Upload Product Picture', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif'])])
+    category = SelectField(
+        "Category",
+        coerce=int,
+        validators=[DataRequired()]
+    )
     submit = SubmitField("Add Product")
 
 
@@ -167,11 +187,11 @@ class addstaffform(FlaskForm):
     password = StringField('Password', validators=[DataRequired()])
     submit = SubmitField('Add Staff')
 
-class UpdatePharmacyForm(FlaskForm):
+class UpdateStoreForm(FlaskForm):
     mpesaname = StringField("Names: ", validators=[DataRequired()])
     mpesacode = StringField("Mpesa Till No.", validators=[DataRequired()])
-    ecocashname = StringField("Ecocash Name: ")
-    ecocashcode = StringField("Ecocash Till No.", validators=[DataRequired()])
+    econame = StringField("Ecocash Name: ")
+    ecocode = StringField("Ecocash Till No.", validators=[DataRequired()])
     submit = SubmitField('Save')
 
 class deliveryregistrationform(FlaskForm):

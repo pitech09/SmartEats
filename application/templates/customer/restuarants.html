@@ -3,7 +3,18 @@
 <div class="container mt-4">
 
     <h2 class="text-success fw-bold mb-4">Available Stores</h2>
-
+    <!-- Search Bar -->
+    <div class="mb-4">
+        <form id="searchForm" action="{{ url_for('main.searcher', page_num=1) }}" method="post" class="d-flex justify-content-center">
+        {{ form2.hidden_tag() }}
+        <div class="input-group w-75">
+            {{ form2.keyword(class='form-control border-0 shadow-sm', placeholder='Search for store by name or district or town...') }}
+            <button class="btn btn-success" type="submit">
+            <i class="fas fa-search"></i>
+            </button>
+        </div>
+        </form>
+    </div>
     {% if stores %}
         <div class="row g-4">
             {% for store in stores %}
@@ -17,7 +28,8 @@
                         </h5>
 
                         <p class="card-text text-muted">
-                            Located: {{ store.address or "Not provided" }}
+                            Located: {{ store.town or "Not provided" }}, {{store.district or "Not Provided"}}
+
                         </p>
 
                         <div class="mt-auto d-flex justify-content-between align-items-center">
@@ -25,7 +37,6 @@
                                class="btn btn-outline-success btn-sm rounded-pill px-3">
                                 View Details
                             </a>
-
                             <a href="{{ url_for('main.set_storee', store_id=store.id) }}" 
                                class="btn btn-success btn-sm rounded-pill px-3">
                                 Choose Restaurant
@@ -40,7 +51,7 @@
 
     {% else %}
         <div class="alert alert-success rounded-4 shadow-sm">
-            No stores are currently registered.
+            No stores Available in this area.
         </div>
     {% endif %}
 </div>

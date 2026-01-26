@@ -19,6 +19,14 @@
                         <div class="text-danger small">{{ form.product_name.errors[0] }}</div>
                     {% endif %}
                 </div>
+                <div class="mb-3">
+                    {{ form.category.label(class="form-label fw-semibold") }}
+                    {{ form.category(class="form-select") }}
+
+                    {% if form.category.errors %}
+                        <div class="text-danger small">{{ form.category.errors[0] }}</div>
+                    {% endif %}
+                </div>
 
                 <!-- Product Price -->
                 <div class="mb-3">
