@@ -11,8 +11,8 @@ from . import db, login_manager
 
 # ----------------- Utilities -----------------
 def get_localTime():
-    tz = pytz.timezone("Africa/Johannesburg")
-    return datetime.now(tz)
+
+    return datetime.now().strftime("%H:%M:%S")
 
 
 def get_orderid():

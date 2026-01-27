@@ -198,13 +198,14 @@ def registered_stores():
 
 @admin.route('/register store')
 def register_store():
-    form = PharmacyRegistrationForm()
+    form = StoreRegistrationForm()
     return render_template('admin/registerstore.html', form=form)
 
 @admin.route('/pending vefication')
 def pending_verification():
     stores = Store.query.filter(Store.verified == False).all()
     return render_template('admin/pendingpharmacies.html', stores=stores)
+
 @admin.route("/ads", methods=["GET", "POST"])
 @login_required
 def manage_ads():
