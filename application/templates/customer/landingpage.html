@@ -6,55 +6,114 @@
 
  {% if ads %}
 <div id="adsCarousel"
-     class="carousel slide mb-5"
-     data-bs-ride="carousel">
+  class="carousel slide mb-5"
+  data-bs-ride="carousel"></div>
 
   <div class="carousel-inner">
     {% for ad in ads %}
     <div class="carousel-item {% if loop.first %}active{% endif %}">
-      <a class="text-decoration-none" href="
-        {% if ad.link_type == 'product' %}
-          {{ url_for('main.product_detail', product_id=ad.product_id) }}
-        {% elif ad.link_type == 'store' %}
-          {{ url_for('main.go_to_store', store_id=ad.store_id) }}
-        {% else %}
-          {{ ad.external_url }}
-        {% endif %}
-      ">
-        <div class="card shadow-sm border-0 rounded-4 mx-auto"
-             style="max-width: 900px;">
+   <a class="text-decoration-none" href="
+     {% if ad.link_type == 'product' %}
+    {{ url_for('main.product_detail', product_id=ad.product_id) }}
+     {% elif ad.link_type == 'store' %}
+    {{ url_for('main.go_to_store', store_id=ad.store_id) }}
+     {% else %}
+    {{ ad.external_url }}
+     {% endif %}
+   ">
+     <div class="card shadow-sm border-0 rounded-4 mx-auto"
+       style="max-width: 900px;">
 
-          <div class="d-flex align-items-center justify-content-center bg-light"
-               style="height: 280px;">
+    <div class="d-flex align-items-center justify-content-center bg-light"
+      style="height: 280px;">
 
-            <img src="{{ ad.image }}"
-                 alt="{{ ad.title }}"
-                 class="img-fluid"
-                 style="
-                   max-height: 100%;
-                   max-width: 100%;
-                   object-fit: contain;
-                 ">
-          </div>
+      <img src="{{ ad.image }}"
+        alt="{{ ad.title }}"
+        class="img-fluid"
+        style="
+          max-height: 100%;
+          max-width: 100%;
+          object-fit: contain;
+        ">
+    </div>
 
-          <div class="card-body text-center">
-            <h5 class="fw-bold mb-1">{{ ad.title }}</h5>
-            <span class="badge bg-success">Tap to view</span>
-          </div>
+    <div class="card-body text-center">
+      <h5 class="fw-bold mb-1">{{ ad.title }}</h5>
+      <span class="badge bg-success">Tap to view</span>
+    </div>
 
-        </div>
-      </a>
+     </div>
+   </a>
     </div>
     {% endfor %}
   </div>
 
   <button class="carousel-control-prev" type="button"
-          data-bs-target="#adsCarousel" data-bs-slide="prev">
+    data-bs-target="#adsCarousel" data-bs-slide="prev">
     <span class="carousel-control-prev-icon"></span>
   </button>
 
   <button class="carousel-control-next" type="button"
-          data-bs-target="#adsCarousel" data-bs-slide="next">
+    data-bs-target="#adsCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon"></span>
+  </button>
+</div>
+{% endif %}
+
+{% if meals %}
+<!-- Meals slider (random selection of meals from all stores) -->
+<div id="mealsCarousel"
+  class="carousel slide mb-5"
+  data-bs-ride="carousel">
+
+  <div class="carousel-inner">
+    {% for meal in meals %}
+    <div class="carousel-item {% if loop.first %}active{% endif %}">
+   <a class="text-decoration-none" href="{% if meal.id %}{{ url_for('main.viewproduct', product_id=meal.id) }}{% else %}#{% endif %}">
+     <div class="card shadow-sm border-0 rounded-4 mx-auto"
+       style="max-width: 900px;">
+
+    <div class="d-flex align-items-center justify-content-center bg-light"
+      style="height: 280px; overflow: hidden;">
+
+      <img src="{{ meal.pictures }}"
+        alt="{{ meal.name }}"
+        class="img-fluid"
+        style="
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        ">
+    </div>
+
+    <div class="card-body text-center">
+      <h5 class="fw-bold mb-1">{{ meal.productname }}</h5>
+      {% if meal.price %}
+        <div class="text-muted mb-1">Price: {{ meal.price }}</div>
+      {% endif %}
+      {% if meal.store_name %}
+        <small class="text-secondary">{{ meal.store_name }}</small>
+      {% elif meal.store and meal.store.name %}
+        <small class="text-secondary">{{ meal.store.name }}</small>
+      {% endif %}
+      <div class="mt-2">
+        <span class="badge bg-success">Order</span>
+      </div>
+    </div>
+
+     </div>
+   </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <button class="carousel-control-prev" type="button"
+    data-bs-target="#mealsCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon"></span>
+  </button>
+
+  <button class="carousel-control-next" type="button"
+    data-bs-target="#mealsCarousel" data-bs-slide="next">
     <span class="carousel-control-next-icon"></span>
   </button>
 </div>
@@ -64,9 +123,14 @@
 
 <!-- Auto slide every 5 seconds -->
 <script>
-  const landingCarousel = document.getElementById('landingAdsCarousel');
-  if (landingCarousel) {
-    const carouselInstance = new bootstrap.Carousel(landingCarousel, { interval: 5000 });
+  const adsCarousel = document.getElementById('adsCarousel');
+  if (adsCarousel) {
+    new bootstrap.Carousel(adsCarousel, { interval: 5000 });
+  }
+
+  const mealsCarousel = document.getElementById('mealsCarousel');
+  if (mealsCarousel) {
+    new bootstrap.Carousel(mealsCarousel, { interval: 5000 });
   }
 </script>
 {% endblock %}

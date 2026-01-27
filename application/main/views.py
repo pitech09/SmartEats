@@ -176,7 +176,9 @@ def home():
 @main.route("/", methods=["POST", "GET"])
 def landing():
     ads = Ad.query.all()
-    return render_template('customer/landingpage.html', ads=ads)
+    meals = Product.query.filter_by(is_active=True).all()
+
+    return render_template('customer/landingpage.html', ads=ads, meals=meals)
 
 # ---------------- CART ----------------
 @main.route('/cartlist', methods=['GET', 'POST'])
@@ -185,7 +187,7 @@ def cart():
     store_id = session.get('store_id')
     if not store_id:
         flash('Please select a store first.')
-        return redirect(url_for('main.home'))
+        return redirect(url_for("main.restuarants"))
 
     form = CartlistForm()
     form2 = removefromcart()
