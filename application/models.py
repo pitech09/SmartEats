@@ -39,18 +39,18 @@ class Store(UserMixin, db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
 
-    district = db.Column(db.String(60), nullable=False, default="None")
-    town = db.Column(db.String(60),nullable=False, default="None")
+    district = db.Column(db.String(60), nullable=True, default="None")
+    town = db.Column(db.String(60), nullable=True, default="None")
     is_active = db.Column(db.Boolean, default=True)
     registered_on = db.Column(db.DateTime, server_default=db.func.now())
     
     
     users = db.relationship("User", back_populates="store")
-    products = db.relationship("Product", backref="store", lazy=True)
+    products = db.relationship("Product", backref="store", lazy="select")
     orders = db.relationship("Order", back_populates="store")
     sales = db.relationship("Sales", back_populates="store")
     ingredients = db.relationship("Ingredient", backref="store")
-    staff_members = db.relationship("Staff", back_populates="store", lazy=True)
+    staff_members = db.relationship("Staff", back_populates="store", lazy="select")
 
 # ----------------- Product -----------------
 class Product(db.Model):
@@ -60,13 +60,15 @@ class Product(db.Model):
     pictures = db.Column(db.Text, nullable=False)
     quantity = db.Column(db.Integer)
     description = db.Column(db.Text, nullable=False)
-    category_name = db.Column(db.String(100), db.ForeignKey("category.name", name="fk_product_category"), nullable=True)
+
+    category_id = db.Column(db.Integer, db.ForeignKey("category.id", ondelete="SET NULL"), nullable=True)
+
     warning = db.Column(db.String(100), default="Quantity Good")
     is_active = db.Column(db.Boolean, default=True)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
     # Relationships
-    cart_items = db.relationship("CartItem", backref="product", lazy=True)
-    order_items = db.relationship("OrderItem", backref="product", lazy=True)
+    cart_items = db.relationship("CartItem", backref="product", lazy="select")
+    order_items = db.relationship("OrderItem", backref="product", lazy="select")
     category = db.relationship("Category", back_populates="products")
 
 
@@ -101,8 +103,8 @@ class User(UserMixin, db.Model):
     town = db.Column(db.String(60), default="None")
     # Relationships
     store = db.relationship("Store", back_populates="users")
-    carts = db.relationship("Cart", backref="user", lazy=True)
-    orders = db.relationship("Order", back_populates="user", lazy=True)
+    carts = db.relationship("Cart", backref="user", lazy="select")
+    orders = db.relationship("Order", back_populates="user", lazy="select")
 
     def generate_confirmation_token(self, expiration=3600):
         s = TimedSerializer(current_app.config["SECRET_KEY"], expiration)
@@ -129,7 +131,7 @@ class Cart(db.Model):
 
     date_created = db.Column(db.DateTime, default=get_localTime)
 
-    cart_items = db.relationship("CartItem", backref="cart", lazy=True)
+    cart_items = db.relationship("CartItem", backref="cart", lazy="select")
 
     def total_items(self):
         return sum(item.quantity for item in self.cart_items)
@@ -157,7 +159,7 @@ class CartItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False, default=1)
 
     # Relationships
-    custom_meal = db.relationship("CustomMeal", backref="cart_items_custom", lazy=True)
+    custom_meal = db.relationship("CustomMeal", backref="cart_items_custom", lazy="select")
 
     def get_name(self):
         if self.product:
@@ -202,8 +204,8 @@ class Order(db.Model):
     is_pos = db.Column(db.Boolean, default=False)
     user = db.relationship("User", back_populates="orders")
     store = db.relationship("Store", back_populates="orders")
-    order_items = db.relationship("OrderItem", back_populates="order", lazy=True, cascade="all, delete-orphan")
-    custom_meals = db.relationship("CustomMeal", backref="order", lazy=True)
+    order_items = db.relationship("OrderItem", back_populates="order", lazy="select", cascade="all, delete-orphan")
+    custom_meals = db.relationship("CustomMeal", backref="order", lazy="select")
 
     def local_time(self):
         return self.create_at.astimezone(ZoneInfo("Africa/Johannesburg"))
@@ -237,7 +239,7 @@ class CustomMeal(db.Model):
         "CustomMealIngredient",
         back_populates="custom_meal",
         cascade="all, delete-orphan",
-        lazy=True
+        lazy="select"
     )
 
 
@@ -288,7 +290,7 @@ class Delivery(db.Model):
     order = db.relationship(
         "Order",
         backref=db.backref("delivery", uselist=False),
-        lazy=True
+        lazy="select"
     )
 
 # ----------------- Sales -----------------
@@ -356,8 +358,8 @@ class Ad(db.Model):
     priority = db.Column(db.Integer, default=0)  # higher = shows first
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    store = db.relationship('Store', backref='ads_Store', lazy=True)
-    product = db.relationship('Product', backref='ads_Product', lazy=True)
+    store = db.relationship('Store', backref='ads_Store', lazy="select")
+    product = db.relationship('Product', backref='ads_Product', lazy="select")
 
     class PushSubscription(db.Model):
         id = db.Column(db.Integer, primary_key=True)
@@ -372,8 +374,5 @@ class Category(db.Model):
     name = db.Column(db.String(100), nullable=False)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
-    products = db.relationship("Product", back_populates="category", lazy=True)
-
-    __table_args__ = (
-        db.UniqueConstraint("store_id", "name", name="uq_store_category"),
-    )
+    products = db.relationship("Product", back_populates="category", lazy="select")
+    store = db.relationship("Store", backref="categories", lazy="select")
