@@ -730,7 +730,6 @@ def account():
 
         # Update user info
         current_user.email = form.Email.data.strip()
-        current_user.phonenumber = form.phonenumber.data.strip()
         current_user.lastname = form.lastName.data.strip()
         current_user.username = form.username.data.strip()
         current_user.district = form.district.data.strip()
@@ -738,16 +737,6 @@ def account():
 
         db.session.commit()
         flash("Account Details Updated Successfully.", "success")
-        return redirect(url_for('main.home'))
-
-    elif request.method == 'GET':
-        form.Email.data = user.email
-        form.phonenumber.data = user.phonenumber
-        form.lastName.data = user.lastname
-        form.username.data = user.username
-        form.district.data = user.district
-        form.town.data = user.town  
-
         return redirect(url_for('main.home'))
 
     image_file = url_for('static', filename='images/profiles/' + user.image_file)

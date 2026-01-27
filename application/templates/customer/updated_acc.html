@@ -58,11 +58,9 @@
     <!-- Profile Header -->
     <div class="profile-card">
         <div class="profile-header">
-            <img src="{{ url_for('static', filename='css/images/profile.png') }}" alt="Profile Picture">
             <div>
                 <h4>{{ current_user.username }} {{ current_user.lastName }}</h4>
                 <p class="text-muted mb-0">{{ current_user.Email }}</p>
-                <p class="text-muted mb-0">Phone: {{ current_user.phonenumber }}</p>
             </div>
         </div>
 
@@ -104,13 +102,6 @@
                     {{ form.town.label(class="form-label") }}
                     {{ form.town(class="form-control") }}
                     {% for error in form.town.errors %}
-                        <small class="text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
-                <div class="col-md-6">
-                    {{ form.phonenumber.label(class="form-label") }}
-                    {{ form.phonenumber(class="form-control") }}
-                    {% for error in form.phonenumber.errors %}
                         <small class="text-danger">{{ error }}</small>
                     {% endfor %}
                 </div>

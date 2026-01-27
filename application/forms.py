@@ -31,7 +31,6 @@ class UpdateForm(FlaskForm):
     lastName = StringField('Lastname',
                            validators=[DataRequired(),
                                        Length(min=2, max=16)])
-    phonenumber = StringField('Phone Number', validators=[DataRequired(), Length(min=8, max=15)])
 
     town = StringField("Town", validators=[DataRequired()])
     district = SelectField("Operating District", validators=[DataRequired()], choices=[('ButhaButhe', 'ButhaButhe'), ('Leribe', 'Leribe'), ('Berea', 'Berea'), ('Maseru', 'Maseru'), ('Mafeteng', 'Mafeteng'), ("Mohale's Hoek", "Mohale's Hoek"), ('Quthing', 'Quthing'), ("Qacha's Nek", "Qacha's Nek"), ('Thaba-Tseka', 'Thaba-Tseka'), ('Mokhotlong', 'Mokhotlong')])
