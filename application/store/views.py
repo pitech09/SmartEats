@@ -583,7 +583,7 @@ def addproducts():
 
                 product = Product(productname=form.product_name.data, price=form.product_price.data,
                                   description=form.product_description.data,
-                                  category_name=form.category.data
+                                  category_id=form.category.data
                                   )
                 print(request.form)
                 print(f'Category selected: {form.category.data}')

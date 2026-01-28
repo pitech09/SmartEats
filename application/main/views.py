@@ -241,7 +241,7 @@ def menu(page_num=1):
     # Query products
     query = Product.query.filter_by(store_id=mystore.id, is_active=True)
     if selected_category_id:
-        query = query.filter_by(category_name=selected_category_id)
+        query = query.filter_by(category_id=selected_category_id)
 
     products = query.all()
 
