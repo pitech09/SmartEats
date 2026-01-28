@@ -30,6 +30,8 @@ class Store(UserMixin, db.Model):
     openinghours = db.Column(db.String(100), default="09:00 to 18:30")
     password = db.Column(db.String(200), nullable=False)
 
+    ecocash_name = db.Column(db.String(100), default="None")
+    mpesaname = db.Column(db.String(100), default="None")
     mpesa_shortcode = db.Column(db.String(100), default="None")
     ecocash_short_code = db.Column(db.String(100), default="None")
 

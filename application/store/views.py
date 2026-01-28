@@ -490,8 +490,10 @@ def updatestore():
     store = Store.query.get_or_404(store_id)
     if updateForm.validate_on_submit():
         store = Store.query.get_or_404(current_user.id)
-        store.ecocash_short_code = updateForm.ecocashcode.data
+        store.ecocash_short_code = updateForm.ecocode.data
         store.mpesa_shortcode = updateForm.mpesacode.data
+        store.ecocash_name = updateForm.econame.data
+        store.mpesaname = updateForm.mpesaname.data
         db.session.commit()
         flash('Store Details added...')
         return redirect(url_for('store.adminpage'))
