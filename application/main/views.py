@@ -5,7 +5,7 @@ from typing import Self
 from flask import render_template, redirect, url_for, flash, session, jsonify, request, current_app
 from flask_login import login_required, current_user, logout_user
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import desc, or_, case
+from sqlalchemy import desc, func, or_, case
 from PIL import Image
 import cloudinary
 from cloudinary.uploader import upload
@@ -176,7 +176,13 @@ def home():
 @main.route("/", methods=["POST", "GET"])
 def landing():
     ads = Ad.query.all()
-    meals = Product.query.filter_by(is_active=True).all()
+    
+    meals = (
+        Product.query
+        .filter_by(is_active=True)
+        .order_by(func.random())
+        .all()
+    )
 
     return render_template('customer/landingpage.html', ads=ads, meals=meals)
 
