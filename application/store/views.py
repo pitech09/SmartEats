@@ -1135,6 +1135,8 @@ def delete_category(category_id):
     flash("Category deleted successfully.", "success")
     return redirect(request.referrer)
 
+
+
 @store.route('/view_categories/<int:category_id>', methods=['GET'])
 @login_required
 def view_categories(category_id):
