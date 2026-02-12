@@ -15,7 +15,7 @@
               <th scope="col">name</th>
               <th scope="col">email</th>
               <th scope="col">Registered On</th>
-              <th scope="col">Address</th>
+              <th scope="col">Town</th>
               <th scope="col">Phone</th>
                         <th>Actions</th>
                     </tr>
@@ -29,14 +29,7 @@
                       </td>
                       <td>
                         {{pharmacy.registered_on.strftime('%Y - %m - %d @ %H:%M') }}
-                      </td>
-                        
-
-                        <td>
-                          {{pharmacy.address}}
-                        </td>
-                       <td>{{pharmacy.phone}}</td>
-                      <td>
+``` </td> <td> {{pharmacy.town}}, {{pharmacy.district}} </td> <td>{{pharmacy.phone}}</td> <td> ```
                           <button onclick="window.location.href='{{ url_for('admin.cancel_pharmacy', pharmacy_id=pharmacy.id) }}'" class="btn btn-outline-primary rounded-pill" style="background-color:red;">Delete</button>
 
                       </td>

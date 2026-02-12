@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>
     {% block title %}
       {% if store is defined and store.name is defined %}
@@ -53,6 +53,28 @@
     /* Logo */
     .logo { max-height:80px; height:auto; width:auto; }
     @media(max-width:768px) { .logo { max-height:60px; } }
+
+    /* Responsive navbar & touch targets */
+    .navbar-nav { width:100%; }
+    .nav-item .btn { white-space:nowrap; }
+    @media (max-width:575.98px) {
+      /* Stack nav items on very small screens, make buttons full width */
+      .navbar-nav { display:flex; flex-direction:column; gap:.5rem; padding: .5rem 0; }
+      .nav-item .btn, .nav-item > a.btn { width:100%; text-align:center; padding: .6rem .75rem; font-size:1rem; }
+      .navbar-brand { padding-right:0.5rem; }
+      .form-select, .form-control { font-size:1rem; padding:.5rem .6rem; }
+    }
+
+    /* Pharmacy select form adjustments */
+    .select-store-form { display:flex; gap:.5rem; align-items:center; width:100%; }
+    @media (max-width:575.98px) {
+      .select-store-form { flex-direction:column; align-items:stretch; }
+      .select-store-form .form-control { width:100%; }
+      .select-store-form .btn { width:100%; margin-top:0.25rem; }
+    }
+
+    /* Small improvement for spacing on small devices */
+    main[role="main"] { padding-top:0.5rem; padding-bottom:1rem; }
   </style>
 </head>
 
@@ -74,25 +96,25 @@
   <header>
     <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
       <div class="container">
-        <a class="navbar-brand" href="{{ url_for('delivery.dashboard', page_num=1) }}">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('delivery.dashboard', page_num=1) }}">
           <img src="{{ url_for('static', filename='css/images/worka.png') }}" class="img-fluid logo" alt="SmartEats"/>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="navbar-collapse collapse flex-sm-row justify-content-between">
-          <ul class="navbar-nav flex-row flex-wrap gap-1">
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          <ul class="navbar-nav ms-auto align-items-center">
             {% if current_user.is_authenticated %}
               <li class="nav-item"><a href="{{ url_for('delivery.dashboard', page_num=1) }}" class="btn bg-light rounded-pill">Dashboard</a></li>
               <li class="nav-item"><a href="{{ url_for('delivery.mydeliveries') }}" class="btn bg-light rounded-pill">Deliveries</a></li>
               <li class="nav-item"><a href="{{ url_for('delivery.ready_orders') }}" class="btn bg-light rounded-pill">Orders <sup>{{ total_count }}</sup></a></li>
               <li class="nav-item"><a href="{{ url_for('main.logout') }}" class="btn bg-light rounded-pill">Logout</a></li>
-              <li class="nav-item">
-                <form action="{{ url_for('delivery.set_store') }}" method="POST" class="d-flex">
+              <li class="nav-item w-100">
+                <form action="{{ url_for('delivery.set_store') }}" method="POST" class="select-store-form">
                   {{ formpharm.hidden_tag() }}
                   {{ formpharm.store(class='form-control bg-light border-0 small') }}
-                  <button class="btn btn-success ms-1" type="submit">Select</button>
+                  <button class="btn btn-success" type="submit">Select</button>
                 </form>
               </li>
             {% else %}
