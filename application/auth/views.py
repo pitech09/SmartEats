@@ -160,7 +160,7 @@ def registerstore():
     form = StoreRegistrationForm()
     formpharm = Set_StoreForm()
     if form.validate():
-        if Store.query.filter_by(email=form.email.data).first():
+        if Store.query.filter_by(email=form.email.data, is_active=True).first():
             flash("Email already exists", "danger")
             return redirect(url_for("auth.registerstore"))
 
@@ -180,6 +180,8 @@ def registerstore():
             print('Committing to database')
             send_confirmation_email(store.email)
             flash("Store registered. Check email to confirm.", "success")
+            if session.get("user_type") == "administrator":
+                return redirect(url_for("admin.pending_verification"))
             return redirect(url_for("auth.newlogin"))
         except IntegrityError:
             db.session.rollback()
@@ -210,7 +212,7 @@ def newlogin():
         ]
 
         for model, role in user_sets:
-            account = model.query.filter_by(email=email).first()
+            account = model.query.filter_by(email=email, is_active=True).first()
             if account and bcrypt.check_password_hash(account.password, password):
                 if hasattr(account, "confirmed") and not account.confirmed:
                     flash("Please confirm your email first.", "warning")

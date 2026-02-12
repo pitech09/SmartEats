@@ -130,6 +130,11 @@ def save_update_profile_picture(form_picture):
     return post_img_fn
 
 
+def send_notification_to_store(store_id, notification_data):
+    socketio.emit('new_order', notification_data, room=f'store_{store_id}')
+
+
+
 @socketio.on("join")
 def handle_join(data):
     join_room(data["room"])

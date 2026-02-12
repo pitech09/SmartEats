@@ -1,3 +1,4 @@
+from operator import is_
 import secrets
 import pytz
 from datetime import datetime
@@ -95,7 +96,7 @@ class User(UserMixin, db.Model):
     image_file = db.Column(db.Text, default="account.png")
     password = db.Column(db.String(200), nullable=False)
 
-
+    is_active = db.Column(db.Boolean, default=True)
     confirmed = db.Column(db.Boolean, default=False)
     loyalty_points = db.Column(db.Integer, default=0)
 
@@ -330,7 +331,7 @@ class Staff(UserMixin, db.Model):
     email = db.Column(db.String(30), unique=True, nullable=False)
     role = db.Column(db.String(120))
     password = db.Column(db.String(100), nullable=False)
-
+    is_active = db.Column(db.Boolean, default=True)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
     store = db.relationship("Store", back_populates="staff_members")
 
@@ -341,6 +342,7 @@ class Administrater(UserMixin, db.Model):
     username = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(50), nullable=False)
     password = db.Column(db.Text, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
 
 
 # ----------------- Ad -----------------

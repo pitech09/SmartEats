@@ -179,12 +179,15 @@ def view_details(pharmacy_id):
 def cancel_pharmacy(pharmacy_id):
     store = Store.query.get_or_404(pharmacy_id)
     if store:
+        store.is_active = False
+        db.session.add(store)
         try:
-            db.session.delete(store)
             db.session.commit()
             return redirect(url_for('admin.pending_verification'))
         except IntegrityError:
-            flash('The Store has orders that have not been fulfiled.')
+            flash('Store could not be deleted due to integrity constraints.')
+            db.session.rollback()
+
             return redirect(url_for('admin.pending_verification'))
     else:
         flash('Store could not be found')
@@ -192,8 +195,7 @@ def cancel_pharmacy(pharmacy_id):
 
 @admin.route('/registered stores')
 def registered_stores():
-    stores = Store.query.all()
-    
+    stores = Store.query.filter_by(is_active=True).all()
     return render_template('admin/registereduser.html', stores=stores)
 
 @admin.route('/register store')
