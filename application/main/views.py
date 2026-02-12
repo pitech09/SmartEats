@@ -809,21 +809,24 @@ def set_storee(store_id):
 @main.route('/stores')
 def restuarants():
     form2 = Search()
-    user_district = current_user.district
-    user_town = current_user.town
+    if current_user.is_authenticated:
+        user_district = current_user.district
+        user_town = current_user.town
 
-    rank_case = case(
-        (Store.town == user_town, 0),
-        (Store.district == user_district, 1),
-        else_=2
-    )
+        rank_case = case(
+            (Store.town == user_town, 0),
+            (Store.district == user_district, 1),
+            else_=2
+        )
 
-    stores = Store.query.filter(
-        Store.is_active == True
-    ).order_by(
-        rank_case,  # prioritize rank
-        Store.name.asc()  # then alphabetical by name
-    ).all()
+        stores = Store.query.filter(
+            Store.is_active == True
+        ).order_by(
+            rank_case,  # prioritize rank
+            Store.name.asc()  # then alphabetical by name
+        ).all()
+    else:
+        stores = Store.query.filter_by(is_active=True).order_by(Store.name.asc()).all()
 
     return render_template('customer/restuarants.html', stores=stores, form2=form2)
 
