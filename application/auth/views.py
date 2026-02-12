@@ -212,7 +212,7 @@ def newlogin():
         ]
 
         for model, role in user_sets:
-            account = model.query.filter_by(email=email, is_active=True).first()
+            account = model.query.filter_by(email=email).first()
             if account and bcrypt.check_password_hash(account.password, password):
                 if hasattr(account, "confirmed") and not account.confirmed:
                     flash("Please confirm your email first.", "warning")
