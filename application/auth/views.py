@@ -227,7 +227,7 @@ def newlogin():
 
                 if role == "customer":
                     session['customer_id'] = account.id
-                    return redirect(url_for("main.restuarants"))
+                    return redirect(url_for("main.home"))
                 elif role == "administrator":
                     session["admin_id"] = account.id
                     return redirect(url_for("admin.admindash"))
