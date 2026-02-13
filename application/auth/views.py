@@ -226,6 +226,7 @@ def newlogin():
                 send_sound(account.id, "login")
 
                 if role == "customer":
+                    session['customer_id'] = account.id
                     return redirect(url_for("main.restuarants"))
                 elif role == "administrator":
                     session["admin_id"] = account.id
