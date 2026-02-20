@@ -258,7 +258,7 @@ def home():
 @main.route("/", methods=["POST", "GET"])
 def landing():
     ads = Ad.query.all()
-    
+    restaurants = Store.query.filter_by(is_active=True).order_by(func.random()).limit(6).all()
     meals = (
         Product.query
         .filter_by(is_active=True)
@@ -266,7 +266,7 @@ def landing():
         .all()
     )
 
-    return render_template('customer/landingpage.html', ads=ads, meals=meals)
+    return render_template('customer/landingpage.html', ads=ads, meals=meals, restaurants=restaurants)
 
 # ---------------- CART ----------------
 @main.route('/cartlist', methods=['GET', 'POST'])

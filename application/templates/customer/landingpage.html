@@ -1,30 +1,47 @@
 {% extends "layout.html" %}
-{% block title %}Welcome - SmartEats{% endblock %}
+{% block title %}SmartEats | Fresh Meals Delivered{% endblock %}
 
 {% block content %}
 
 <style>
-/* ===== Modern SmartEats Carousel with Overlay ===== */
+/* ===== Landing Page Styles ===== */
 
-/* Carousel Cards */
-.se-carousel-card {
-    max-width: 900px;
-    margin: auto;
+/* Hero Section with appetizing gradient */
+.hero {
+    background: linear-gradient(135deg, #FF4B3E, #FFB347, #FFD93D, #6FCF97);
+    background-size: 400% 400%;  /* for subtle animation */
+    animation: gradientShift 15s ease infinite;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    border-radius: 1rem;
+    padding: 3rem 1rem;
+}
+
+/* Gradient animation */
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Card common style */
+.se-carousel-card, .store-card, .hcl-card {
     border-radius: 1rem;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: #fff;
 }
 
-.se-carousel-card:hover {
+.se-carousel-card:hover, .store-card:hover, .hcl-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 20px rgba(0,0,0,0.25);
 }
 
-/* Image container */
+/* Carousel image box */
 .se-carousel-image-box {
     position: relative;
     height: 280px;
-    background: linear-gradient(135deg, #fdfdfd, #f0f0f0);
+    background: #f0f0f0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -34,12 +51,12 @@
 .se-carousel-image-box img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform 0.5s ease;
 }
 
 .se-carousel-image-box:hover img {
-    transform: scale(1.05);
+    transform: scale(1.03);
 }
 
 /* Overlay */
@@ -61,160 +78,185 @@
     opacity: 1;
 }
 
-/* Card Body */
-.se-carousel-card .card-body {
-    padding: 1rem;
-    background: #ffffff;
+/* Store Cards */
+.store-card {
+    text-align: center;
+    padding: 10px;
 }
 
-/* Titles & Badges */
-.se-carousel-card h5 {
-    font-weight: 700;
-    font-size: 1.1rem;
+.store-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 0.8rem;
 }
 
-.se-carousel-card .badge {
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: transform 0.2s ease;
+/* How It Works (HCL cards) */
+.hcl-card {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #fff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.se-carousel-card .badge:hover {
-    transform: scale(1.1);
+.hcl-card h5 {
+    font-weight: 600;
 }
 
-/* Carousel Controls with subtle shadow */
-.carousel-control-prev-icon,
-.carousel-control-next-icon {
+.hcl-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Carousel controls */
+.carousel-control-prev-icon, .carousel-control-next-icon {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 /* Responsive tweaks */
 @media (max-width: 768px) {
-    .se-carousel-image-box {
-        height: 200px;
-    }
+    .se-carousel-image-box { height: 200px; }
+    .store-card img { height: 140px; }
+    .hcl-card { padding: 1.5rem 1rem; }
 }
 
 @media (max-width: 480px) {
-    .se-carousel-card {
-        border-radius: 0.5rem;
-    }
-
-    .se-carousel-image-box {
-        height: 150px;
-    }
-
-    .se-carousel-card h5 {
-        font-size: 1rem;
-    }
+    .se-carousel-image-box { height: 150px; }
+    .store-card img { height: 120px; }
+    .store-card h6 { font-size: 0.95rem; }
+    .hcl-card { padding: 1rem; font-size: 0.9rem; }
 }
 </style>
 
-<div class="container my-4">
+<div class="container">
 
-  {# ================= ADS CAROUSEL ================= #}
-  {% if ads %}
-  <div id="adsCarousel"
-       class="carousel slide carousel-fade mb-5"
-       data-bs-ride="carousel"
-       data-bs-interval="5000"
-       data-bs-pause="hover">
+<!-- ===== Hero Section ===== -->
+<section class="hero text-center mb-5">
+    <h1 class="display-4 mb-3">Delicious Meals Delivered Fast!</h1>
+    <p class="lead mb-4">Browse top restaurants in Maputsoe, Roma & Leribe. Order your favorites in just a few taps.</p>
+    <a href="{{url_for('auth.newlogin')}}" class="btn btn-primary btn-lg me-2">Order Now</a>
+    <a href="{{url_for('auth.registerstore')}}" class="btn btn-outline-light btn-lg">Join as a Restaurant</a>
+</section>
 
+<!-- ===== Ads Carousel ===== -->
+{% if ads %}
+<div id="adsCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
     <div class="carousel-inner">
-      {% for ad in ads %}
-      <div class="carousel-item {% if loop.first %}active{% endif %}">
-        <a class="text-decoration-none"
-           href="{% if ad.link_type == 'product' %}
-                   {{ url_for('main.product_detail', product_id=ad.product_id) }}
-                 {% elif ad.link_type == 'store' %}
-                   {{ url_for('main.go_to_store', store_id=ad.store_id) }}
-                 {% else %}
-                   {{ ad.external_url }}
-                 {% endif %}">
-
-          <div class="card shadow-sm border-0 se-carousel-card">
-            <div class="se-carousel-image-box">
-              <img src="{{ ad.image }}" alt="{{ ad.title }}">
-              <div class="se-carousel-overlay">{{ ad.title }}</div>
-            </div>
-
-            <div class="card-body text-center">
-              <span class="badge bg-success">Tap to view</span>
-            </div>
-          </div>
-
-        </a>
-      </div>
-      {% endfor %}
+        {% for ad in ads %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <a class="text-decoration-none" href="{% if ad.link_type == 'product' %}{{ url_for('main.product_detail', product_id=ad.product_id) }}{% elif ad.link_type == 'store' %}{{ url_for('main.go_to_store', store_id=ad.store_id) }}{% else %}{{ ad.external_url }}{% endif %}">
+                <div class="card shadow-sm border-0 se-carousel-card">
+                    <div class="se-carousel-image-box">
+                        <img src="{{ ad.image }}" alt="{{ ad.title }}">
+                        <div class="se-carousel-overlay">{{ ad.title }}</div>
+                    </div>
+                    <div class="card-body text-center">
+                        <span class="badge bg-success">Tap to view</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
     </div>
-
-    <button class="carousel-control-prev" type="button"
-            data-bs-target="#adsCarousel" data-bs-slide="prev">
-      <span class="carousel-control-prev-icon"></span>
+    <button class="carousel-control-prev" type="button" data-bs-target="#adsCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
     </button>
-
-    <button class="carousel-control-next" type="button"
-            data-bs-target="#adsCarousel" data-bs-slide="next">
-      <span class="carousel-control-next-icon"></span>
+    <button class="carousel-control-next" type="button" data-bs-target="#adsCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
     </button>
-  </div>
-  {% endif %}
+</div>
+{% endif %}
 
-  {# ================= MEALS CAROUSEL ================= #}
-  {% if meals %}
-  <div id="mealsCarousel"
-       class="carousel slide carousel-fade mb-5"
-       data-bs-ride="carousel"
-       data-bs-interval="5000"
-       data-bs-pause="hover">
-
+<!-- ===== Meals/Products Carousel ===== -->
+{% if meals %}
+<div id="mealsCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
     <div class="carousel-inner">
-      {% for meal in meals %}
-      <div class="carousel-item {% if loop.first %}active{% endif %}">
-        <a class="text-decoration-none"
-           href="{{ url_for('main.viewproduct', product_id=meal.id) }}">
-
-          <div class="card shadow-sm border-0 se-carousel-card">
-            <div class="se-carousel-image-box">
-              <img src="{{ meal.pictures }}" alt="{{ meal.productname }}">
-              <div class="se-carousel-overlay">{{ meal.productname }}</div>
-            </div>
-
-            <div class="card-body text-center">
-              {% if meal.price %}
-                <div class="text-muted mb-1">{{ meal.price }}</div>
-              {% endif %}
-
-              {% if meal.store_name %}
-                <small class="text-secondary">{{ meal.store_name }}</small>
-              {% elif meal.store and meal.store.name %}
-                <small class="text-secondary">{{ meal.store.name }}</small>
-              {% endif %}
-
-              <div class="mt-2">
-                <span class="badge bg-success">Order</span>
-              </div>
-            </div>
-          </div>
-
-        </a>
-      </div>
-      {% endfor %}
+        {% for meal in meals %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <a class="text-decoration-none" href="{{ url_for('main.viewproduct', product_id=meal.id) }}">
+                <div class="card shadow-sm border-0 se-carousel-card">
+                    <div class="se-carousel-image-box">
+                        <img src="{{ meal.pictures }}" alt="{{ meal.productname }}">
+                        <div class="se-carousel-overlay">{{ meal.productname }}</div>
+                    </div>
+                    <div class="card-body text-center">
+                        {% if meal.price %}
+                        <div class="text-muted mb-1">{{ meal.price }}</div>
+                        {% endif %}
+                        {% if meal.store_name %}
+                        <small class="text-secondary">{{ meal.store_name }}</small>
+                        {% elif meal.store and meal.store.name %}
+                        <small class="text-secondary">{{ meal.store.name }}</small>
+                        {% endif %}
+                        <div class="mt-2"><span class="badge bg-success">Order</span></div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
     </div>
-
-    <button class="carousel-control-prev" type="button"
-            data-bs-target="#mealsCarousel" data-bs-slide="prev">
-      <span class="carousel-control-prev-icon"></span>
+    <button class="carousel-control-prev" type="button" data-bs-target="#mealsCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
     </button>
-
-    <button class="carousel-control-next" type="button"
-            data-bs-target="#mealsCarousel" data-bs-slide="next">
-      <span class="carousel-control-next-icon"></span>
+    <button class="carousel-control-next" type="button" data-bs-target="#mealsCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
     </button>
-  </div>
-  {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== Popular Restaurants ===== -->
+<section class="text-center py-5 mb-5">
+    <h2 class="mb-4">Popular Restaurants</h2>
+    <div class="row justify-content-center g-3">
+        {% for rest in restaurants %}
+        <div class="col-md-3 col-sm-6">
+            <div class="store-card shadow-sm p-2 rounded">
+                <img src="{{ rest.image or url_for('static', filename='css/images/default.png') }}" alt="{{ rest.name }}">
+                <h6 class="fw-semibold mt-2">{{ rest.name }}</h6>
+                {% if rest.district %}<small class="text-muted">{{ rest.district }}</small>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ===== How It Works (HCL cards) ===== -->
+<section class="py-5 mb-5">
+    <h2 class="text-center mb-4">How It Works</h2>
+    <div class="row g-3 justify-content-center">
+        <div class="col-md-3 col-sm-6">
+            <div class="hcl-card rounded" style="background-color: #FF6B6B;">
+                <h5>Browse Restaurants</h5>
+                <p>Find your favorite meals in seconds.</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="hcl-card rounded" style="background-color: #4DD0E1;">
+                <h5>Add to Cart</h5>
+                <p>Select meals and place your order quickly.</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="hcl-card rounded" style="background-color: #8BC34A;">
+                <h5>Track Delivery</h5>
+                <p>Watch your order arrive in real-time.</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="hcl-card rounded" style="background-color: #FFD54F; color:#333;">
+                <h5>Enjoy!</h5>
+                <p>Fresh and hot meals delivered to your door.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== About Section ===== -->
+<section class="text-center py-5 mb-5">
+    <h2 class="mb-3">About SmartEats</h2>
+    <p>SmartEats is a Lesotho-based food delivery platform founded by Khauhelo Makara. We connect people with delicious local food quickly and reliably.</p>
+    <a href="{{url_for('main.about')}}" class="btn btn-outline-primary">Learn More</a>
+</section>
 
 </div>
-
 {% endblock %}
