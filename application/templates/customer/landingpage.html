@@ -4,38 +4,110 @@
 {% block content %}
 
 <style>
-/* ===== SmartEats Carousel Ads & Meals ===== */
+/* ===== Modern SmartEats Carousel with Overlay ===== */
 
+/* Carousel Cards */
 .se-carousel-card {
-  max-width: 900px;
-  margin: auto;
-  border-radius: 1rem;
-  overflow: hidden;
+    max-width: 900px;
+    margin: auto;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+.se-carousel-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.25);
+}
+
+/* Image container */
 .se-carousel-image-box {
-  height: 280px;            /* 🔒 constant height */
-  background: #f8f9fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    position: relative;
+    height: 280px;
+    background: linear-gradient(135deg, #fdfdfd, #f0f0f0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .se-carousel-image-box img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;        /* 🔥 consistent sizing */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
 }
 
-/* Smooth fade animation */
-.carousel-fade .carousel-item {
-  transition: opacity 0.8s ease-in-out;
+.se-carousel-image-box:hover img {
+    transform: scale(1.05);
 }
 
-/* Carousel controls */
+/* Overlay */
+.se-carousel-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+    color: #fff;
+    padding: 10px 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.se-carousel-image-box:hover .se-carousel-overlay {
+    opacity: 1;
+}
+
+/* Card Body */
+.se-carousel-card .card-body {
+    padding: 1rem;
+    background: #ffffff;
+}
+
+/* Titles & Badges */
+.se-carousel-card h5 {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.se-carousel-card .badge {
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.se-carousel-card .badge:hover {
+    transform: scale(1.1);
+}
+
+/* Carousel Controls with subtle shadow */
 .carousel-control-prev-icon,
 .carousel-control-next-icon {
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .se-carousel-image-box {
+        height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .se-carousel-card {
+        border-radius: 0.5rem;
+    }
+
+    .se-carousel-image-box {
+        height: 150px;
+    }
+
+    .se-carousel-card h5 {
+        font-size: 1rem;
+    }
 }
 </style>
 
@@ -64,10 +136,10 @@
           <div class="card shadow-sm border-0 se-carousel-card">
             <div class="se-carousel-image-box">
               <img src="{{ ad.image }}" alt="{{ ad.title }}">
+              <div class="se-carousel-overlay">{{ ad.title }}</div>
             </div>
 
             <div class="card-body text-center">
-              <h5 class="fw-bold mb-1">{{ ad.title }}</h5>
               <span class="badge bg-success">Tap to view</span>
             </div>
           </div>
@@ -106,11 +178,10 @@
           <div class="card shadow-sm border-0 se-carousel-card">
             <div class="se-carousel-image-box">
               <img src="{{ meal.pictures }}" alt="{{ meal.productname }}">
+              <div class="se-carousel-overlay">{{ meal.productname }}</div>
             </div>
 
             <div class="card-body text-center">
-              <h5 class="fw-bold mb-1">{{ meal.productname }}</h5>
-
               {% if meal.price %}
                 <div class="text-muted mb-1">{{ meal.price }}</div>
               {% endif %}

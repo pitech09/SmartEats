@@ -1029,6 +1029,35 @@ def searcher(page_num=1):
     )
 
 
+@main.route('/decrement_cart_item/<int:item_id>', methods=['POST'])
+@login_required
+def decrement_cart_item(item_id):
+    item = CartItem.query.get_or_404(item_id)
+
+    # Make sure this item belongs to the current user's cart
+    cart = Cart.query.get(item.cart_id)
+    if not cart or cart.user_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
+    # Decrement or remove item
+    if item.quantity > 1:
+        item.quantity -= 1
+        db.session.commit()
+    else:
+        db.session.delete(item)
+        db.session.commit()
+        item.quantity = 0  # ensure front-end knows quantity is 0
+
+    # Optional: calculate new cart total
+    cart_items = CartItem.query.filter_by(cart_id=cart.id).all()
+    cart_total = sum(i.quantity * i.product.price for i in cart_items)
+
+    return jsonify({
+        'success': True,
+        'new_quantity': item.quantity,
+        'cart_total': cart_total
+    })
+
 # ---------------- CONTACT / ABOUT / HEALTH ----------------
 @main.route("/about")
 def about():

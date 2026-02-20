@@ -3,147 +3,120 @@
 
 {% block content %}
 <div class="container my-4">
-{% if ads %}
-<div id="adsCarousel"
-     class="carousel slide mb-5"
-     data-bs-ride="carousel">
 
-  <div class="carousel-inner">
-    {% for ad in ads %}
-    <div class="carousel-item {% if loop.first %}active{% endif %}">
-      <a class="text-decoration-none" href="
-        {% if ad.link_type == 'product' %}
-          {{ url_for('main.product_detail', product_id=ad.product_id) }}
-        {% elif ad.link_type == 'store' %}
-          {{ url_for('main.go_to_store', store_id=ad.store_id) }}
-        {% else %}
-          {{ ad.external_url }}
-        {% endif %}
-      ">
-        <div class="card shadow-sm border-0 rounded-4 mx-auto"
-             style="max-width: 900px;">
-
-          <div class="d-flex align-items-center justify-content-center bg-light"
-               style="height: 280px;">
-
-            <img src="{{ ad.image }}"
-                 alt="{{ ad.title }}"
-                 class="img-fluid"
-                 style="
-                   max-height: 100%;
-                   max-width: 100%;
-                   object-fit: contain;
-                 ">
+  {% if ads %}
+  <div id="adsCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel">
+    <div class="carousel-inner">
+      {% for ad in ads %}
+      <div class="carousel-item {% if loop.first %}active{% endif %}">
+        <a class="text-decoration-none" href="
+          {% if ad.link_type == 'product' %}
+            {{ url_for('main.product_detail', product_id=ad.product_id) }}
+          {% elif ad.link_type == 'store' %}
+            {{ url_for('main.go_to_store', store_id=ad.store_id) }}
+          {% else %}
+            {{ ad.external_url }}
+          {% endif %}
+        ">
+          <div class="card shadow-sm border-0 rounded-4 mx-auto modern-card" style="max-width: 900px;">
+            <div class="position-relative d-flex align-items-center justify-content-center bg-light" style="height: 280px;">
+              <img src="{{ ad.image }}" alt="{{ ad.title }}" class="img-fluid" style="object-fit: cover; width:100%; height:100%; transition: transform .5s;">
+              <div class="carousel-overlay">{{ ad.title }}</div>
+            </div>
+            <div class="card-body text-center">
+              <span class="badge bg-success">Tap to view</span>
+            </div>
           </div>
-
-          <div class="card-body text-center">
-            <h5 class="fw-bold mb-1">{{ ad.title }}</h5>
-            <span class="badge bg-success">Tap to view</span>
-          </div>
-
-        </div>
-      </a>
-    </div>
-    {% endfor %}
-  </div>
-
-  <button class="carousel-control-prev" type="button"
-          data-bs-target="#adsCarousel" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon"></span>
-  </button>
-
-  <button class="carousel-control-next" type="button"
-          data-bs-target="#adsCarousel" data-bs-slide="next">
-    <span class="carousel-control-next-icon"></span>
-  </button>
-</div>
-{% endif %}
-
-
-<style>
-  .soft-card {
-    border-radius: 1rem;
-    transition: transform .15s ease, box-shadow .15s ease;
-  }
-  .soft-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 .5rem 1.2rem rgba(0,0,0,.12);
-  }
-</style>
-
-<div class="row g-4">
-
-  <!-- Getting Started -->
-  <div class="col-md-6">
-    <div class="card soft-card shadow-sm border-0">
-      <div class="card-body">
-        <h5 class="fw-bold text-success mb-3">🚀 Getting Started</h5>
-        <ol class="mb-0">
-          <li>Select a restaurant</li>
-          <li>Browse the menu</li>
-          <li>Add meals to cart</li>
-          <li><b>Checkout fast</b></li>
-        </ol>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cart Summary -->
-  <div class="col-md-6">
-    <div class="card soft-card shadow-sm border-0 bg-warning bg-opacity-10">
-      <div class="card-body">
-        <h6 class="text-uppercase text-muted">Your Cart</h6>
-        <h3 class="fw-bold mb-1">{{ total_count or 0 }} items</h3>
-        <p class="mb-3">
-          Total: <b>M{{ '%.2f'|format(total_amount or 0) }}</b>
-        </p>
-        <a href="{{ url_for('main.cart') }}"
-           class="btn btn-warning w-100 fw-bold">
-          View Cart
         </a>
       </div>
+      {% endfor %}
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#adsCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon"></span>
+    </button>
+
+    <button class="carousel-control-next" type="button" data-bs-target="#adsCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon"></span>
+    </button>
+  </div>
+  {% endif %}
+
+  <style>
+    .modern-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 1rem; overflow: hidden; }
+    .modern-card:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.25); }
+    .carousel-overlay { 
+      position: absolute; bottom: 0; left: 0; width: 100%;
+      background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+      color: #fff; padding: 10px 15px; font-weight: 600; opacity: 0; transition: opacity .3s;
+    }
+    .modern-card:hover .carousel-overlay { opacity: 1; }
+    .modern-card img:hover { transform: scale(1.05); }
+    .soft-card { border-radius: 1rem; transition: transform .15s ease, box-shadow .15s ease; }
+    .soft-card:hover { transform: translateY(-2px); box-shadow: 0 .5rem 1.2rem rgba(0,0,0,.12); }
+  </style>
+
+  <div class="row g-4">
+    <!-- Getting Started -->
+    <div class="col-md-6">
+      <div class="card soft-card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="fw-bold text-success mb-3">🚀 Getting Started</h5>
+          <ol class="mb-0">
+            <li>Select a restaurant</li>
+            <li>Browse the menu</li>
+            <li>Add meals to cart</li>
+            <li><b>Checkout fast</b></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart Summary -->
+    <div class="col-md-6">
+      <div class="card soft-card shadow-sm border-0 bg-warning bg-opacity-10">
+        <div class="card-body">
+          <h6 class="text-uppercase text-muted">Your Cart</h6>
+          <h3 class="fw-bold mb-1">{{ total_count or 0 }} items</h3>
+          <p class="mb-3">Total: <b>M{{ '%.2f'|format(total_amount or 0) }}</b></p>
+          <a href="{{ url_for('main.cart') }}" class="btn btn-warning w-100 fw-bold">View Cart</a>
+        </div>
+      </div>
     </div>
   </div>
-
-</div>
 </div>
 
 <!-- Real-time Notifications -->
 <script>
-  var socket = io();
+var socket = io();
 
-  {% if current_user.is_authenticated %}
-    socket.emit('join', { room: 'user_{{ current_user.id }}' });
-  {% endif %}
+{% if current_user.is_authenticated %}
+socket.emit('join', { room: 'user_{{ current_user.id }}' });
+{% endif %}
 
-  socket.on('new_notification', function(data) {
-    const list = document.getElementById('notification-list');
-    const placeholder = list.querySelector('.text-muted');
-    if (placeholder) placeholder.remove();
+socket.on('new_notification', function(data) {
+  const list = document.getElementById('notification-list');
+  const placeholder = list.querySelector('.text-muted');
+  if (placeholder) placeholder.remove();
 
-    const li = document.createElement('li');
-    li.className = 'list-group-item px-0';
-    li.innerHTML = `
-      <small class="text-muted">${data.time}</small><br>
-      <b>${data.type}</b> – ${data.message}
-    `;
-    list.prepend(li);
+  const li = document.createElement('li');
+  li.className = 'list-group-item px-0';
+  li.innerHTML = `<small class="text-muted">${data.time}</small><br><b>${data.type}</b> – ${data.message}`;
+  list.prepend(li);
 
-    const audio = document.getElementById('order_update');
-    if (audio) audio.play();
-  });
+  const audio = document.getElementById('order_update');
+  if (audio) audio.play();
+});
 
-  socket.on('cart_updated', function(data) {
-    const el = document.getElementById("cart-count");
-    if (el) el.textContent = data.cart_count;
-  });
+socket.on('cart_updated', function(data) {
+  const el = document.getElementById("cart-count");
+  if (el) el.textContent = data.cart_count;
+});
 </script>
 
 <script>
-  const carousel = document.getElementById('adsCarousel');
-  if (carousel) {
-    new bootstrap.Carousel(carousel, { interval: 5000 });
-  }
+const carousel = document.getElementById('adsCarousel');
+if (carousel) new bootstrap.Carousel(carousel, { interval: 5000 });
 </script>
 
 {% endblock %}
