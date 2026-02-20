@@ -294,7 +294,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
          style="width:40px;height:40px;">
 </a>
 <footer class="border-top footer text-muted" style="background: #fff4e6; padding:15px;">
-  <div class="container text-center">&copy; 2025 - SmartEats by Pi Technologies</div>
+  <div class="container text-center">
+    <div class="mb-2">
+      <a href="{{ url_for('main.privacy_policy') }}" class="text-muted mx-2">Privacy Policy</a> |
+      <a href="{{ url_for('main.terms_conditions') }}" class="text-muted mx-2">Terms & Conditions</a> |
+      <a href="{{ url_for('main.about') }}" class="text-muted mx-2">About</a>
+    </div>
+    <div> 
+      &copy; {{ current_year }} - SmartEats by Pi Technologies
+    </div>
+  </div>
 </footer>
 
 <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>

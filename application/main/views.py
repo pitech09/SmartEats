@@ -1028,6 +1028,13 @@ def searcher(page_num=1):
         total_pages=total_pages
     )
 
+@main.route('/terms')
+def terms_conditions():
+    return render_template("customer/terms.html")
+
+@main.route('/privacy policy')
+def privacy_policy():
+    return render_template('customer/policy.html')
 
 @main.route('/decrement_cart_item/<int:item_id>', methods=['POST'])
 @login_required
