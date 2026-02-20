@@ -139,19 +139,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
 <audio id="order_ready" preload="auto" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
 
- <!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/696a87f31165b2197f616788/default';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
-</script>
-<!--End of Tawk.to Script-->
+
 
 <script>
   if (!window._socket) {
@@ -254,6 +242,11 @@ s0.parentNode.insertBefore(s1,s0);
               <i class="fas fa-store-alt"></i> <span class="link-text">Register Store</span>
             </a>
           </li>
+                    <li class="nav-item icon-btn">
+            <a href="{{ url_for('main.about') }}" class="btn bg-light rounded-pill">
+              <i class="fas fa-info-circle"></i> <span class="link-text">About</span>
+            </a>
+          </li>
           {% endif %}
         </ul>
       </div>
@@ -275,7 +268,31 @@ s0.parentNode.insertBefore(s1,s0);
     {% block content %}{% endblock %}
   </main>
 </div>
-
+<!-- WhatsApp Floating Button -->
+<a href="https://wa.me/26658538173?text=Hello%20I%20have%20a%20question%20about%20SmartEats!" 
+   target="_blank" 
+   style="
+       position: fixed;
+       bottom: 20px;
+       right: 20px;
+       z-index: 1000;
+       width: 70px;
+       height: 70px;
+       border-radius: 50%;
+       background-color: #25D366;
+       display: flex;
+       justify-content: center;
+       align-items: center;
+       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+       transition: transform 0.3s;
+   "
+   onmouseover="this.style.transform='scale(1.1)';"
+   onmouseout="this.style.transform='scale(1)';"
+>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+         alt="Chat on WhatsApp" 
+         style="width:40px;height:40px;">
+</a>
 <footer class="border-top footer text-muted" style="background: #fff4e6; padding:15px;">
   <div class="container text-center">&copy; 2025 - SmartEats by Pi Technologies</div>
 </footer>

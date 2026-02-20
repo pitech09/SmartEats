@@ -31,6 +31,18 @@
                             Located: {{ store.town or "Not provided" }}, {{store.district or "Not Provided"}}
 
                         </p>
+                        <h5 class="card-title text-success fw-semibold">
+                            {% if is_store_open(store.openinghours) %}
+                                <span class="badge bg-success ms-2">Open</span>
+                            {% else %}
+                                <span class="badge bg-danger ms-2">Closed</span>
+                            {% endif %}
+                    </h5>
+
+
+                    <p class="card-text text-muted">
+                        Located: {{ store.town or "Not provided" }}, {{store.district or "Not Provided"}}<br>
+                    </p>
 
                         <div class="mt-auto d-flex justify-content-between align-items-center">
                             <a href="{{ url_for('main.store_details', store_id=store.id) }}" 

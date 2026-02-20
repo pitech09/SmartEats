@@ -3,15 +3,22 @@
 
 {% block content %}
 <div class="container my-5">
-  <h2 class="text-center text-success mb-4">Your Cart</h2>
+  <h2 class="text-center text-success mb-4">Checking out from {{store.name}}</h2>
 
   <div class="row g-4">
-
+            <h3 class="card-title text-success fw-semibold">
+                {% if is_store_open(store.openinghours) %}
+                    <span class="badge bg-success ms-2">Store is Open. Enjoy your meal!</span>
+                    {% else %}
+                    <span class="badge bg-danger ms-2">Store is Closed, Please Come Back During its Operating Hours</span>
+                {% endif %}
+            </h3>
     <!-- Payment Codes -->
     <div class="col-md-4">
       <div class="card shadow-sm border-success h-100">
         <div class="card-header bg-success text-white">
           <h5>Payment Codes</h5>
+
         </div>
         <div class="card-body">
           <p><strong>Mpesa:</strong> {{ store.mpesa_shortcode }}</p>
@@ -135,6 +142,7 @@
             </div>
 
             <div class="mb-3">
+              <p>Screenshot or photo of your payment.</p>
               {{ form3.payment_screenshot.label }}
               {{ form3.payment_screenshot(class="form-control") }}
             </div>
@@ -158,108 +166,129 @@
 
 <!-- JS -->
 <script>
-// Haversine formula to calculate distance in KM
-function distanceKm(lat1, lon1, lat2, lon2){
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2-lat1)*Math.PI/180;
-    const dLon = (lon2-lon1)*Math.PI/180;
-    const a = Math.sin(dLat/2)**2 +
-              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
-              Math.sin(dLon/2)**2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const subtotalEl = document.getElementById('subtotal');
     const deliveryEl = document.getElementById('delivery-fee');
     const grandEl = document.getElementById('grand-total');
-
     let baseTotal = parseFloat(subtotalEl.dataset.base);
 
     const latInput = document.getElementById('latitude');
     const lngInput = document.getElementById('longitude');
 
-    // Store coordinates
     const storeLat = {{ store.latitude }};
     const storeLng = {{ store.longitude }};
+    const storeRadius = 500;
 
-    function calculateDeliveryFee(custLat, custLng){
-        const km = distanceKm(storeLat, storeLng, custLat, custLng);
-        let fee = km * 4; // M4 per km
-        if(fee < 6) fee = 6; // minimum M6
-        return fee;
+    // Haversine distance in meters
+    function distanceMeters(lat1, lon1, lat2, lon2){
+        const R = 6371000;
+        const toRad = x => x * Math.PI/180;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat/2)**2 +
+                  Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     }
 
-    function updateTotals(){
-        if(latInput.value && lngInput.value){
-            const fee = calculateDeliveryFee(parseFloat(latInput.value), parseFloat(lngInput.value));
-            deliveryEl.textContent = `M${fee.toFixed(2)}`;
-            grandEl.textContent = (baseTotal + fee).toFixed(2);
-        }
+    function calculateDeliveryFee(meters){
+        const insideMinFee = 8;
+        const normalMinFee = 13;
+        const maxFee = 10000;
+        const ratePerMeter = 0.007;
+        
+        let fee = meters <= storeRadius ? insideMinFee : Math.max(meters * ratePerMeter, normalMinFee);
+        console.log(`Distance: ${meters.toFixed(2)} m, Calculated Fee: M${fee.toFixed(2)}`);
+        return Math.min(fee, maxFee);
     }
 
-    // Initialize map
-    let map = L.map('cart-map').setView([storeLat, storeLng], 12);
+    // Map initialization (same as before)
+    const map = L.map('cart-map').setView([storeLat, storeLng], 12);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Marker draggable
-    let marker = L.marker([storeLat, storeLng], {draggable:true}).addTo(map);
-    latInput.value = storeLat;
-    lngInput.value = storeLng;
+    const storeMarker = L.marker([storeLat, storeLng]).addTo(map).bindPopup('Store Location').openPopup();
+    const storeCircle = L.circle([storeLat, storeLng], {
+        radius: storeRadius,
+        color: 'blue',
+        fillColor: '#add8e6',
+        fillOpacity: 0.3
+    }).addTo(map);
 
-    marker.on('dragend', function(e){
-        const pos = e.target.getLatLng();
-        latInput.value = pos.lat;
-        lngInput.value = pos.lng;
-        updateTotals();
-    });
+    let line, labelMarker;
+    function updateLineAndTotals(customerLat, customerLng){
+        const meters = distanceMeters(storeLat, storeLng, customerLat, customerLng);
+        const fee = calculateDeliveryFee(meters);
+        const distanceLabel = meters > 1000 ? (meters/1000).toFixed(2) + ' km' : meters.toFixed(0) + ' m';
 
-    // Auto locate user
-    if("geolocation" in navigator){
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                const {latitude, longitude} = pos.coords;
-                marker.setLatLng([latitude, longitude]);
-                map.setView([latitude, longitude], 14);
-                latInput.value = latitude;
-                lngInput.value = longitude;
-                updateTotals();
-            },
-            () => console.log("User location not allowed or available."),
-            { enableHighAccuracy:true, timeout:10000 }
-        );
+        if(line) map.removeLayer(line);
+        if(labelMarker) map.removeLayer(labelMarker);
+
+        line = L.polyline([[storeLat, storeLng], [customerLat, customerLng]], {color:'red'}).addTo(map);
+        const midpointLat = (storeLat + customerLat)/2;
+        const midpointLng = (storeLng + customerLng)/2;
+        labelMarker = L.marker([midpointLat, midpointLng], {
+            icon: L.divIcon({
+                className: 'distance-label',
+                html: `<div style="background:white;padding:2px 4px;border:1px solid red;border-radius:4px;font-size:12px;">
+                        ${distanceLabel} | M${fee.toFixed(2)}
+                       </div>`,
+                iconSize: [100,20]
+            })
+        }).addTo(map);
+
+        deliveryEl.textContent = `M${fee.toFixed(2)}`;
+        grandEl.textContent = (baseTotal + fee).toFixed(2);
+
+        latInput.value = customerLat;
+        lngInput.value = customerLng;
+
+        storeCircle.setStyle({fillColor: meters <= storeRadius ? '#90ee90' : '#add8e6', color: meters <= storeRadius ? '#008000' : 'blue'});
     }
 
-    // Capture GPS on selecting delivery agent
+    const customerMarker = L.marker([storeLat, storeLng + 0.01], {draggable:true}).addTo(map).bindPopup('Customer Location').openPopup();
+    updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng);
+    customerMarker.on('drag', e => {
+        const pos = e.target.getLatLng();
+        updateLineAndTotals(pos.lat, pos.lng);
+    });
+    map.fitBounds([[storeLat, storeLng],[customerMarker.getLatLng().lat, customerMarker.getLatLng().lng]]);
+
+    // Delivery option selection
     document.querySelectorAll('.delivery-option').forEach(opt => {
         opt.addEventListener('change', () => {
             if(opt.value !== 'agent' || !opt.checked){
                 deliveryEl.textContent = "M0.00";
                 grandEl.textContent = baseTotal.toFixed(2);
             } else {
-                updateTotals();
+                updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng);
             }
         });
     });
 
-    // Remove item AJAX
+    // **Decrement item quantity instead of removing whole row**
     document.querySelectorAll('.remove-item').forEach(btn => {
         btn.addEventListener('click', async () => {
             const itemId = btn.dataset.id;
-            const res = await fetch(`/remove_from_cart_ajax/${itemId}`, {method:'POST'});
+            const res = await fetch(`/decrement_cart_item/${itemId}`, {method:'POST'}); // endpoint decrements quantity
             const result = await res.json();
             if(result.success){
-                document.querySelector(`tr[data-item-id="${itemId}"]`).remove();
+                const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                const qtyEl = row.querySelector('.item-qty');
+                if(result.new_quantity > 0){
+                    qtyEl.textContent = result.new_quantity;
+                } else {
+                    row.remove(); // remove if quantity reaches 0
+                }
                 baseTotal = parseFloat(result.cart_total);
                 subtotalEl.dataset.base = baseTotal;
                 subtotalEl.textContent = `M${baseTotal.toFixed(2)}`;
-                updateTotals();
+                updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng);
             }
         });
     });
+
 });
 </script>
 

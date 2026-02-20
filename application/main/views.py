@@ -1,5 +1,6 @@
 import os
 import secrets
+import re
 from datetime import datetime
 from typing import Self
 from flask import render_template, redirect, url_for, flash, session, jsonify, request, current_app
@@ -38,6 +39,7 @@ def init_login_manager(login_manager):
             return Administrater.query.get(int(user_id))
         return None
 # --------------------- UTILITIES ---------------------
+
 def update_product_status(Product):
     for item in Product:
         if item.quantity < 10:
@@ -53,24 +55,104 @@ def calculate_loyalty_points(user, sale_amount):
     db.session.commit()
     return points_earned
 
-# --- Helper functions ---
-def haversine(lat1, lon1, lat2, lon2):
+
+from math import radians, sin, cos, sqrt, atan2
+
+def haversine_meters(lat1, lon1, lat2, lon2):
     """
-    Calculate the great-circle distance between two points (km)
+    Calculate great-circle distance in meters
     """
+    R = 6371000  # Earth radius in meters
+
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
-    r = 6371  # Earth radius in km
-    return c * r
 
-def calculate_delivery_fee(store_lat, store_lng, cust_lat, cust_lng, rate_per_km=4, min_fee=6):
-    distance = haversine(store_lat, store_lng, cust_lat, cust_lng)
-    fee = distance * rate_per_km
-    return round(max(fee, min_fee), 2)
+    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
+    return R * c
+
+
+def calculate_delivery_fee(store_lat, store_lng, cust_lat, cust_lng,
+                           rate_per_km=5,
+                           min_fee=10,
+                           free_radius_m=500):
+    """
+    Fair delivery calculation:
+    - Base minimum fee
+    - First 500m included
+    - M5 per km after that
+    """
+    distance_m = haversine_meters(store_lat, store_lng, cust_lat, cust_lng)
+
+    fee = min_fee
+
+    if distance_m > free_radius_m:
+        extra_km = (distance_m - free_radius_m) / 1000
+        fee += extra_km * rate_per_km
+
+    return round(fee, 2)
+
+
+
+def is_store_open(opening_hours):
+    """
+    Returns True if store is open, False otherwise.
+    Handles messy formats like:
+    - "Orders from 8am - 10pm"
+    - "8am - 10pm"
+    - "08:00 to 21:00"
+    - "24/7"
+    """
+    print(f"[DEBUG] Checking opening hours: {opening_hours}")
+
+    if not opening_hours:
+        print("[DEBUG] No opening hours → Closed")
+        return False
+
+    opening_hours = opening_hours.lower()
+
+    # Handle "24/7" explicitly
+    if "24/7" in opening_hours:
+        print("[DEBUG] 24/7 store → Open")
+        return True
+
+    # Regex to extract two times (HH:MM or H[H]?am/pm)
+    time_matches = re.findall(r'(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)', opening_hours)
+    print(f"[DEBUG] Extracted times: {time_matches}")
+
+    if len(time_matches) != 2:
+        print("[DEBUG] Could not find exactly 2 times → Closed")
+        return False
+
+    open_str, close_str = time_matches
+    now = datetime.now().time()
+    print(f"[DEBUG] Current time: {now}")
+
+    # Try possible formats
+    for fmt in ("%H:%M", "%I%p", "%I:%M%p"):
+        try:
+            open_time = datetime.strptime(open_str.strip(), fmt).time()
+            close_time = datetime.strptime(close_str.strip(), fmt).time()
+            print(f"[DEBUG] Parsed with format {fmt}: Open={open_time}, Close={close_time}")
+            break
+        except ValueError:
+            continue
+    else:
+        print("[DEBUG] Could not parse times → Closed")
+        return False
+
+    # Check if store is open
+    if open_time < close_time:
+        is_open = open_time <= now <= close_time
+        print(f"[DEBUG] Regular hours → is_open: {is_open}")
+        return is_open
+    else:
+        is_open = now >= open_time or now <= close_time
+        print(f"[DEBUG] Overnight hours → is_open: {is_open}")
+        return is_open
 
 def upload_to_cloudinary(file, folder='payment_proofs'):
     result = upload(
@@ -212,7 +294,7 @@ def cart():
 
     return render_template('customer/updated_cartlist.html', form=form, form2=form2, form3=form3,
                            cart=cart, user=user, formpharm=formpharm, store=Store.query.get(store_id),
-                           total_amount=total_amount, total_count=total_count)
+                           total_amount=total_amount, total_count=total_count, is_store_open=is_store_open)
 @main.route("/go-to-store/<int:store_id>")
 def go_to_store(store_id):
     session["store_id"] = store_id
@@ -451,14 +533,8 @@ def addorder():
 
         from math import radians, sin, cos, sqrt, atan2
 
-        def calculate_distance(lat1, lon1, lat2, lon2):
-            R = 6371
-            dlat = radians(lat2 - lat1)
-            dlon = radians(lon2 - lon1)
-            a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
-            return 2 * R * atan2(sqrt(a), sqrt(1 - a))
 
-        distance_km = calculate_distance(
+        distance_km = haversine(
             store.latitude,
             store.longitude,
             customer_lat,
@@ -799,7 +875,7 @@ def set_storee(store_id):
     store = Store.query.get_or_404(store_id)
     session['store_id'] = store.id
     flash(f'You are now viewing {store.name}', 'success')
-    return redirect(url_for('main.home', store_id=store.id))
+    return redirect(url_for('main.menu', page_num=1))
 
 @main.route('/stores')
 def restuarants():
@@ -820,7 +896,7 @@ def restuarants():
         Store.name.asc()  # then alphabetical by name
     ).all()
 
-    return render_template('customer/restuarants.html', stores=stores, form2=form2)
+    return render_template('customer/restuarants.html', stores=stores, form2=form2, is_store_open=is_store_open)
 
 @main.route("/store/<int:store_id>")
 @login_required
@@ -956,7 +1032,7 @@ def searcher(page_num=1):
 # ---------------- CONTACT / ABOUT / HEALTH ----------------
 @main.route("/about")
 def about():
-    return render_template("customer/about.html")
+    return render_template("customer/aboutme.html")
 
 @main.route("/contact")
 def contact():
