@@ -162,7 +162,7 @@ def adminpage():
                 (
                     (func.date(Sales.date_) == today.date()) &
                     (Order.status.in_(VALID_ORDER_STATUSES)),
-                    (Sales.price * Sales.quantity) * NET_MULTIPLIER
+                    (Sales.price * Sales.quantity)
                 ),
                 else_=0
             )
@@ -174,7 +174,7 @@ def adminpage():
                     (Sales.date_ >= start_of_month) &
                     (Sales.date_ <= end_of_month) &
                     (Order.status.in_(VALID_ORDER_STATUSES)),
-                    (Sales.price * Sales.quantity) * NET_MULTIPLIER
+                    (Sales.price * Sales.quantity)
                 ),
                 else_=0
             )
@@ -186,7 +186,7 @@ def adminpage():
                     (Sales.date_ >= start_of_year) &
                     (Sales.date_ <= end_of_year) &
                     (Order.status.in_(VALID_ORDER_STATUSES)),
-                    (Sales.price * Sales.quantity) * NET_MULTIPLIER
+                    (Sales.price * Sales.quantity) 
                 ),
                 else_=0
             )
@@ -243,7 +243,7 @@ def adminpage():
         unread_notifications=unread_notifications,
         count=count,
         daily_data=daily_data,
-        commission_rate=COMMISSION_RATE * 100
+        
     )
 
 

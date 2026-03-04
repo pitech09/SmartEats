@@ -161,6 +161,7 @@ def verifypharmacy(pharmacy_id):
     store = Store.query.get_or_404(pharmacy_id)
     if store:
         store.verified = True
+        store.confirmed = True
         db.session.add(store)
     try:
         db.session.commit()

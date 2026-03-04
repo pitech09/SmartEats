@@ -6,24 +6,23 @@
   <h2 class="text-center text-success mb-4">Checking out from {{store.name}}</h2>
 
   <div class="row g-4">
-            <h3 class="card-title text-success fw-semibold">
-                {% if is_store_open(store.openinghours) %}
-                    <span class="badge bg-success ms-2">Store is Open. Enjoy your meal!</span>
-                    {% else %}
-                    <span class="badge bg-danger ms-2">Store is Closed, Please Come Back During its Operating Hours</span>
-                {% endif %}
-            </h3>
+    <h3 class="card-title text-success fw-semibold">
+      {% if is_store_open(store.openinghours) %}
+        <span class="badge bg-success ms-2">Store is Open. Enjoy your meal!</span>
+      {% else %}
+        <span class="badge bg-danger ms-2">Store is Closed, Please Come Back During its Operating Hours</span>
+      {% endif %}
+    </h3>
+
     <!-- Payment Codes -->
     <div class="col-md-4">
       <div class="card shadow-sm border-success h-100">
         <div class="card-header bg-success text-white">
           <h5>Payment Codes</h5>
-
         </div>
         <div class="card-body">
           <p><strong>Mpesa:</strong> {{ store.mpesa_shortcode }}</p>
           <p><strong>Mpesa Name:</strong> {{ store.mpesaname }}</p>
-          
           <p><strong>Ecocash:</strong> {{ store.ecocash_short_code }}</p>
           <p><strong>Ecocash Name:</strong> {{ store.ecocash_name }}</p>
           <p class="text-muted small">
@@ -44,32 +43,32 @@
           {% if not cart or cart.cart_items|length == 0 %}
             <p class="text-center text-muted">Your cart is empty!</p>
           {% else %}
-          <table class="table table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Item</th>
-                <th>Price</th>
-                <th>Qty</th>
-                <th>Total</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="cart-items">
-              {% for item in cart.cart_items %}
-              <tr data-item-id="{{ item.id }}">
-                <td>{{ item.get_name() }}</td>
-                <td>M{{ '%.2f'|format(item.get_price()) }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>M{{ '%.2f'|format(item.get_total()) }}</td>
-                <td>
-                  <button class="btn btn-outline-danger btn-sm remove-item" data-id="{{ item.id }}">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Item</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cart-items">
+                {% for item in cart.cart_items %}
+                  <tr data-item-id="{{ item.id }}">
+                    <td>{{ item.get_name() }}</td>
+                    <td>M{{ '%.2f'|format(item.get_price()) }}</td>
+                    <td class="item-qty">{{ item.quantity }}</td>
+                    <td>M{{ '%.2f'|format(item.get_total()) }}</td>
+                    <td>
+                      <button class="btn btn-outline-danger btn-sm remove-item" data-id="{{ item.id }}">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           {% endif %}
 
           <!-- Totals -->
@@ -98,9 +97,9 @@
 
           <hr>
 
-          <!-- Map for accurate location -->
+          <!-- Map -->
           <div class="mb-3">
-            <label class="form-label">Drag the marker to your location:</label>
+            <label class="form-label">Drag the marker to your location (or allow browser geolocation):</label>
             <div id="cart-map" style="height:300px; border:1px solid #ccc; border-radius:8px;"></div>
           </div>
 
@@ -112,9 +111,10 @@
 
             {{ form3.hidden_tag() }}
 
-            <!-- GPS hidden fields -->
+            <!-- Hidden inputs for location & fee -->
             <input type="hidden" name="latitude" id="latitude">
             <input type="hidden" name="longitude" id="longitude">
+            <input type="hidden" name="delivery_fee" id="delivery-fee-input">
 
             <div class="mb-3">
               {{ form3.payment.label }}
@@ -129,10 +129,10 @@
             <div class="mb-3">
               {{ form3.deliverymethod.label }}
               {% for subfield in form3.deliverymethod %}
-              <div class="form-check">
-                {{ subfield(class="form-check-input delivery-option") }}
-                {{ subfield.label(class="form-check-label") }}
-              </div>
+                <div class="form-check">
+                  {{ subfield(class="form-check-input delivery-option") }}
+                  {{ subfield.label(class="form-check-label") }}
+                </div>
               {% endfor %}
             </div>
 
@@ -142,7 +142,7 @@
             </div>
 
             <div class="mb-3">
-              <p>Screenshot or photo of your payment.</p>
+              <p>Screenshot or photo of your payment:</p>
               {{ form3.payment_screenshot.label }}
               {{ form3.payment_screenshot(class="form-control") }}
             </div>
@@ -160,7 +160,7 @@
   </div>
 </div>
 
-<!-- Leaflet CSS & JS -->
+<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const subtotalEl = document.getElementById('subtotal');
     const deliveryEl = document.getElementById('delivery-fee');
     const grandEl = document.getElementById('grand-total');
+    const feeInput = document.getElementById('delivery-fee-input');
     let baseTotal = parseFloat(subtotalEl.dataset.base);
 
     const latInput = document.getElementById('latitude');
@@ -179,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const storeLng = {{ store.longitude }};
     const storeRadius = 500;
 
-    // Haversine distance in meters
     function distanceMeters(lat1, lon1, lat2, lon2){
         const R = 6371000;
         const toRad = x => x * Math.PI/180;
@@ -196,13 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const normalMinFee = 13;
         const maxFee = 10000;
         const ratePerMeter = 0.007;
-        
         let fee = meters <= storeRadius ? insideMinFee : Math.max(meters * ratePerMeter, normalMinFee);
-        console.log(`Distance: ${meters.toFixed(2)} m, Calculated Fee: M${fee.toFixed(2)}`);
         return Math.min(fee, maxFee);
     }
 
-    // Map initialization (same as before)
     const map = L.map('cart-map').setView([storeLat, storeLng], 12);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
@@ -217,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
 
     let line, labelMarker;
+
     function updateLineAndTotals(customerLat, customerLng){
         const meters = distanceMeters(storeLat, storeLng, customerLat, customerLng);
         const fee = calculateDeliveryFee(meters);
@@ -243,44 +241,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
         latInput.value = customerLat;
         lngInput.value = customerLng;
+        feeInput.value = fee.toFixed(2);
 
-        storeCircle.setStyle({fillColor: meters <= storeRadius ? '#90ee90' : '#add8e6', color: meters <= storeRadius ? '#008000' : 'blue'});
+        storeCircle.setStyle({
+            fillColor: meters <= storeRadius ? '#90ee90' : '#add8e6',
+            color: meters <= storeRadius ? '#008000' : 'blue'
+        });
     }
 
-    const customerMarker = L.marker([storeLat, storeLng + 0.01], {draggable:true}).addTo(map).bindPopup('Customer Location').openPopup();
+    const customerMarker = L.marker([storeLat, storeLng + 0.01], {draggable:true}).addTo(map).bindPopup('Your Location').openPopup();
     updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng);
+
     customerMarker.on('drag', e => {
         const pos = e.target.getLatLng();
         updateLineAndTotals(pos.lat, pos.lng);
     });
+
+    // Automatic geolocation
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(position => {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            customerMarker.setLatLng([userLat, userLng]);
+            map.setView([userLat, userLng], 14);
+            updateLineAndTotals(userLat, userLng);
+        }, err => {
+            console.warn("Geolocation failed or denied.");
+        });
+    }
+
     map.fitBounds([[storeLat, storeLng],[customerMarker.getLatLng().lat, customerMarker.getLatLng().lng]]);
 
-    // Delivery option selection
     document.querySelectorAll('.delivery-option').forEach(opt => {
         opt.addEventListener('change', () => {
-            if(opt.value !== 'agent' || !opt.checked){
+            const selected = document.querySelector('.delivery-option:checked');
+            if(!selected || selected.value !== 'agent'){
                 deliveryEl.textContent = "M0.00";
                 grandEl.textContent = baseTotal.toFixed(2);
+                feeInput.value = "0.00";
             } else {
-                updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng);
+                const pos = customerMarker.getLatLng();
+                updateLineAndTotals(pos.lat, pos.lng);
             }
         });
     });
 
-    // **Decrement item quantity instead of removing whole row**
     document.querySelectorAll('.remove-item').forEach(btn => {
         btn.addEventListener('click', async () => {
             const itemId = btn.dataset.id;
-            const res = await fetch(`/decrement_cart_item/${itemId}`, {method:'POST'}); // endpoint decrements quantity
+            const res = await fetch(`/decrement_cart_item/${itemId}`, {method:'POST'});
             const result = await res.json();
             if(result.success){
                 const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
                 const qtyEl = row.querySelector('.item-qty');
-                if(result.new_quantity > 0){
-                    qtyEl.textContent = result.new_quantity;
-                } else {
-                    row.remove(); // remove if quantity reaches 0
-                }
+                if(result.new_quantity > 0) qtyEl.textContent = result.new_quantity;
+                else row.remove();
                 baseTotal = parseFloat(result.cart_total);
                 subtotalEl.dataset.base = baseTotal;
                 subtotalEl.textContent = `M${baseTotal.toFixed(2)}`;

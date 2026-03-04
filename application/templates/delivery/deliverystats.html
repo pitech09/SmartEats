@@ -1,14 +1,15 @@
 {% extends "deliverylayout.html" %}
+{% block title %}My Delivery Dashboard - MediCart{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-  <h2 class="mb-4">📦 My Delivery Stats</h2>
+  <h2 class="mb-4">My Delivery Stats</h2>
 
-  <!-- Stats Cards -->
   <div class="row g-3">
 
     <!-- Total Deliveries -->
     <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-primary h-100">
+      <div class="card text-white bg-primary h-100 shadow-sm">
         <div class="card-body text-center">
           <h5 class="card-title">Total Deliveries</h5>
           <p class="card-text fs-4">{{ total }}</p>
@@ -18,7 +19,7 @@
 
     <!-- Delivered -->
     <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-success h-100">
+      <div class="card text-white bg-success h-100 shadow-sm">
         <div class="card-body text-center">
           <h5 class="card-title">Delivered</h5>
           <p class="card-text fs-4">{{ delivered }}</p>
@@ -28,7 +29,7 @@
 
     <!-- In Progress -->
     <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-warning h-100">
+      <div class="card text-white bg-warning h-100 shadow-sm">
         <div class="card-body text-center">
           <h5 class="card-title">In Progress</h5>
           <p class="card-text fs-4">{{ in_progress }}</p>
@@ -38,7 +39,7 @@
 
     <!-- Cancelled -->
     <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-danger h-100">
+      <div class="card text-white bg-danger h-100 shadow-sm">
         <div class="card-body text-center">
           <h5 class="card-title">Cancelled</h5>
           <p class="card-text fs-4">{{ cancelled }}</p>
@@ -48,37 +49,37 @@
 
     <!-- Total Revenue -->
     <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-success h-100">
+      <div class="card bg-success text-white h-100 shadow-sm">
         <div class="card-body text-center">
           <h5 class="card-title">Total Revenue</h5>
-          <p class="card-text fs-4">M {{ revenue }}</p>
+          <p class="card-text fs-4">M {{ '%.2f'|format(revenue) }}</p>
         </div>
       </div>
     </div>
 
     <!-- Weekly Revenue -->
     <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-success h-100">
+      <div class="card bg-info text-white h-100 shadow-sm">
         <div class="card-body text-center">
           <h5 class="card-title">Weekly Revenue</h5>
-          <p class="card-text fs-4">M {{ weekly_revenue }}</p>
+          <p class="card-text fs-4">M {{ '%.2f'|format(weekly_revenue) }}</p>
         </div>
       </div>
     </div>
 
     <!-- Daily Revenue -->
     <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-success h-100">
+      <div class="card bg-secondary text-white h-100 shadow-sm">
         <div class="card-body text-center">
           <h5 class="card-title">Daily Revenue</h5>
-          <p class="card-text fs-4">M {{ daily_revenue }}</p>
+          <p class="card-text fs-4">M {{ '%.2f'|format(daily_revenue) }}</p>
         </div>
       </div>
     </div>
 
     <!-- Success Rate -->
     <div class="col-md-3 col-sm-6">
-      <div class="card h-100">
+      <div class="card h-100 shadow-sm">
         <div class="card-header text-center bg-light">Success Rate</div>
         <div class="card-body text-center">
           <h4 class="text-success">{{ success_rate }}%</h4>
@@ -88,4 +89,17 @@
 
   </div>
 </div>
+
+<style>
+  .card:hover {
+    transform: translateY(-4px);
+    transition: 0.2s;
+  }
+  .card-header {
+    font-weight: 600;
+  }
+  .card-title {
+    font-weight: 600;
+  }
+</style>
 {% endblock %}

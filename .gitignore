@@ -8,6 +8,8 @@ fix_account.py
 fix_store.py
 fix_products.py
 migrations/
+!application/static/css/images/default.png
+
 *.jpg
 *.jpeg
 *.png

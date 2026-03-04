@@ -203,6 +203,9 @@ class Order(db.Model):
 
     deliveryguy = db.Column(db.String(50), default="Not Taken")
     screenshot = db.Column(db.Text)
+
+    deliveryfee = db.Column(db.Float, default=0.0)
+    
     is_pos = db.Column(db.Boolean, default=False)
     user = db.relationship("User", back_populates="orders")
     store = db.relationship("Store", back_populates="orders")
@@ -275,7 +278,7 @@ class Delivery(db.Model):
     customer_name = db.Column(db.String(120))
     address = db.Column(db.String(100))
     status = db.Column(db.String(50))
-
+    deliveryfee = db.Column(db.Float, default=0.0)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     end_time = db.Column(db.DateTime)
 
@@ -285,10 +288,8 @@ class Delivery(db.Model):
         nullable=False,
         unique=True
     )
-
     delivery_guy_id = db.Column(db.Integer, db.ForeignKey("deliveryguy.id"))
     customer_pic = db.Column(db.Text)
-
     order = db.relationship(
         "Order",
         backref=db.backref("delivery", uselist=False),

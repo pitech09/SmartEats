@@ -76,25 +76,26 @@ def haversine_meters(lat1, lon1, lat2, lon2):
 
 
 def calculate_delivery_fee(store_lat, store_lng, cust_lat, cust_lng,
-                           rate_per_km=5,
-                           min_fee=10,
-                           free_radius_m=500):
-    """
-    Fair delivery calculation:
-    - Base minimum fee
-    - First 500m included
-    - M5 per km after that
-    """
-    distance_m = haversine_meters(store_lat, store_lng, cust_lat, cust_lng)
+                           store_radius=500,
+                           inside_min_fee=8,
+                           normal_min_fee=13,
+                           rate_per_meter=0.007,
+                           max_fee=10000):
 
-    fee = min_fee
+    distance_m = haversine_meters(
+        store_lat,
+        store_lng,
+        cust_lat,
+        cust_lng
+    )
 
-    if distance_m > free_radius_m:
-        extra_km = (distance_m - free_radius_m) / 1000
-        fee += extra_km * rate_per_km
+    # Same logic as JS
+    if distance_m <= store_radius:
+        fee = inside_min_fee
+    else:
+        fee = max(distance_m * rate_per_meter, normal_min_fee)
 
-    return round(fee, 2)
-
+    return round(min(fee, max_fee), 2)
 
 
 def is_store_open(opening_hours):
@@ -451,22 +452,15 @@ def addorder():
     store = Store.query.get_or_404(store_id)
 
     # Get cart
-    cart = Cart.query.filter_by(
-        user_id=current_user.id,
-        store_id=store_id
-    ).first()
-
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
     if not cart or not cart.cart_items:
         flash("Your cart is empty.", "warning")
         return redirect(url_for('main.menu', page_num=1))
 
     # Prevent multiple pending orders
     existing_order = Order.query.filter_by(
-        user_id=current_user.id,
-        store_id=store_id,
-        status='Pending'
+        user_id=current_user.id, store_id=store_id, status='Pending'
     ).first()
-
     if existing_order:
         flash("You still have a pending order.", "warning")
         return redirect(url_for('main.myorders'))
@@ -476,14 +470,37 @@ def addorder():
         return redirect(url_for('main.cart'))
 
     # -----------------------------
-    # Get customer coordinates
+    # Get customer coordinates & client fee
     # -----------------------------
     try:
-        customer_lat = float(request.form.get('latitude')) if request.form.get('latitude') else None
-        customer_lng = float(request.form.get('longitude')) if request.form.get('longitude') else None
-    except ValueError:
-        customer_lat = None
-        customer_lng = None
+        customer_lat = float(request.form.get('latitude'))
+        customer_lng = float(request.form.get('longitude'))
+        client_fee = float(request.form.get('delivery_fee'))
+    except (TypeError, ValueError):
+        flash("Invalid location data.", "warning")
+        return redirect(url_for('main.cart'))
+
+    # -----------------------------
+    # Recalculate delivery fee on server
+    # -----------------------------
+    if form.deliverymethod.data == 'agent':
+        if None in [customer_lat, customer_lng, store.latitude, store.longitude]:
+            flash("Location access required for delivery.", "warning")
+            return redirect(url_for('main.cart'))
+
+        server_fee = calculate_delivery_fee(store.latitude, store.longitude, customer_lat, customer_lng)
+
+        # Compare against client fee (allow small rounding diff)
+        if abs(server_fee - client_fee) > 1:
+            current_app.logger.warning(
+                f"Fee mismatch | User:{current_user.id} Client:{client_fee} Server:{server_fee}"
+            )
+            flash("Delivery fee mismatch detected.", "danger")
+            return redirect(url_for('main.cart'))
+
+        delivery_fee = server_fee
+    else:
+        delivery_fee = 0
 
     # -----------------------------
     # Create Order
@@ -495,17 +512,10 @@ def addorder():
         payment=form.payment.data,
         status="Pending",
         customer_lat=customer_lat,
-        customer_lng=customer_lng
+        customer_lng=customer_lng,
+        deliveryfee=delivery_fee,
+        location=form.drop_address.data if form.deliverymethod.data != 'pickup' else 'pickup'
     )
-
-    # Delivery location
-    if form.deliverymethod.data == 'pickup':
-        neworder.location = 'pickup'
-    else:
-        if not form.drop_address.data:
-            flash("Delivery address is required.", "warning")
-            return redirect(url_for('main.cart'))
-        neworder.location = form.drop_address.data
 
     # -----------------------------
     # Payment Screenshot
@@ -520,43 +530,13 @@ def addorder():
     else:
         neworder.screenshot = save_product_picture(file)
 
-    # -----------------------------
-    # Distance + Delivery Fee
-    # -----------------------------
-    delivery_fee = 0
-    distance_km = 0
-
-    if form.deliverymethod.data == 'agent':
-        if not all([customer_lat, customer_lng, store.latitude, store.longitude]):
-            flash("Location access required for delivery.", "warning")
-            return redirect(url_for('main.cart'))
-
-        from math import radians, sin, cos, sqrt, atan2
-
-
-        distance_km = haversine(
-            store.latitude,
-            store.longitude,
-            customer_lat,
-            customer_lng
-        )
-
-        BASE_FEE = 10
-        PER_KM = 5
-
-        delivery_fee = round(BASE_FEE + (distance_km * PER_KM), 2)
-
-    neworder.delivery_fee = delivery_fee
-    neworder.distance_km = round(distance_km, 2)
-
     db.session.add(neworder)
-    db.session.commit()
+    db.session.flush()  # get neworder.id before commit
 
     # -----------------------------
     # Process Cart Items
     # -----------------------------
     total_amount = 0
-
     for item in cart.cart_items:
         if item.product:
             order_item = OrderItem(
@@ -567,9 +547,7 @@ def addorder():
                 quantity=item.quantity
             )
             db.session.add(order_item)
-
-            item_total = item.product.price * item.quantity
-            total_amount += item_total
+            total_amount += item.product.price * item.quantity
 
             sale = Sales(
                 order_id=neworder.id,
@@ -581,7 +559,6 @@ def addorder():
                 store_id=store.id
             )
             db.session.add(sale)
-
         elif item.custom_meal:
             item.custom_meal.order_id = neworder.id
             total_amount += item.custom_meal.total_price
@@ -598,18 +575,19 @@ def addorder():
             db.session.add(sale)
 
     total_amount += delivery_fee
-    neworder.total_amount = round(total_amount, 2)
+    neworder.deliveryfee = round(total_amount, 2)
+    print(f"[DEBUG] Total order amount (including delivery): {total_amount}")
+    print(f"[DEBUG] Calculated delivery fee: {delivery_fee}")
 
     # -----------------------------
     # Clear Cart
     # -----------------------------
     CartItem.query.filter_by(cart_id=cart.id).delete()
     db.session.commit()
-
     cart_cache.clear_cache(current_user.id)
 
     # -----------------------------
-    # Notify Store (SocketIO)
+    # Notify Store via SocketIO
     # -----------------------------
     socketio.emit(
         'new_order',
@@ -618,7 +596,6 @@ def addorder():
             'customer_email': current_user.email,
             'total_amount': neworder.total_amount,
             'delivery_fee': delivery_fee,
-            'distance_km': neworder.distance_km,
             'delivery_method': form.deliverymethod.data,
             'location': neworder.location,
             'created_at': neworder.create_at.strftime('%Y-%m-%d %H:%M')
@@ -628,8 +605,6 @@ def addorder():
 
     flash("Order successfully placed.", "success")
     return redirect(url_for('main.myorders'))
-
-
 
 
 @main.route('/myorders')
