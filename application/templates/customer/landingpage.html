@@ -211,7 +211,7 @@
         {% for rest in restaurants %}
         <div class="col-md-3 col-sm-6">
             <div class="store-card shadow-sm p-2 rounded">
-                <img src="{{ rest.image or url_for('static', filename='css/images/default.png') }}" alt="{{ rest.name }}">
+                <img src="{{url_for('static', filename='css/images/profile/default.png') }}" alt="{{ rest.name }}">
                 <h6 class="fw-semibold mt-2">{{ rest.name }}</h6>
                 {% if rest.district %}<small class="text-muted">{{ rest.district }}</small>{% endif %}
             </div>
