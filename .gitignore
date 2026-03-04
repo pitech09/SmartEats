@@ -9,7 +9,6 @@ fix_store.py
 fix_products.py
 migrations/
 !application/static/css/images/profile/default.png
-
 *.jpg
 *.jpeg
 *.gif
