@@ -301,40 +301,55 @@ def update_store_location():
 
 @store.route('/dashboard/updateproduct/<int:item_id>', methods=['GET', 'POST'])
 @login_required
-#@role_required('Store')
 def updateproduct(item_id):
     mystore = Store.query.get_or_404(current_user.id)
+
+    # Notifications
     unread_notifications = Notification.query.filter_by(
         user_type='store', user_id=mystore.id, is_read=False
     ).order_by(Notification.timestamp.desc()).all()
-    count = Notification.query.filter_by(
-        user_type='store', user_id=mystore.id, is_read=False
-    ).order_by(Notification.timestamp.desc()).count()
+    count = len(unread_notifications)
 
+    # Get the product
+    product = Product.query.filter_by(id=item_id, store_id=mystore.id).first_or_404()
+
+    # Initialize form
     form = update()
     form.category.choices = [
-        (c.id, c.name)
-        for c in Category.query.filter_by(store_id=store.id).all()
+        (c.id, c.name) for c in Category.query.filter_by(store_id=mystore.id).all()
     ]
-    if form.validate_on_submit():
 
-        product = Product.query.filter_by(id=item_id, store_id=mystore.id).first()
-        if product:
-            product.productname = form.newname.data
-            product.description = form.newdescription.data
-            product.price = form.newprice.data
+    # Pre-fill form with existing product data
+    if request.method == 'GET':
+        form.newname.data = product.productname
+        form.newdescription.data = product.description
+        form.newprice.data = product.price
+        form.category.data = product.category_id
+
+    # Handle submission
+    if form.validate_on_submit():
+        product.productname = form.newname.data
+        product.description = form.newdescription.data
+        product.price = form.newprice.data
+        product.category_id = form.category.data
 
         try:
             db.session.commit()
+            flash('Product updated successfully!', 'success')
             return redirect(url_for('store.products'))
         except IntegrityError:
             db.session.rollback()
-
+            flash('Error updating product. Please try again.', 'danger')
             return redirect(url_for('store.products'))
-    store_id = session.get('store_id')
 
-    return render_template('store/updated_updateproduct.html', form=form, item_id=item_id,
-                           count=count, unread_notifications=unread_notifications, store=store)
+    return render_template(
+        'store/updated_updateproduct.html',
+        form=form,
+        item_id=item_id,
+        count=count,
+        unread_notifications=unread_notifications,
+        store=mystore
+    )
 
 @store.route('/dashboard/ready_orders')
 @login_required
