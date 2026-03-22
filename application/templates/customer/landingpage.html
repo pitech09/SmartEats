@@ -4,34 +4,33 @@
 {% block content %}
 
 <style>
-/* ===== Landing Page Styles ===== */
-
-/* Hero Section with appetizing gradient */
+/* ===== Hero Section ===== */
 .hero {
     background: linear-gradient(135deg, #FF4B3E, #FFB347, #FFD93D, #6FCF97);
-    background-size: 400% 400%;  /* for subtle animation */
+    background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
     color: #fff;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     border-radius: 1rem;
     padding: 3rem 1rem;
+    transition: transform 0.3s;
 }
-
-/* Gradient animation */
+.hero:hover { transform: scale(1.01); }
 @keyframes gradientShift {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
+.hero .btn { transition: transform 0.2s, box-shadow 0.2s; }
+.hero .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
 
-/* Card common style */
+/* ===== Cards ===== */
 .se-carousel-card, .store-card, .hcl-card {
     border-radius: 1rem;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     background: #fff;
 }
-
 .se-carousel-card:hover, .store-card:hover, .hcl-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 20px rgba(0,0,0,0.25);
@@ -47,17 +46,8 @@
     justify-content: center;
     overflow: hidden;
 }
-
-.se-carousel-image-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: transform 0.5s ease;
-}
-
-.se-carousel-image-box:hover img {
-    transform: scale(1.03);
-}
+.se-carousel-image-box img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s ease; }
+.se-carousel-image-box:hover img { transform: scale(1.03); }
 
 /* Overlay */
 .se-carousel-overlay {
@@ -73,53 +63,27 @@
     font-size: 1rem;
     font-weight: 600;
 }
-
-.se-carousel-image-box:hover .se-carousel-overlay {
-    opacity: 1;
-}
+.se-carousel-image-box:hover .se-carousel-overlay { opacity: 1; }
 
 /* Store Cards */
-.store-card {
-    text-align: center;
-    padding: 10px;
-}
+.store-card { text-align: center; padding: 10px; }
+.store-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 0.8rem; }
+.store-card h6 { margin-top: 0.5rem; font-weight: 600; }
 
-.store-card img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 0.8rem;
-}
-
-/* How It Works (HCL cards) */
-.hcl-card {
-    text-align: center;
-    padding: 2rem 1rem;
-    color: #fff;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hcl-card h5 {
-    font-weight: 600;
-}
-
-.hcl-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-}
+/* HCL Cards */
+.hcl-card { text-align: center; padding: 2rem 1rem; color: #fff; transition: transform 0.3s, box-shadow 0.3s; }
+.hcl-card h5 { font-weight: 600; }
+.hcl-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
 /* Carousel controls */
-.carousel-control-prev-icon, .carousel-control-next-icon {
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
+.carousel-control-prev-icon, .carousel-control-next-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
-/* Responsive tweaks */
+/* Responsive */
 @media (max-width: 768px) {
     .se-carousel-image-box { height: 200px; }
     .store-card img { height: 140px; }
     .hcl-card { padding: 1.5rem 1rem; }
 }
-
 @media (max-width: 480px) {
     .se-carousel-image-box { height: 150px; }
     .store-card img { height: 120px; }
@@ -130,7 +94,7 @@
 
 <div class="container">
 
-<!-- ===== Hero Section ===== -->
+<!-- Hero Section -->
 <section class="hero text-center mb-5">
     <h1 class="display-4 mb-3">Delicious Meals Delivered Fast!</h1>
     <p class="lead mb-4">Browse top restaurants in Maputsoe, Roma & Leribe. Order your favorites in just a few taps.</p>
@@ -138,7 +102,7 @@
     <a href="{{url_for('auth.registerstore')}}" class="btn btn-outline-light btn-lg">Join as a Restaurant</a>
 </section>
 
-<!-- ===== Ads Carousel ===== -->
+<!-- Ads Carousel -->
 {% if ads %}
 <div id="adsCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
     <div class="carousel-inner">
@@ -150,9 +114,7 @@
                         <img src="{{ ad.image }}" alt="{{ ad.title }}">
                         <div class="se-carousel-overlay">{{ ad.title }}</div>
                     </div>
-                    <div class="card-body text-center">
-                        <span class="badge bg-success">Tap to view</span>
-                    </div>
+                    <div class="card-body text-center"><span class="badge bg-success">Tap to view</span></div>
                 </div>
             </a>
         </div>
@@ -167,7 +129,7 @@
 </div>
 {% endif %}
 
-<!-- ===== Meals/Products Carousel ===== -->
+<!-- Meals Carousel -->
 {% if meals %}
 <div id="mealsCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
     <div class="carousel-inner">
@@ -180,14 +142,8 @@
                         <div class="se-carousel-overlay">{{ meal.productname }}</div>
                     </div>
                     <div class="card-body text-center">
-                        {% if meal.price %}
-                        <div class="text-muted mb-1">{{ meal.price }}</div>
-                        {% endif %}
-                        {% if meal.store_name %}
-                        <small class="text-secondary">{{ meal.store_name }}</small>
-                        {% elif meal.store and meal.store.name %}
-                        <small class="text-secondary">{{ meal.store.name }}</small>
-                        {% endif %}
+                        {% if meal.price %}<div class="text-muted mb-1">{{ meal.price }}</div>{% endif %}
+                        {% if meal.store_name %}<small class="text-secondary">{{ meal.store_name }}</small>{% elif meal.store and meal.store.name %}<small class="text-secondary">{{ meal.store.name }}</small>{% endif %}
                         <div class="mt-2"><span class="badge bg-success">Order</span></div>
                     </div>
                 </div>
@@ -204,7 +160,7 @@
 </div>
 {% endif %}
 
-<!-- ===== Popular Restaurants ===== -->
+<!-- Popular Restaurants -->
 <section class="text-center py-5 mb-5">
     <h2 class="mb-4">Popular Restaurants</h2>
     <div class="row justify-content-center g-3">
@@ -220,7 +176,7 @@
     </div>
 </section>
 
-<!-- ===== How It Works (HCL cards) ===== -->
+<!-- How It Works -->
 <section class="py-5 mb-5">
     <h2 class="text-center mb-4">How It Works</h2>
     <div class="row g-3 justify-content-center">
@@ -251,7 +207,7 @@
     </div>
 </section>
 
-<!-- ===== About Section ===== -->
+<!-- About Section -->
 <section class="text-center py-5 mb-5">
     <h2 class="mb-3">About SmartEats</h2>
     <p>SmartEats is a Lesotho-based food delivery platform founded by Khauhelo Makara. We connect people with delicious local food quickly and reliably.</p>
@@ -259,4 +215,4 @@
 </section>
 
 </div>
-{% endblock %}
+{% endblock %}s

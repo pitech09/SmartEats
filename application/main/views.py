@@ -594,7 +594,6 @@ def addorder():
         {
             'order_id': neworder.id,
             'customer_email': current_user.email,
-            'total_amount': neworder.total_amount,
             'delivery_fee': delivery_fee,
             'delivery_method': form.deliverymethod.data,
             'location': neworder.location,

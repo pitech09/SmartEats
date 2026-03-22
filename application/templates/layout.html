@@ -2,29 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="google-adsense-account" content="ca-pub-6135499489035494">
-  <script async src="//www.ezojs.com/ezoic/sa.min.js"></script>
-<script>
-    window.ezstandalone = window.ezstandalone || {};
-    ezstandalone.cmd = ezstandalone.cmd || [];
-</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="current-user-id" content="{{ current_user.id if current_user.is_authenticated else '' }}">
+
   <!-- Open Graph -->
   <meta property="og:title" content="SmartEats – Order Food From Local Restaurants">
   <meta property="og:description" content="Order delicious meals from nearby restaurants with SmartEats. Fast, simple, and reliable food delivery.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:image" content="{{ url_for('static', filename='css/images/worka.png', _external=True) }}">
-<script data-cfasync="false" src="https://cmp.gatekeeperconsent.com/min.js"></script>
-<script data-cfasync="false" src="https://the.gatekeeperconsent.com/cmp.min.js"></script>
-  <!-- SEO Meta -->
+
+  <!-- SEO -->
   <meta name="description" content="SmartEats is a food ordering and delivery platform connecting customers with local restaurants for fast, reliable meals. Order food online with ease.">
   <meta name="keywords" content="SmartEats, food delivery, online food ordering, local restaurants, fast food delivery">
   <meta name="author" content="Pi Technologies">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="{{ request.url }}">
-
 
   <title>
       {% block title %}
@@ -35,290 +28,269 @@
           {% endif %}
       {% endblock %}
   </title>
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-MV473VBW');</script>
-  <!-- End Google Tag Manager -->
+
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png') }}">
-  <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
-  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
+
+  <!-- Bootstrap -->
   <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css') }}"/>
+
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
 
+  <!-- Pace Loader -->
   <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
+
+  <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <style>
+    /* Body & Background */
     body {
-        background: linear-gradient(135deg, #FFF9F0, #FFFAF5);
+        background: linear-gradient(135deg, #FFF9F0, #FFEFD6);
         font-family: 'Nunito', sans-serif;
+        color: #333;
     }
 
-    .logo { max-height: 80px; width: auto; }
-    @media (max-width: 768px) { .logo { max-height: 60px; } }
-
-    header { margin:20px auto; padding:10px 20px; backdrop-filter: blur(8px); background-color: rgba(255,255,255,0.95); border-radius: 10px; }
-
-    .navbar-nav .nav-item .btn { margin: 2px; display:flex; align-items:center; gap:5px; }
-
-    /* Icon + hover text */
-    .icon-btn .link-text {
-        display: none;
-        font-size: 0.9rem;
+    /* Header */
+    header {
+        margin: 20px auto;
+        padding: 10px 20px;
+        backdrop-filter: blur(10px);
+        background-color: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
+    .navbar-nav .nav-item .btn {
+        margin: 3px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .navbar-nav .nav-item .btn:hover {
+        background-color: #00b37e;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .icon-btn .link-text { display: none; font-size: 0.9rem; }
     .icon-btn:hover .link-text { display: inline; }
 
-    /* Cart count always visible */
-    #cart-count {
-        font-size: 0.8rem;
-        margin-left: 3px;
-        color: #dc3545;
-        font-weight: bold;
-    }
-
-    /* Responsive: stack text under icon for small screens */
     @media (max-width: 576px) {
         .navbar-nav .nav-item .btn {
             flex-direction: column;
-            padding:5px 10px;
+            padding: 6px 12px;
         }
         .icon-btn .link-text { display: block; font-size: 0.8rem; }
     }
 
-    .pace { pointer-events: none; user-select: none; }
-    .pace.pace-active { background: rgba(255, 255, 255, 0.8); position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; }
-    .pace .pace-progress { background: #00b37e; position: fixed; z-index: 2000; top: 0; right: 100%; width: 100%; height: 3px; }
-    .pace .pace-activity { display: block; position: fixed; z-index: 2001; top: 50%; left: 50%; width: 45px; height: 45px; border: 4px solid #00b37e; border-top-color: transparent; border-radius: 50%; animation: pace-spinner 0.8s linear infinite; transform: translate(-50%, -50%); }
-    @keyframes pace-spinner { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+    /* Logo */
+    .logo { max-height: 80px; width: auto; }
+    @media (max-width: 768px) { .logo { max-height: 60px; } }
+
+    /* Cart */
+    #cart-count {
+        font-size: 0.85rem;
+        margin-left: 4px;
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    /* WhatsApp Floating Button */
+    .whatsapp-btn {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        z-index: 1000;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background-color: #25D366;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .whatsapp-btn:hover {
+        transform: scale(1.15);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.35);
+    }
+
+    /* Footer */
+    footer {
+        background: #fff4e6;
+        padding: 20px 15px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    footer a {
+        color: #555;
+        text-decoration: none;
+        margin: 0 6px;
+        transition: color 0.2s;
+    }
+    footer a:hover { color: #00b37e; }
+
+    /* Pace Loader */
+    .pace .pace-progress { background: #00b37e; height: 4px; }
+    .pace .pace-activity { border: 4px solid #00b37e; border-top-color: transparent; }
   </style>
-
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FoodDeliveryService",
-  "name": "SmartEats",
-  "url": "{{ request.url_root }}",
-  "logo": "{{ url_for('static', filename='css/images/worka.png', _external=True) }}",
-  "description": "SmartEats is a food ordering and delivery platform connecting customers with local restaurants.",
-  "provider": {
-    "@type": "Organization",
-    "name": "Pi Technologies"
-  }
-}
-</script>
-
 </head>
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-W95S3CTECJ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-W95S3CTECJ');
-</script>
-
 <body>
-  
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV473VBW"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-<!-- Audio -->
-<audio id="new_order" preload="auto" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
-<audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
-<audio id="order_ready" preload="auto" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
+  <!-- Header & Navbar -->
+  <header>
+    <nav class="navbar navbar-expand-sm navbar-light border-bottom box-shadow mb-3">
+      <div class="container">
+        <img src="{{ url_for('static', filename='css/images/worka.png') }}" class="img-fluid logo" alt="SmartEats Logo" />
 
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-
-<script>
-  if (!window._socket) {
-    window._socket = io({ transports:["polling"], upgrade:false, reconnection:true, reconnectionAttempts:5 });
-  }
-  const socket = window._socket;
-  let audioUnlocked = false;
-  document.body.addEventListener("click", () => { audioUnlocked = true; }, { once:true });
-
-  socket.on("play_sound", function (data) {
-    if (!audioUnlocked) return;
-    const audio = document.getElementById(data.sound);
-    if (audio) { audio.currentTime=0; audio.play().catch(()=>{}); }
-  });
-
-  socket.on("cart_updated", function(data){
-    const el = document.getElementById("cart-count");
-    if(el) el.textContent = data.cart_count;
-  });
-</script>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FoodEstablishment",
-  "name": "SmartEats",
-  "areaServed": {
-    "@type": "Place",
-    "name": "Maputsoe, Leribe, Maseru, Roma, Lesotho"
-  },
-  "servesCuisine": ["Local", "Fast Food"],
-  "url": "https://www.smarteatsapp.online"
-}
-</script>
-
-
-<header>
-  <nav class="navbar navbar-expand-sm navbar-light border-bottom box-shadow mb-3">
-    <div class="container">
-  <img 
-    src="{{ url_for('static', filename='css/images/worka.png') }}" 
-    class="img-fluid logo"
-    alt="SmartEats food ordering and delivery logo"
-  />
-
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="navbar-collapse collapse flex-sm-row justify-content-between">
-        <ul class="navbar-nav flex-row flex-wrap gap-1">
-          {% if current_user.is_authenticated %}
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.home') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-home"></i> <span class="link-text">Home</span>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.menu', page_num=1) }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-utensils"></i> <span class="link-text">Menu</span>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.restuarants') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-store"></i> <span class="link-text">Stores</span>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.cart') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-shopping-cart"></i> <span class="link-text">Cart</span>
-              <sup id="cart-count">{{ total_count or 0 }}</sup>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.myorders') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-box"></i> <span class="link-text">Orders</span>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.account') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-user"></i> <span class="link-text">Profile</span>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.logout') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-sign-out-alt"></i> <span class="link-text">Logout</span>
-            </a>
-          </li>
-          {% else %}
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('auth.newlogin') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-sign-in-alt"></i> <span class="link-text">Login</span>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('auth.register') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-user-plus"></i> <span class="link-text">Register</span>
-            </a>
-          </li>
-          <li class="nav-item icon-btn">
-            <a href="{{ url_for('auth.registerstore') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-store-alt"></i> <span class="link-text">Register Store</span>
-            </a>
-          </li>
-                    <li class="nav-item icon-btn">
-            <a href="{{ url_for('main.about') }}" class="btn bg-light rounded-pill">
-              <i class="fas fa-info-circle"></i> <span class="link-text">About</span>
-            </a>
-          </li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </nav>
-</header>
-
-<div class="container">
-  <main role="main" class="pb-3">
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <div class="mt-3">
-            {% for message in messages %}
-                <div class="alert alert-info" role="alert">{{ message }}</div>
-            {% endfor %}
+        <div class="navbar-collapse collapse flex-sm-row justify-content-between">
+          <ul class="navbar-nav flex-row flex-wrap gap-1">
+            {% if current_user.is_authenticated %}
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.home') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-home"></i> <span class="link-text">Home</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.menu', page_num=1) }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-utensils"></i> <span class="link-text">Menu</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.restuarants') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-store"></i> <span class="link-text">Stores</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.cart') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-shopping-cart"></i> <span class="link-text">Cart</span>
+                <sup id="cart-count">{{ total_count or 0 }}</sup>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.myorders') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-box"></i> <span class="link-text">Orders</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.account') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-user"></i> <span class="link-text">Profile</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.logout') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-sign-out-alt"></i> <span class="link-text">Logout</span>
+              </a>
+            </li>
+            {% else %}
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('auth.newlogin') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-sign-in-alt"></i> <span class="link-text">Login</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('auth.register') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-user-plus"></i> <span class="link-text">Register</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('auth.registerstore') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-store-alt"></i> <span class="link-text">Register Store</span>
+              </a>
+            </li>
+            <li class="nav-item icon-btn">
+              <a href="{{ url_for('main.about') }}" class="btn bg-light rounded-pill">
+                <i class="fas fa-info-circle"></i> <span class="link-text">About</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
         </div>
-        {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
-</div>
-<!-- WhatsApp Floating Button -->
-<a href="https://wa.me/26658538173?text=Hello%20I%20have%20a%20question%20about%20SmartEats!" 
-   target="_blank" 
-   style="
-       position: fixed;
-       bottom: 20px;
-       right: 20px;
-       z-index: 1000;
-       width: 70px;
-       height: 70px;
-       border-radius: 50%;
-       background-color: #25D366;
-       display: flex;
-       justify-content: center;
-       align-items: center;
-       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-       transition: transform 0.3s;
-   "
-   onmouseover="this.style.transform='scale(1.1)';"
-   onmouseout="this.style.transform='scale(1)';"
->
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
-         alt="Chat on WhatsApp" 
-         style="width:40px;height:40px;">
-</a>
-<footer class="border-top footer text-muted" style="background: #fff4e6; padding:15px;">
-  <div class="container text-center">
-    <div class="mb-2">
-      <a href="{{ url_for('main.privacy_policy') }}" class="text-muted mx-2">Privacy Policy</a> |
-      <a href="{{ url_for('main.terms_conditions') }}" class="text-muted mx-2">Terms & Conditions</a> |
-      <a href="{{ url_for('main.about') }}" class="text-muted mx-2">About</a>
-    </div>
-    <div> 
-      &copy; {{ current_year }} - SmartEats by Pi Technologies
-    </div>
-  </div>
-</footer>
+      </div>
+    </nav>
+  </header>
 
-<script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
-<script src="{{ url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6135499489035494"
-     crossorigin="anonymous"></script>
-<!-- chief -->
-<ins class="adsbygoogle"
-     style="display:block"
-     data-ad-client="ca-pub-6135499489035494"
-     data-ad-slot="8688003489"
-     data-ad-format="auto"
-     data-full-width-responsive="true"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
+  <!-- Main Content -->
+  <div class="container">
+    <main role="main" class="pb-3">
+      {% with messages = get_flashed_messages() %}
+          {% if messages %}
+          <div class="mt-3">
+              {% for message in messages %}
+                  <div class="alert alert-info" role="alert">{{ message }}</div>
+              {% endfor %}
+          </div>
+          {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- WhatsApp Floating Button -->
+  <a href="https://wa.me/26658538173?text=Hello%20I%20have%20a%20question%20about%20SmartEats!" 
+     target="_blank" 
+     class="whatsapp-btn">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+           alt="Chat on WhatsApp" 
+           style="width:40px;height:40px;">
+  </a>
+
+  <!-- Footer -->
+  <footer>
+    <div class="mb-2">
+      <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a> |
+      <a href="{{ url_for('main.terms_conditions') }}">Terms & Conditions</a> |
+      <a href="{{ url_for('main.about') }}">About</a>
+    </div>
+    <div>&copy; {{ current_year }} - SmartEats by Pi Technologies</div>
+  </footer>
+
+  <!-- JS Scripts -->
+  <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
+
+  <!-- Socket Audio Handling -->
+  <audio id="new_order" preload="auto" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
+  <audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
+  <audio id="order_ready" preload="auto" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
+  <script>
+    if (!window._socket) {
+      window._socket = io({ transports:["polling"], upgrade:false, reconnection:true, reconnectionAttempts:5 });
+    }
+    const socket = window._socket;
+    let audioUnlocked = false;
+    document.body.addEventListener("click", () => { audioUnlocked = true; }, { once:true });
+
+    socket.on("play_sound", function (data) {
+      if (!audioUnlocked) return;
+      const audio = document.getElementById(data.sound);
+      if (audio) { audio.currentTime=0; audio.play().catch(()=>{}); }
+    });
+
+    socket.on("cart_updated", function(data){
+      const el = document.getElementById("cart-count");
+      if(el) el.textContent = data.cart_count;
+    });
+  </script>
 </body>
 </html>
