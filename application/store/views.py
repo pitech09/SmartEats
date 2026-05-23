@@ -32,6 +32,7 @@ from application.notification import notify_customer
 from application.auth.views import send_sound
 from application.models import Ingredient
 from application.forms import IngredientForm, StoreLocationForm
+from application.utils.sms import send_sms
 
 mystore_product = Store.products
 mystore_orders = Store.orders
@@ -553,6 +554,13 @@ def updatestatus(order_id):
             print("Notification sent to customer.")
             # Also notify store dashboard if needed
             create_notification(user_type='store', user_id=order.store_id, message=message)
+
+            if new_status.strip().lower() == "ready" and old_status.strip().lower() != "ready":
+                sms_body = (
+                    f"SmartEats: Your order {order.order_id} from {order.store.name} "
+                    "is ready. Please collect it or wait for delivery pickup."
+                )
+                send_sms(order.customer_phone, sms_body)
 
             flash('Order status updated successfully')
             return redirect(url_for('store.ActiveOrders'))

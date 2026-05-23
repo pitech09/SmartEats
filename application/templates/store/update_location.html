@@ -22,6 +22,9 @@
       <button type="button" class="btn btn-primary" id="use-location">
         Use My Current Location
       </button>
+      <small class="d-block text-muted mt-2" id="accuracy-status">
+        For best accuracy, stand near the store entrance and allow precise location.
+      </small>
     </div>
 
     <!-- Small map below the form -->
@@ -40,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const latInput = document.getElementById('latitude');
   const lngInput = document.getElementById('longitude');
   const useBtn = document.getElementById('use-location');
+  const accuracyStatus = document.getElementById('accuracy-status');
 
   // Default coordinates (fallback)
   let lat = latInput.value ? parseFloat(latInput.value) : -28.895383;
@@ -55,34 +59,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Marker
   let marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+  let accuracyCircle;
+  let watchId;
 
   // Sync marker → inputs
   marker.on('dragend', e => {
     const pos = e.target.getLatLng();
-    latInput.value = pos.lat.toFixed(6);
-    lngInput.value = pos.lng.toFixed(6);
+    latInput.value = pos.lat.toFixed(7);
+    lngInput.value = pos.lng.toFixed(7);
+    accuracyStatus.textContent = 'Pin moved manually. Save when it is exactly on the store entrance.';
+    if (accuracyCircle) map.removeLayer(accuracyCircle);
   });
 
   // Sync inputs → marker
   function updateMarker(latitude, longitude) {
-    latInput.value = latitude.toFixed(6);
-    lngInput.value = longitude.toFixed(6);
+    latInput.value = latitude.toFixed(7);
+    lngInput.value = longitude.toFixed(7);
     marker.setLatLng([latitude, longitude]);
-    map.setView([latitude, longitude], 16);
+    map.setView([latitude, longitude], 17);
   }
 
   // Fetch user location (auto)
   function fetchCurrentLocation() {
     if (!navigator.geolocation) return;
 
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    };
+    const applyPosition = position => {
+      const accuracy = position.coords.accuracy;
+      updateMarker(position.coords.latitude, position.coords.longitude);
+      accuracyStatus.textContent = `Location accuracy: about ${Math.round(accuracy)} meters.`;
+
+      if (accuracyCircle) map.removeLayer(accuracyCircle);
+      accuracyCircle = L.circle([position.coords.latitude, position.coords.longitude], {
+        radius: accuracy,
+        color: '#0071e3',
+        fillColor: '#0071e3',
+        fillOpacity: 0.08,
+        weight: 1
+      }).addTo(map);
+
+      if (watchId && accuracy <= 25) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+    };
+
     navigator.geolocation.getCurrentPosition(
-      position => {
-        updateMarker(
-          position.coords.latitude,
-          position.coords.longitude
-        );
+      applyPosition,
+      () => {
+        accuracyStatus.textContent = 'Location permission was denied. Drag the pin to the exact store entrance.';
       },
-      () => console.warn('Geolocation permission denied')
+      options
+    );
+
+    watchId = navigator.geolocation.watchPosition(
+      applyPosition,
+      () => {},
+      options
     );
   }
 

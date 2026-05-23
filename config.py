@@ -30,6 +30,10 @@ class Config:
     COMPRESS_MIMETYPES = [
         'text/html', 'text/css', 'application/json', 'application/javascript'
     ]
+    SMS_ENABLED = os.environ.get('SMS_ENABLED', 'false').lower() == 'true'
+    TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+    TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
+    TWILIO_FROM_NUMBER = os.environ.get('TWILIO_FROM_NUMBER')
 
     # Flask-Profiler
     ENABLE_PROFILER = False

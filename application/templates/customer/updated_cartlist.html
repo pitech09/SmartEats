@@ -114,6 +114,7 @@
             <!-- Hidden inputs for location & fee -->
             <input type="hidden" name="latitude" id="latitude">
             <input type="hidden" name="longitude" id="longitude">
+            <input type="hidden" name="location_accuracy" id="location-accuracy">
             <input type="hidden" name="delivery_fee" id="delivery-fee-input">
 
             <div class="mb-3">
@@ -175,9 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const latInput = document.getElementById('latitude');
     const lngInput = document.getElementById('longitude');
+    const accuracyInput = document.getElementById('location-accuracy');
 
-    const storeLat = {{ store.latitude }};
-    const storeLng = {{ store.longitude }};
+    const storeLat = {{ store.latitude|default(-28.895383, true) }};
+    const storeLng = {{ store.longitude|default(24.767190, true) }};
     const storeRadius = 500;
 
     function distanceMeters(lat1, lon1, lat2, lon2){
@@ -213,9 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fillOpacity: 0.3
     }).addTo(map);
 
-    let line, labelMarker;
+    let line, labelMarker, accuracyCircle, watchId;
 
-    function updateLineAndTotals(customerLat, customerLng){
+    function updateLineAndTotals(customerLat, customerLng, accuracy){
         const meters = distanceMeters(storeLat, storeLng, customerLat, customerLng);
         const fee = calculateDeliveryFee(meters);
         const distanceLabel = meters > 1000 ? (meters/1000).toFixed(2) + ' km' : meters.toFixed(0) + ' m';
@@ -241,6 +243,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         latInput.value = customerLat;
         lngInput.value = customerLng;
+        if(Number.isFinite(accuracy)){
+            accuracyInput.value = accuracy.toFixed(0);
+            if(accuracyCircle) map.removeLayer(accuracyCircle);
+            accuracyCircle = L.circle([customerLat, customerLng], {
+                radius: accuracy,
+                color: '#0071e3',
+                fillColor: '#0071e3',
+                fillOpacity: 0.08,
+                weight: 1
+            }).addTo(map);
+        }
         feeInput.value = fee.toFixed(2);
 
         storeCircle.setStyle({
@@ -254,20 +267,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     customerMarker.on('drag', e => {
         const pos = e.target.getLatLng();
+        accuracyInput.value = '';
+        if(accuracyCircle) map.removeLayer(accuracyCircle);
         updateLineAndTotals(pos.lat, pos.lng);
     });
 
     // Automatic geolocation
     if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(position => {
+        const geoOptions = {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        };
+        const applyPosition = position => {
             const userLat = position.coords.latitude;
             const userLng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
             customerMarker.setLatLng([userLat, userLng]);
-            map.setView([userLat, userLng], 14);
-            updateLineAndTotals(userLat, userLng);
-        }, err => {
+            map.setView([userLat, userLng], accuracy && accuracy < 80 ? 17 : 15);
+            updateLineAndTotals(userLat, userLng, accuracy);
+            if(watchId && accuracy && accuracy <= 50){
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        };
+        navigator.geolocation.getCurrentPosition(applyPosition, err => {
             console.warn("Geolocation failed or denied.");
-        });
+        }, geoOptions);
+        watchId = navigator.geolocation.watchPosition(applyPosition, err => {
+            console.warn("Geolocation watch failed.");
+        }, geoOptions);
     }
 
     map.fitBounds([[storeLat, storeLng],[customerMarker.getLatLng().lat, customerMarker.getLatLng().lng]]);
@@ -281,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 feeInput.value = "0.00";
             } else {
                 const pos = customerMarker.getLatLng();
-                updateLineAndTotals(pos.lat, pos.lng);
+                updateLineAndTotals(pos.lat, pos.lng, parseFloat(accuracyInput.value));
             }
         });
     });
@@ -299,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 baseTotal = parseFloat(result.cart_total);
                 subtotalEl.dataset.base = baseTotal;
                 subtotalEl.textContent = `M${baseTotal.toFixed(2)}`;
-                updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng);
+                updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng, parseFloat(accuracyInput.value));
             }
         });
     });

@@ -200,6 +200,8 @@ class Order(db.Model):
 
     customer_lat = db.Column(db.Float)
     customer_lng = db.Column(db.Float)
+    customer_phone = db.Column(db.String(32))
+    location_accuracy_m = db.Column(db.Float)
 
     deliveryguy = db.Column(db.String(50), default="Not Taken")
     screenshot = db.Column(db.Text)

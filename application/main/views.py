@@ -20,6 +20,7 @@ from sqlalchemy.orm import joinedload
 from application.notification import *
 from application.auth.views import send_sound
 from application.utils.cache import *
+from application.utils.sms import normalize_phone_number
 from application import socketio, db
 from flask_socketio import join_room
 PRODUCTS_PER_PAGE = 9
@@ -475,10 +476,18 @@ def addorder():
     try:
         customer_lat = float(request.form.get('latitude'))
         customer_lng = float(request.form.get('longitude'))
-        client_fee = float(request.form.get('delivery_fee'))
+        client_fee = float(request.form.get('delivery_fee') or 0)
+        location_accuracy = request.form.get('location_accuracy')
+        location_accuracy = float(location_accuracy) if location_accuracy else None
     except (TypeError, ValueError):
         flash("Invalid location data.", "warning")
         return redirect(url_for('main.cart'))
+
+    if not (-90 <= customer_lat <= 90 and -180 <= customer_lng <= 180):
+        flash("Invalid map coordinates.", "warning")
+        return redirect(url_for('main.cart'))
+
+    customer_phone = normalize_phone_number(form.payment_number.data)
 
     # -----------------------------
     # Recalculate delivery fee on server
@@ -487,6 +496,10 @@ def addorder():
         if None in [customer_lat, customer_lng, store.latitude, store.longitude]:
             flash("Location access required for delivery.", "warning")
             return redirect(url_for('main.cart'))
+        if location_accuracy and location_accuracy > 1500:
+            current_app.logger.warning(
+                f"Low accuracy location | User:{current_user.id} Accuracy:{location_accuracy}m"
+            )
 
         server_fee = calculate_delivery_fee(store.latitude, store.longitude, customer_lat, customer_lng)
 
@@ -513,6 +526,8 @@ def addorder():
         status="Pending",
         customer_lat=customer_lat,
         customer_lng=customer_lng,
+        customer_phone=customer_phone,
+        location_accuracy_m=location_accuracy,
         deliveryfee=delivery_fee,
         location=form.drop_address.data if form.deliverymethod.data != 'pickup' else 'pickup'
     )
