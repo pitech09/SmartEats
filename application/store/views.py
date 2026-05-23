@@ -868,14 +868,23 @@ def vendor_analytics():
 
     # ------------------ Category Sales ------------------
     category_sales = (
-        db.session.query(Product.category, func.sum(net_amount))
-        .join(Sales, Sales.product_id == Product.id)
-        .join(Order, Order.id == Sales.order_id)
-        .filter(*base_filter)
-        .filter(func.date(Sales.date_).between(start_date, end_date))
-        .group_by(Product.category)
-        .all()
+    db.session.query(
+        Category.id,
+        Category.name,
+        func.sum(
+            Sales.price * Sales.quantity * 0.9
+        ).label("revenue")
     )
+    .select_from(Sales)
+    .join(Product, Product.id == Sales.product_id)
+    .join(Category, Category.id == Product.category_id)
+    .join(Order, Order.id == Sales.order_id)
+    .filter(Sales.store_id == current_user.id)
+    .filter(Order.status != "Cancelled")
+    .filter(func.date(Sales.date_).between(start_date, end_date))
+    .group_by(Category.id, Category.name)
+    .all()
+)
 
     categories, cat_revenue = zip(*category_sales) if category_sales else ([], [])
 
