@@ -1,127 +1,258 @@
 {% extends "layout.html" %}
-{% block title %}Profile - SmartEats{% endblock %}
+{% block title %}My Account – SmartEats{% endblock %}
+
 {% block content %}
 <style>
-    body {
-        background-color: #f9f9f9;
-        font-family: 'Segoe UI', sans-serif;
+  .account-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+  
+  .profile-sidebar {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    border: 1px solid var(--color-border-light);
+    text-align: center;
+  }
+  
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto var(--space-md);
+    background: var(--color-border-light);
+  }
+  
+  .profile-name {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  
+  .profile-email {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-lg);
+  }
+  
+  .profile-stat {
+    padding: var(--space-sm) 0;
+    border-top: 1px solid var(--color-border-light);
+  }
+  
+  .profile-stat:last-child {
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  
+  .profile-stat-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  
+  .profile-stat-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+  
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+  
+  .dashboard-card {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-light);
+    transition: all var(--transition-base);
+    text-decoration: none;
+    display: block;
+  }
+  
+  .dashboard-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  
+  .dashboard-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: var(--space-sm);
+  }
+  
+  .dashboard-card-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  
+  .dashboard-card-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+  }
+  
+  @media (max-width: 768px) {
+    .account-layout {
+      grid-template-columns: 1fr;
     }
-    .profile-card {
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        background-color: #fff;
-        padding: 2rem;
-        margin-bottom: 2rem;
-    }
-    .profile-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    .profile-header img {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #28a745;
-    }
-    .profile-header h4 {
-        margin: 0;
-    }
-    .form-label {
-        font-weight: 500;
-    }
-    .btn-primary {
-        border-radius: 50px;
-        padding: 0.5rem 1.5rem;
-    }
-    .btn-outline-secondary {
-        border-radius: 50px;
-        padding: 0.5rem 1.5rem;
-    }
-    .delete-card {
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        background-color: #fff;
-        padding: 1.5rem;
-        text-align: center;
-    }
-    .deactivate-account {
-        border-radius: 50px;
-        padding: 0.5rem 1.5rem;
-    }
+  }
 </style>
 
-<div class="container-xxl mt-4">
+<div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
 
-    <!-- Profile Header -->
-    <div class="profile-card">
-        <div class="profile-header">
-            <div>
-                <h4>{{ current_user.username }} {{ current_user.lastName }}</h4>
-                <p class="text-muted mb-0">{{ current_user.Email }}</p>
+  <!-- Page Header -->
+  <div style="margin-bottom:var(--space-xl);">
+    <h1 style="font-size:1.5rem;margin:0;">My Account</h1>
+    <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:4px 0 0 0;">Manage your profile, orders, and preferences</p>
+  </div>
+
+  <div class="account-layout">
+    <!-- Profile Sidebar -->
+    <div class="profile-sidebar">
+      <img src="{{ image_file or url_for('static', filename='css/images/profiles/default.png') }}" 
+           alt="{{ current_user.username }}" class="profile-avatar" loading="lazy">
+      <div class="profile-name">{{ current_user.username }} {{ current_user.lastname }}</div>
+      <div class="profile-email">{{ current_user.email }}</div>
+      
+      <div class="profile-stat">
+        <div class="profile-stat-label">Loyalty Points</div>
+        <div class="profile-stat-value">{{ current_user.loyalty_points or 0 }}</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-label">Location</div>
+        <div class="profile-stat-value">{{ current_user.town or 'Not set' }}{% if current_user.district and current_user.district != 'None' %}, {{ current_user.district }}{% endif %}</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-label">Member Since</div>
+        <div class="profile-stat-value">{{ current_user.registered_on.strftime('%b %Y') if current_user.registered_on else 'N/A' }}</div>
+      </div>
+
+      <hr class="apple-divider">
+      
+      <a href="{{ url_for('main.logout') }}" class="apple-btn apple-btn-danger apple-btn-block" style="margin-top:var(--space-sm);">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
+      </a>
+    </div>
+
+    <!-- Main Content -->
+    <div>
+      <!-- Dashboard Cards -->
+      <div class="dashboard-grid">
+        <a href="{{ url_for('main.myorders') }}" class="dashboard-card">
+          <div class="dashboard-card-icon" style="background:rgba(0,113,227,0.1);color:var(--color-accent);">
+            <i class="fas fa-box"></i>
+          </div>
+          <div class="dashboard-card-value">{{ current_user.orders|length if current_user.orders else 0 }}</div>
+          <div class="dashboard-card-label">Active Orders</div>
+        </a>
+        <a href="{{ url_for('main.completed_order') }}" class="dashboard-card">
+          <div class="dashboard-card-icon" style="background:rgba(52,199,89,0.1);color:var(--color-success);">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="dashboard-card-value">{{ current_user.orders|selectattr('status', 'equalto', 'Completed')|list|length if current_user.orders else 0 }}</div>
+          <div class="dashboard-card-label">Completed</div>
+        </a>
+        <a href="#" class="dashboard-card">
+          <div class="dashboard-card-icon" style="background:rgba(255,159,10,0.1);color:var(--color-warning);">
+            <i class="fas fa-heart"></i>
+          </div>
+          <div class="dashboard-card-value">0</div>
+          <div class="dashboard-card-label">Favorites</div>
+        </a>
+        <a href="#" class="dashboard-card">
+          <div class="dashboard-card-icon" style="background:rgba(0,113,227,0.1);color:var(--color-accent);">
+            <i class="fas fa-star"></i>
+          </div>
+          <div class="dashboard-card-value">{{ current_user.loyalty_points or 0 }}</div>
+          <div class="dashboard-card-label">Points</div>
+        </a>
+      </div>
+
+      <!-- Edit Profile Form -->
+      <div class="info-card" style="background:var(--color-card);border-radius:var(--radius-xl);padding:var(--space-xl);border:1px solid var(--color-border-light);">
+        <h2 style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;margin-bottom:var(--space-lg);">
+          Edit Profile
+        </h2>
+        
+        <form method="POST" enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+          
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="apple-label">{{ form.username.label.text }}</label>
+              {{ form.username(class='apple-input', placeholder='Username') }}
+              {% for error in form.username.errors %}
+              <span style="font-size:0.75rem;color:var(--color-danger);">{{ error }}</span>
+              {% endfor %}
             </div>
-        </div>
-
-        <!-- Account Settings Form -->
-        <form id="formAccountSettings" method="POST" action="{{ url_for('main.account') }}">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    {{ form.username.label(class="form-label") }}
-                    {{ form.username(class="form-control") }}
-                    {% for error in form.username.errors %}
-                        <small class="text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
-                <div class="col-md-6">
-                    {{ form.lastName.label(class="form-label") }}
-                    {{ form.lastName(class="form-control") }}
-                    {% for error in form.lastName.errors %}
-                        <small class="text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
-                <div class="col-md-6">
-                    {{ form.Email.label(class="form-label") }}
-                    {{ form.Email(class="form-control") }}
-                    {% for error in form.Email.errors %}
-                        <small class="text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-6">
-                    {{ form.district.label(class="form-label") }}
-                    {{ form.district(class="form-control") }}
-                    {% for error in form.district.errors %}
-                        <small class="text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
-
-
-                <div class="col-md-6">
-                    {{ form.town.label(class="form-label") }}
-                    {{ form.town(class="form-control") }}
-                    {% for error in form.town.errors %}
-                        <small class="text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
+            <div class="col-md-6">
+              <label class="apple-label">{{ form.lastName.label.text }}</label>
+              {{ form.lastName(class='apple-input', placeholder='Last name') }}
+              {% for error in form.lastName.errors %}
+              <span style="font-size:0.75rem;color:var(--color-danger);">{{ error }}</span>
+              {% endfor %}
             </div>
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary me-2">Save Changes</button>
-                <button type="reset" class="btn btn-outline-secondary">Cancel</button>
+            <div class="col-md-6">
+              <label class="apple-label">{{ form.Email.label.text }}</label>
+              {{ form.Email(class='apple-input', placeholder='Email address') }}
+              {% for error in form.Email.errors %}
+              <span style="font-size:0.75rem;color:var(--color-danger);">{{ error }}</span>
+              {% endfor %}
             </div>
+            <div class="col-md-6">
+              <label class="apple-label">{{ form.picture.label.text }}</label>
+              {{ form.picture(class='apple-input', accept='image/*') }}
+            </div>
+            <div class="col-md-6">
+              <label class="apple-label">{{ form.district.label.text }}</label>
+              {{ form.district(class='apple-input', placeholder='District') }}
+            </div>
+            <div class="col-md-6">
+              <label class="apple-label">{{ form.town.label.text }}</label>
+              {{ form.town(class='apple-input', placeholder='Town/City') }}
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-xl);">
+            <button type="submit" class="apple-btn apple-btn-primary apple-btn-lg">
+              <i class="fas fa-save"></i> Save Changes
+            </button>
+            <a href="{{ url_for('main.home') }}" class="apple-btn apple-btn-secondary apple-btn-lg">
+              Cancel
+            </a>
+          </div>
         </form>
-    </div>
+      </div>
 
-    <!-- Delete Account -->
-    <div class="delete-card">
-        <h5 class="text-danger mb-3">Delete Account</h5>
-        <div class="alert alert-warning">
-            <h6 class="fw-bold mb-1">Are you sure you want to delete your account?</h6>
-            <p class="mb-0">Once you delete your account, there is no going back. Please be certain.</p>
-        </div>
-        <button type="button" onclick="window.location.href='{{ url_for('main.deactivate_Account', user_id=current_user.id) }}'" class="btn btn-danger deactivate-account">Deactivate Account</button>
+      <!-- Danger Zone -->
+      <div style="margin-top:var(--space-xl);padding:var(--space-lg);border-radius:var(--radius-lg);border:1px solid var(--color-danger);background:rgba(255,59,48,0.03);">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--color-danger);margin-bottom:var(--space-sm);">
+          <i class="fas fa-exclamation-triangle"></i> Danger Zone
+        </h3>
+        <p style="font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:var(--space-md);">
+          Permanently delete your account and all associated data. This action cannot be undone.
+        </p>
+        <a href="{{ url_for('main.deactivate_Account', user_id=current_user.id) }}" 
+           class="apple-btn apple-btn-danger"
+           onclick="return confirm('Are you sure you want to delete your account? This cannot be undone.');">
+          <i class="fas fa-trash"></i> Delete Account
+        </a>
+      </div>
     </div>
-
+  </div>
 </div>
 {% endblock %}

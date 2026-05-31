@@ -86,7 +86,7 @@
         <a href="{{ user_order.screenshot }}" target="_blank">
             <img 
                 style="width: 100%; max-width: 350px; height: 200px; object-fit: cover; cursor: pointer;" 
-                src="{% if user_order.screenshot.startswith('http') %}{{ user_order.screenshot }}{% else %}{{ url_for('static', filename='css/products/' + user_order.screenshot) }}{% endif %}"
+                src="{% if user_order.screenshot.startswith('http') %}{{ user_order.screenshot }}{% else %}{{ url_for('static', filename='css/images/products/' + user_order.screenshot) }}{% endif %}"
                 alt="Screenshot from {{ user_order.user_email }}">
         </a>
     {% else %}

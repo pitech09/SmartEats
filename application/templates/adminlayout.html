@@ -32,8 +32,47 @@
 
 <body id="page-top">
 
+<!-- Page Loading Overlay -->
+<div id="global-loader" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);z-index:9999;align-items:center;justify-content:center;">
+    <div class="spinner-border text-success" role="status" style="width:3rem;height:3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2 text-muted" style="font-size:14px;">Loading...</p>
+</div>
+
+<script>
+// Show global loader on page navigation
+(function() {
+    var loader = document.getElementById('global-loader');
+    
+    // Hide loader after page fully loads
+    if (loader) {
+        loader.style.display = 'none';
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (loader) loader.style.display = 'none';
+    });
+    
+    window.addEventListener('load', function() {
+        if (loader) loader.style.display = 'none';
+    });
+    
+    // Show loader on link clicks to same-origin pages
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('a');
+        if (!link || !loader) return;
+        var href = link.getAttribute('href');
+        if (!href) return;
+        if (href.startsWith('#') || href.startsWith('javascript:') || link.hasAttribute('download') || link.getAttribute('data-bs-toggle') || link.getAttribute('data-bs-target')) return;
+        if (href.startsWith('http') && !href.startsWith(window.location.origin)) return;
+        loader.style.display = 'flex';
+    });
+})();
+</script>
+
 <!-- Socket.IO (LOCAL) -->
-<script src="{{ url_for('static', filename='lib/socket.io/socket.io.min.js') }}"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
 <audio id="new_order" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
 <audio id="order_update" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
@@ -121,6 +160,15 @@ socket.on("connect", () => {
   </a>
 </li>
 
+<hr class="sidebar-divider">
+
+<div class="sidebar-heading">POS System</div>
+
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('store.vendor_pos') }}">
+    <i class="fas fa-cash-register"></i> <span>Point of Sale (POS)</span>
+  </a>
+</li>
 
 <hr class="sidebar-divider">
 

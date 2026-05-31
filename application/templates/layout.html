@@ -2,296 +2,354 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="current-user-id" content="{{ current_user.id if current_user.is_authenticated else '' }}">
+  <meta name="theme-color" content="#F5F5F7">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="SmartEats – Order Food From Local Restaurants">
-  <meta property="og:description" content="Order delicious meals from nearby restaurants with SmartEats. Fast, simple, and reliable food delivery.">
+  <meta property="og:title" content="SmartEats – Premium Food Delivery">
+  <meta property="og:description" content="Discover and order from the best local restaurants. Fast, elegant, reliable food delivery.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='css/images/worka.png', _external=True) }}">
+  <meta property="og:image" content="{{ url_for('static', filename='worka.png', _external=True) }}">
 
   <!-- SEO -->
-  <meta name="description" content="SmartEats is a food ordering and delivery platform connecting customers with local restaurants for fast, reliable meals. Order food online with ease.">
-  <meta name="keywords" content="SmartEats, food delivery, online food ordering, local restaurants, fast food delivery">
+  <meta name="description" content="SmartEats is a premium food ordering platform connecting you with the best local restaurants. Order online with ease.">
+  <meta name="keywords" content="SmartEats, food delivery, online ordering, restaurants, local food">
   <meta name="author" content="Pi Technologies">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="{{ request.url }}">
 
-  <title>
-      {% block title %}
-          {% if store is defined and store.name is defined %}
-              {{ store.name }}
-          {% else %}
-              SmartEats
-          {% endif %}
-      {% endblock %}
-  </title>
+  <title>{% block title %}SmartEats – Premium Food Delivery{% endblock %}</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='worka.png') }}">
 
-  <!-- Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
 
-  <!-- Bootstrap -->
+  <!-- Bootstrap (for grid only) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap/dist/css/bootstrap.min.css') }}"/>
 
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css') }}"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css') }}"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/blue/pace-theme-minimal.css') }}">
+  <!-- Apple-inspired Design System -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-ui.css') }}"/>
+  {% block extra_css %}{% endblock %}
 
-  <!-- Pace Loader -->
-  <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
+  <style>
+    /* Ensure Bootstrap grid doesn't clash with our design */
+    .container { max-width: 1200px; }
+    .row { margin-left: -12px; margin-right: -12px; }
+    .col, [class*="col-"] { padding-left: 12px; padding-right: 12px; }
+    
+    @media (max-width: 768px) {
+      .container { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Skip link for accessibility -->
+  <a href="#main-content" class="apple-skip-link">Skip to main content</a>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="apple-toast-container"></div>
+
+  <!-- ===== GLASSMORPHISM NAVBAR ===== -->
+  <nav class="apple-navbar" role="navigation" aria-label="Main navigation">
+    <div class="apple-navbar-inner">
+      <!-- Logo -->
+      <a href="{{ url_for('main.landing') if not current_user.is_authenticated else url_for('main.home') }}" class="apple-navbar-logo" aria-label="SmartEats Home">
+        <img src="{{ url_for('static', filename='worka.png') }}" alt="SmartEats">
+        <span class="d-none d-sm-inline">SmartEats</span>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <div class="apple-navbar-links">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.home') }}" class="apple-nav-link" aria-label="Home">
+          <i class="fas fa-home"></i>
+          <span class="d-none d-md-inline">Home</span>
+        </a>
+        <a href="{{ url_for('main.restuarants') }}" class="apple-nav-link" aria-label="Restaurants">
+          <i class="fas fa-store"></i>
+          <span class="d-none d-md-inline">Restaurants</span>
+        </a>
+        <a href="{{ url_for('main.myorders') }}" class="apple-nav-link" aria-label="Orders">
+          <i class="fas fa-box"></i>
+          <span class="d-none d-md-inline">Orders</span>
+        </a>
+        <a href="{{ url_for('main.cart') }}" class="apple-nav-link apple-cart-badge" aria-label="Shopping Cart">
+          <i class="fas fa-shopping-bag"></i>
+          <span class="d-none d-md-inline">Cart</span>
+          <span id="cart-count" class="apple-cart-count {% if not total_count %}d-none{% endif %}">{{ total_count or 0 }}</span>
+        </a>
+        <a href="{{ url_for('main.account') }}" class="apple-nav-link" aria-label="Profile">
+          <i class="fas fa-user-circle"></i>
+          <span class="d-none d-md-inline">{{ current_user.username }}</span>
+        </a>
+        <a href="{{ url_for('main.logout') }}" class="apple-nav-link" aria-label="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="d-none d-md-inline">Sign Out</span>
+        </a>
+        {% else %}
+        <a href="{{ url_for('auth.newlogin') }}" class="apple-nav-link" aria-label="Sign In">
+          <i class="fas fa-sign-in-alt"></i> Sign In
+        </a>
+        <a href="{{ url_for('auth.register') }}" class="apple-btn apple-btn-primary apple-btn-sm" aria-label="Get Started">
+          Get Started
+        </a>
+        <a href="{{ url_for('auth.registerstore') }}" class="apple-nav-link" aria-label="Register Restaurant">
+          <i class="fas fa-store-alt"></i> List Your Restaurant
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Mobile: Hamburger + Cart -->
+      <div class="d-flex d-lg-none align-items-center gap-2">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.cart') }}" class="apple-nav-link apple-cart-badge position-relative" aria-label="Cart">
+          <i class="fas fa-shopping-bag"></i>
+          <span id="cart-count-mobile" class="apple-cart-count {% if not total_count %}d-none{% endif %}">{{ total_count or 0 }}</span>
+        </a>
+        {% endif %}
+        <button id="drawerToggle" class="apple-btn apple-btn-ghost" style="padding:8px;" aria-label="Open menu" aria-expanded="false">
+          <i class="fas fa-bars" style="font-size:1.25rem;"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== MOBILE DRAWER ===== -->
+  <div id="drawerOverlay" class="apple-drawer-overlay" aria-hidden="true"></div>
+  <div id="mobileDrawer" class="apple-drawer" role="dialog" aria-label="Mobile navigation" aria-hidden="true">
+    <div class="apple-drawer-header">
+      <div class="apple-drawer-logo">
+        <img src="{{ url_for('static', filename='worka.png') }}" alt="SmartEats">
+        SmartEats
+      </div>
+      <button id="drawerClose" class="apple-drawer-close" aria-label="Close menu">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <nav class="apple-drawer-nav" aria-label="Mobile navigation">
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('main.home') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-home"></i> Home
+      </a>
+      <a href="{{ url_for('main.restuarants') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-store"></i> Restaurants
+      </a>
+      <a href="{{ url_for('main.menu', page_num=1) }}" class="apple-drawer-nav-item">
+        <i class="fas fa-utensils"></i> Menu
+      </a>
+      <a href="{{ url_for('main.cart') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-shopping-bag"></i> Cart <span id="cart-count-drawer">({{ total_count or 0 }})</span>
+      </a>
+      <a href="{{ url_for('main.myorders') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-box"></i> My Orders
+      </a>
+      <a href="{{ url_for('main.completed_order') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-check-circle"></i> Order History
+      </a>
+      <a href="{{ url_for('main.account') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-user-circle"></i> Profile
+      </a>
+      <hr class="apple-divider">
+      <a href="{{ url_for('main.logout') }}" class="apple-drawer-nav-item" style="color:var(--color-danger);">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
+      </a>
+      {% else %}
+      <a href="{{ url_for('auth.newlogin') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </a>
+      <a href="{{ url_for('auth.register') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-user-plus"></i> Create Account
+      </a>
+      <a href="{{ url_for('auth.registerstore') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-store-alt"></i> Register Restaurant
+      </a>
+      <hr class="apple-divider">
+      <a href="{{ url_for('main.landing') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-home"></i> Home
+      </a>
+      {% endif %}
+    </nav>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main id="main-content" role="main">
+    <!-- Flash messages as Apple-style toasts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div style="display:none;" id="flashData" data-messages='{{ messages | tojson | safe }}'></div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ===== APPLE FOOTER ===== -->
+  <footer class="apple-footer" role="contentinfo">
+    <div class="apple-footer-inner">
+      <div class="apple-footer-grid">
+        <div class="apple-footer-column">
+          <h5>SmartEats</h5>
+          <a href="{{ url_for('main.about') }}">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">Press</a>
+          <a href="#">Blog</a>
+        </div>
+        <div class="apple-footer-column">
+          <h5>For Customers</h5>
+          <a href="{{ url_for('main.restuarants') }}">Browse Restaurants</a>
+          <a href="#">How It Works</a>
+          <a href="#">FAQs</a>
+          <a href="#">Contact Support</a>
+        </div>
+        <div class="apple-footer-column">
+          <h5>For Partners</h5>
+          <a href="{{ url_for('auth.registerstore') }}">List Your Restaurant</a>
+          <a href="#">Become a Driver</a>
+          <a href="#">Partner Support</a>
+        </div>
+        <div class="apple-footer-column">
+          <h5>Legal</h5>
+          <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a>
+          <a href="{{ url_for('main.terms_conditions') }}">Terms of Service</a>
+          <a href="#">Cookie Policy</a>
+        </div>
+      </div>
+      <div class="apple-footer-bottom">
+        <span>&copy; {{ current_year }} SmartEats by Pi Technologies. All rights reserved.</span>
+        <span>
+          <a href="#" aria-label="Facebook" style="margin:0 8px;"><i class="fab fa-facebook"></i></a>
+          <a href="#" aria-label="Twitter" style="margin:0 8px;"><i class="fab fa-twitter"></i></a>
+          <a href="#" aria-label="Instagram" style="margin:0 8px;"><i class="fab fa-instagram"></i></a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== MOBILE BOTTOM NAV ===== -->
+  <nav class="apple-bottom-nav" aria-label="Bottom navigation">
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('main.home') }}" class="apple-bottom-nav-item" aria-label="Home">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="{{ url_for('main.restuarants') }}" class="apple-bottom-nav-item" aria-label="Restaurants">
+      <i class="fas fa-store"></i>
+      <span>Eats</span>
+    </a>
+    <a href="{{ url_for('main.cart') }}" class="apple-bottom-nav-item" aria-label="Cart">
+      <i class="fas fa-shopping-bag"></i>
+      <span>Cart</span>
+      <span id="cart-count-bottom" class="nav-count {% if not total_count %}d-none{% endif %}">{{ total_count or 0 }}</span>
+    </a>
+    <a href="{{ url_for('main.myorders') }}" class="apple-bottom-nav-item" aria-label="Orders">
+      <i class="fas fa-box"></i>
+      <span>Orders</span>
+    </a>
+    <a href="{{ url_for('main.account') }}" class="apple-bottom-nav-item" aria-label="Profile">
+      <i class="fas fa-user-circle"></i>
+      <span>Profile</span>
+    </a>
+    {% else %}
+    <a href="{{ url_for('main.landing') }}" class="apple-bottom-nav-item" aria-label="Home">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="{{ url_for('auth.newlogin') }}" class="apple-bottom-nav-item" aria-label="Sign In">
+      <i class="fas fa-sign-in-alt"></i>
+      <span>Sign In</span>
+    </a>
+    <a href="{{ url_for('auth.register') }}" class="apple-bottom-nav-item" aria-label="Register">
+      <i class="fas fa-user-plus"></i>
+      <span>Register</span>
+    </a>
+    {% endif %}
+  </nav>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
 
   <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
-  <style>
-    /* Body & Background */
-    body {
-        background: linear-gradient(135deg, #FFF9F0, #FFEFD6);
-        font-family: 'Nunito', sans-serif;
-        color: #333;
-    }
+  <!-- Apple UI JavaScript -->
+  <script src="{{ url_for('static', filename='js/apple-ui.js') }}"></script>
 
-    /* Header */
-    header {
-        margin: 20px auto;
-        padding: 10px 20px;
-        backdrop-filter: blur(10px);
-        background-color: rgba(255,255,255,0.95);
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
+  <!-- Flash messages handler -->
+  <script>
+    (function() {
+      const flashData = document.getElementById('flashData');
+      if (flashData) {
+        try {
+          const messages = JSON.parse(flashData.dataset.messages);
+          messages.forEach(function(msg) {
+            const category = msg[0] || 'info';
+            const text = msg[1];
+            if (window.showToast) {
+              window.showToast(text, category);
+            }
+          });
+        } catch(e) {}
+      }
+      
+      // Socket.IO connection for real-time cart updates
+      if (!window._socket) {
+        window._socket = io({ transports: ["polling"], upgrade: false, reconnection: true, reconnectionAttempts: 5 });
+      }
+      const socket = window._socket;
+      
+      socket.on("cart_updated", function(data) {
+        const count = data.cart_count || 0;
+        ['cart-count', 'cart-count-mobile', 'cart-count-bottom', 'cart-count-drawer'].forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el) {
+            el.textContent = count;
+            if (count > 0) el.classList.remove('d-none');
+            else el.classList.add('d-none');
+          }
+        });
+        // Update all .nav-count elements too
+        document.querySelectorAll('.nav-count').forEach(function(el) {
+          el.textContent = count;
+          if (count > 0) el.classList.remove('d-none');
+          else el.classList.add('d-none');
+        });
+      });
 
-    .navbar-nav .nav-item .btn {
-        margin: 3px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
-    }
-    .navbar-nav .nav-item .btn:hover {
-        background-color: #00b37e;
-        color: white;
-        transform: translateY(-2px);
-    }
+      // Join user room for notifications
+      {% if current_user.is_authenticated %}
+      socket.emit('join', { room: 'user_{{ current_user.id }}' });
+      {% endif %}
+    })();
+  </script>
 
-    .icon-btn .link-text { display: none; font-size: 0.9rem; }
-    .icon-btn:hover .link-text { display: inline; }
+  {% block extra_js %}{% endblock %}
 
-    @media (max-width: 576px) {
-        .navbar-nav .nav-item .btn {
-            flex-direction: row;
-            padding: 6px 12px;
-        }
-        .icon-btn .link-text { display: block; font-size: 0.8rem; }
-    }
-
-    /* Logo */
-    .logo { max-height: 80px; width: auto; }
-    @media (max-width: 768px) { .logo { max-height: 60px; } }
-
-    /* Cart */
-    #cart-count {
-        font-size: 0.85rem;
-        margin-left: 4px;
-        color: #dc3545;
-        font-weight: bold;
-    }
-
-    /* WhatsApp Floating Button */
-    .whatsapp-btn {
-        position: fixed;
-        bottom: 25px;
-        right: 25px;
-        z-index: 1000;
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        background-color: #25D366;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-    .whatsapp-btn:hover {
-        transform: scale(1.15);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.35);
-    }
-
-    /* Footer */
-    footer {
-        background: #fff4e6;
-        padding: 20px 15px;
-        text-align: center;
-        font-size: 0.9rem;
-        color: #555;
-    }
-    footer a {
-        color: #555;
-        text-decoration: none;
-        margin: 0 6px;
-        transition: color 0.2s;
-    }
-    footer a:hover { color: #00b37e; }
-
-    /* Pace Loader */
-    .pace .pace-progress { background: #00b37e; height: 4px; }
-    .pace .pace-activity { border: 4px solid #00b37e; border-top-color: transparent; }
-  </style>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-ui.css') }}"/>
-</head>
-
-<body>
-  <!-- Header & Navbar -->
-  <header>
-    <nav class="navbar navbar-expand-sm navbar-light border-bottom box-shadow mb-3">
-      <div class="container">
-        <img src="{{ url_for('static', filename='css/images/worka.png') }}" class="img-fluid logo" alt="SmartEats Logo" />
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="navbar-collapse collapse flex-sm-row justify-content-between">
-          <ul class="navbar-nav flex-row flex-wrap gap-1">
-            {% if current_user.is_authenticated %}
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.home') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-home"></i> <span class="link-text">Home</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.menu', page_num=1) }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-utensils"></i> <span class="link-text">Menu</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.restuarants') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-store"></i> <span class="link-text">Stores</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.cart') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-shopping-cart"></i> <span class="link-text">Cart</span>
-                <sup id="cart-count">{{ total_count or 0 }}</sup>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.myorders') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-box"></i> <span class="link-text">Orders</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.account') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-user"></i> <span class="link-text">Profile</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.logout') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-sign-out-alt"></i> <span class="link-text">Logout</span>
-              </a>
-            </li>
-            {% else %}
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('auth.newlogin') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-sign-in-alt"></i> <span class="link-text">Login</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('auth.register') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-user-plus"></i> <span class="link-text">Register</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('auth.registerstore') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-store-alt"></i> <span class="link-text">Register Store</span>
-              </a>
-            </li>
-            <li class="nav-item icon-btn">
-              <a href="{{ url_for('main.about') }}" class="btn bg-light rounded-pill">
-                <i class="fas fa-info-circle"></i> <span class="link-text">About</span>
-              </a>
-            </li>
-            {% endif %}
-          </ul>
-        </div>
-      </div>
-    </nav>
-  </header>
-
-  <!-- Main Content -->
-  <div class="container">
-    <main role="main" class="pb-3">
-      {% with messages = get_flashed_messages() %}
-          {% if messages %}
-          <div class="mt-3">
-              {% for message in messages %}
-                  <div class="alert alert-info" role="alert">{{ message }}</div>
-              {% endfor %}
-          </div>
-          {% endif %}
-      {% endwith %}
-      {% block content %}{% endblock %}
-    </main>
-  </div>
-
-  <!-- WhatsApp Floating Button -->
-  <a href="https://wa.me/26658538173?text=Hello%20I%20have%20a%20question%20about%20SmartEats!" 
-     target="_blank" 
-     class="whatsapp-btn">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
-           alt="Chat on WhatsApp" 
-           style="width:40px;height:40px;">
-  </a>
-
-  <!-- Footer -->
-  <footer>
-    <div class="mb-2">
-      <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a> |
-      <a href="{{ url_for('main.terms_conditions') }}">Terms & Conditions</a> |
-      <a href="{{ url_for('main.about') }}">About</a>
-    </div>
-    <div>&copy; {{ current_year }} - SmartEats by Pi Technologies</div>
-  </footer>
-
-  <!-- JS Scripts -->
-  <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
-
-  <!-- Socket Audio Handling -->
+  <!-- Audio for notifications -->
   <audio id="new_order" preload="auto" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
   <audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>
   <audio id="order_ready" preload="auto" src="{{ url_for('static', filename='sounds/order_ready.wav') }}"></audio>
   <script>
-    if (!window._socket) {
-      window._socket = io({ transports:["polling"], upgrade:false, reconnection:true, reconnectionAttempts:5 });
-    }
-    const socket = window._socket;
-    let audioUnlocked = false;
-    document.body.addEventListener("click", () => { audioUnlocked = true; }, { once:true });
+    (function() {
+      let audioUnlocked = false;
+      document.body.addEventListener("click", function() { audioUnlocked = true; }, { once: true });
 
-    socket.on("play_sound", function (data) {
-      if (!audioUnlocked) return;
-      const audio = document.getElementById(data.sound);
-      if (audio) { audio.currentTime=0; audio.play().catch(()=>{}); }
-    });
-
-    socket.on("cart_updated", function(data){
-      const el = document.getElementById("cart-count");
-      if(el) el.textContent = data.cart_count;
-    });
+      const socket = window._socket;
+      socket.on("play_sound", function(data) {
+        if (!audioUnlocked) return;
+        const audio = document.getElementById(data.sound);
+        if (audio) { audio.currentTime = 0; audio.play().catch(function(){}); }
+      });
+    })();
   </script>
 </body>
 </html>

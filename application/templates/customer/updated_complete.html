@@ -1,73 +1,71 @@
 {% extends "layout.html" %}
-{% block title %}Completed Orders - SmartEats{% endblock %}
+{% block title %}Order History – SmartEats{% endblock %}
 
 {% block content %}
 <style>
-    .order-filters {
-        margin-bottom: 1.5rem;
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-    .order-filters .btn {
-        flex: 1;
-        border-radius: 50px;
-        padding: 0.5rem 1.5rem;
-    }
-    .order-card {
-        background-color: #fff;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: transform 0.2s ease;
-    }
-    .order-card:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-    }
-    .order-card h3 {
-        font-size: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-    .order-card p {
-        margin: 0.25rem 0;
-        color: #555;
-    }
-    .empty-message {
-        text-align: center;
-        color: #777;
-        margin-top: 2rem;
-        font-size: 1.1rem;
-    }
+  .history-card {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-light);
+    margin-bottom: var(--space-md);
+    transition: all var(--transition-base);
+  }
+  
+  .history-card:hover {
+    box-shadow: var(--shadow-md);
+  }
 </style>
 
-<div class="container-xxl mt-4">
-
-    <!-- Filter Buttons -->
-    <div class="order-filters">
-        <button type="button" class="btn btn-outline-success" onclick="window.location.href='{{ url_for('main.myorders') }}'">Active/Pending Orders</button>
-        <button type="button" class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('main.completed_order') }}'">Order History</button>
-        <button type="button" class="btn btn-outline-danger" onclick="window.location.href='{{ url_for('main.cancelled_orders') }}'">Cancelled Orders</button>
+<div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
+    <div>
+      <h1 style="font-size:1.5rem;margin:0;">Order History</h1>
+      <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:4px 0 0 0;">View all your completed and past orders</p>
     </div>
+    <a href="{{ url_for('main.myorders') }}" class="apple-btn apple-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Active Orders
+    </a>
+  </div>
 
-    <!-- Completed Orders List -->
-    <section class="order-list">
-        {% if not orders_completed %}
-            <div class="empty-message">
-                <p>You have no completed orders yet.</p>
-                <p>Go back to the <a href="{{ url_for('main.menu', page_num=1) }}">menu</a> to place new orders.</p>
-            </div>
-        {% else %}
-            {% for order in orders_completed %}
-            <div class="order-card">
-                <h3>Order ID: {{ order.order_id }}</h3>
-                <p><strong>Destination:</strong> {{ order.location }}</p>
-                <p><strong>Order Date:</strong> {{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</p>
-            </div>
-            {% endfor %}
-        {% endif %}
-    </section>
-
+  {% if completed_orders %}
+  {% for o in completed_orders %}
+  <div class="history-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-sm);">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap;">
+          <strong>Order #{{ o.order_id }}</strong>
+          <span class="apple-badge apple-badge-success">Delivered</span>
+        </div>
+        <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:4px 0 0 0;">
+          {{ o.create_at.strftime('%b %d, %Y at %I:%M %p') if o.create_at else 'N/A' }}
+          {% if o.location and o.location != 'pickup' %} · Delivered to {{ o.location }}{% endif %}
+        </p>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:600;font-size:1.125rem;">M{{ '%.2f'|format(o.deliveryfee or 0) }}</div>
+        {% if o.payment %}<div style="font-size:0.75rem;color:var(--color-text-secondary);">Paid via {{ o.payment }}</div>{% endif %}
+      </div>
+    </div>
+    {% if o.order_items %}
+    <hr class="apple-divider" style="margin:var(--space-sm) 0;">
+    <div style="font-size:0.875rem;color:var(--color-text-secondary);">
+      {% for item in o.order_items %}
+      <span>{{ item.quantity }}x {{ item.product_name }}{% if not loop.last %}, {% endif %}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="apple-empty" style="padding:var(--space-4xl) var(--space-lg);">
+    <div class="apple-empty-icon"><i class="fas fa-history"></i></div>
+    <div class="apple-empty-title">No Order History</div>
+    <div class="apple-empty-text">You haven't completed any orders yet. Start ordering!</div>
+    <a href="{{ url_for('main.restuarants') }}" class="apple-btn apple-btn-primary apple-btn-lg">
+      <i class="fas fa-store"></i> Browse Restaurants
+    </a>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

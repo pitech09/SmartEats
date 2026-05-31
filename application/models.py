@@ -188,7 +188,7 @@ class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.String(200), default=get_orderid)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
 
     create_at = db.Column(db.DateTime, default=get_localTime)
@@ -196,7 +196,7 @@ class Order(db.Model):
     status = db.Column(db.String(40), default="Pending")
     payment = db.Column(db.String(40), default="Cash")
     transactionID = db.Column(db.String(90), default="None")
-    user_email = db.Column(db.String(120), nullable=False)
+    user_email = db.Column(db.String(120), nullable=True)
 
     customer_lat = db.Column(db.Float)
     customer_lng = db.Column(db.Float)
@@ -366,10 +366,11 @@ class Ad(db.Model):
     store = db.relationship('Store', backref='ads_Store', lazy="select")
     product = db.relationship('Product', backref='ads_Product', lazy="select")
 
-    class PushSubscription(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        user_id = db.Column(db.Integer, nullable=False)  # link to your User table
-        subscription_info = db.Column(JSON, nullable=False)
+
+class PushSubscription(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)  # link to your User table
+    subscription_info = db.Column(JSON, nullable=False)
 
 
 class Category(db.Model):

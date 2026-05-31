@@ -1,74 +1,43 @@
 {% extends "layout.html" %}
-{% block title %}Cancelled Orders - SmartEats{% endblock %}
+{% block title %}Cancelled Orders – SmartEats{% endblock %}
 
 {% block content %}
-<style>
-    .order-filters {
-        margin-bottom: 1.5rem;
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-    .order-filters .btn {
-        flex: 1;
-        border-radius: 50px;
-        padding: 0.5rem 1.5rem;
-    }
-    .order-card {
-        background-color: #fff;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: transform 0.2s ease;
-    }
-    .order-card:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-    }
-    .order-card h3 {
-        font-size: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-    .order-card p {
-        margin: 0.25rem 0;
-        color: #555;
-    }
-    .empty-message {
-        text-align: center;
-        color: #777;
-        margin-top: 2rem;
-        font-size: 1.1rem;
-    }
-</style>
-
-<div class="container-xxl mt-4">
-
-    <!-- Filter Buttons -->
-    <div class="order-filters">
-        <button type="button" class="btn btn-outline-success" onclick="window.location.href='{{ url_for('main.myorders') }}'">Active/Pending Orders</button>
-        <button type="button" class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('main.completed_order') }}'">Order History</button>
-        <button type="button" class="btn btn-outline-danger" onclick="window.location.href='{{ url_for('main.cancelled_orders') }}'">Cancelled Orders</button>
+<div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
+    <div>
+      <h1 style="font-size:1.5rem;margin:0;">Cancelled Orders</h1>
+      <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:4px 0 0 0;">Orders that were cancelled</p>
     </div>
+    <a href="{{ url_for('main.myorders') }}" class="apple-btn apple-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Active Orders
+    </a>
+  </div>
 
-    <!-- Cancelled Orders List -->
-    <section class="order-list">
-        {% if not order %}
-            <div class="empty-message">
-                <p>You have no cancelled orders at the moment.</p>
-                <p>Navigate to the <a href="{{ url_for('main.menu', page_num=1) }}">menu</a> to place new orders.</p>
-            </div>
-        {% else %}
-            {% for order in order %}
-            <div class="order-card">
-                <h3>Order ID: {{ order.order_id }}</h3>
-                <p><strong>Status:</strong> {{ order.status }}</p>
-                <p><strong>Destination:</strong> {{ order.location }}</p>
-                <p><strong>Order Date:</strong> {{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</p>
-            </div>
-            {% endfor %}
-        {% endif %}
-    </section>
-
+  {% if orders %}
+  {% for o in orders %}
+  <div style="background:var(--color-card);border-radius:var(--radius-lg);padding:var(--space-lg);border:1px solid var(--color-border-light);margin-bottom:var(--space-md);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-sm);">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap;">
+          <strong>Order #{{ o.order_id }}</strong>
+          <span class="apple-badge apple-badge-danger">Cancelled</span>
+        </div>
+        <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:4px 0 0 0;">
+          {{ o.create_at.strftime('%b %d, %Y at %I:%M %p') if o.create_at else 'N/A' }}
+        </p>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:600;">M{{ '%.2f'|format(o.deliveryfee or 0) }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="apple-empty" style="padding:var(--space-4xl) var(--space-lg);">
+    <div class="apple-empty-icon"><i class="fas fa-times-circle"></i></div>
+    <div class="apple-empty-title">No Cancelled Orders</div>
+    <div class="apple-empty-text">You have no cancelled orders.</div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

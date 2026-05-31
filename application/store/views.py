@@ -7,6 +7,7 @@ import plotly.offline as plot #type: ignore
 from PIL import Image
 from flask import current_app, jsonify # type: ignore
 from flask import render_template, redirect, url_for, session, request, flash
+from flask_wtf.csrf import generate_csrf
 from flask_bcrypt import Bcrypt
 from flask_login import login_required, current_user, logout_user, LoginManager # type: ignore
 from sqlalchemy import func, extract, case,and_
@@ -40,9 +41,107 @@ bcrypt = Bcrypt()
 
 
 
+def ai_enhance_and_upload(file, folder='products'):
+    """
+    Upload a product photo to Cloudinary with visual enhancements.
+    Uses standard Cloudinary transformations (no paid add-ons needed).
+    Falls back gracefully if any step fails.
+    """
+    # ── Pre-process into a reusable bytes buffer ──────────────────────────
+    import io
+    try:
+        img = Image.open(file)
+
+        # Convert RGBA / palette PNGs to RGB
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+
+        buffer = io.BytesIO()
+        img.save(buffer, format='JPEG', quality=92, optimize=True)
+        buffer.seek(0)
+
+        # Store the buffer for reuse on retries
+        file_to_upload = buffer
+    except Exception as e:
+        print(f"[Image] PIL pre-processing failed ({e}), using raw file.")
+        file_to_upload = file
+
+    # ── Try with all enhancements ──────────────────────────────────────────
+    try:
+        result = upload(
+            file_to_upload,
+            folder=folder,
+            use_filename=True,
+            unique_filename=True,
+            resource_type='image',
+            transformation=[
+                # Standard Cloudinary effects (included in all plans)
+                {'effect': 'auto_brightness'},
+                {'effect': 'auto_contrast'},
+                {'effect': 'improve'},
+                {'effect': 'e_sharpen:80'},
+                # Final output
+                {'width': 500, 'height': 500, 'crop': 'fill',
+                 'quality': 'auto:best', 'fetch_format': 'auto'}
+            ]
+        )
+        print(f"[Enhance] Uploaded: {result.get('secure_url', 'unknown')}")
+        return result
+
+    except Exception as e:
+        # ── If first attempt consumed the buffer, re-create it ────────────
+        if file_to_upload is not buffer:
+            # Original file object — may be consumed, try rewinding
+            try:
+                file_to_upload.seek(0)
+            except Exception:
+                pass
+        else:
+            # Buffer was consumed by failed upload, re-create from file
+            try:
+                new_img = Image.open(file)
+                if new_img.mode in ('RGBA', 'P'):
+                    new_img = new_img.convert('RGB')
+                buffer = io.BytesIO()
+                new_img.save(buffer, format='JPEG', quality=92, optimize=True)
+                buffer.seek(0)
+                file_to_upload = buffer
+            except Exception:
+                # Can't re-process, just fallback to basic
+                file_to_upload = file
+
+        # ── Fallback: basic upload with resize only ────────────────────────
+        print(f"[Enhance] Enhanced upload failed ({e}), using basic resize.")
+        try:
+            result = upload(
+                file_to_upload,
+                folder=folder,
+                use_filename=True,
+                unique_filename=True,
+                resource_type='image',
+                transformation=[
+                    {'width': 500, 'height': 500, 'crop': 'fill'}
+                ]
+            )
+            return result
+        except Exception as e2:
+            # ── Last-resort fallback: upload as-is with no transformations ─
+            print(f"[Enhance] Basic upload also failed ({e2}), "
+                  f"uploading without transformations.")
+            result = upload(
+                file_to_upload,
+                folder=folder,
+                use_filename=True,
+                unique_filename=True,
+                resource_type='image'
+            )
+            return result
+
+
+# Kept for local-storage environments — lightweight PIL-based adjustments
 def save_product_picture(file):
     # Set the desired size for resizing
-    size = (300, 300)
+    size = (600, 600)
 
     # Generate a random hex string for the filename
     random_hex = secrets.token_hex(9)
@@ -53,37 +152,33 @@ def save_product_picture(file):
     # Generate the final filename (random + extension)
     post_img_fn = random_hex + f_ex
 
-    # Define the path to save the file (UPLOAD_PRODUCTS should be configured in your Flask app)
+    # Define the path to save the file
     post_image_path = os.path.join(current_app.root_path, current_app.config['UPLOAD_PRODUCTS'], post_img_fn)
 
     try:
         # Open the image
         img = Image.open(file)
 
-        # Resize the image to fit within the size (thumbnail)
+        # Convert to RGB if needed
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+
+        # Simple brightness/contrast tweaks using PIL (lightweight, no AI)
+        from PIL import ImageEnhance
+        img = ImageEnhance.Contrast(img).enhance(1.1)
+        img = ImageEnhance.Sharpness(img).enhance(1.2)
+
+        # Resize
         img.thumbnail(size)
 
-        # Save the resized image
-        img.save(post_image_path)
+        # Save with better quality
+        img.save(post_image_path, 'JPEG' if f_ex.lower() in ('.jpg', '.jpeg') else None,
+                 quality=92, optimize=True)
 
-        return post_img_fn  # Return the filename to store in the database
+        return post_img_fn
     except Exception as e:
-        # If an error occurs during image processing, handle it
         print(f"Error saving image: {e}")
         return None
-
-def upload_to_cloudinary(file, folder='products'):
-    result = upload(
-        file,
-        folder=folder,
-        use_filename=True,
-        unique_filename=True,
-        resource_type='image',
-        transformation=[
-            {'width': 200, 'height': 200, 'crop': 'fill'}
-            ]
-    )
-    return result
 
 
 login_manager = LoginManager()
@@ -365,7 +460,7 @@ def ready_orders():
     ).order_by(Notification.timestamp.desc()).count()
 
     form = updatestatusform()
-    readyorders = Order.query.filter(Order.status=="Ready ", Order.store_id == current_user.id).all()
+    readyorders = Order.query.filter(Order.status.in_(["Ready", "Ready "]), Order.store_id == current_user.id).all()
     return render_template('store/readyorder.html',form=form, readyorders=readyorders, store=mystore,
                         unread_notifications=unread_notifications, count=count, form1=form1)
 
@@ -615,8 +710,8 @@ def addproducts():
                 file = form.product_pictures.data
                 print(current_app.config['USE_CLOUDINARY'])
                 if current_app.config['USE_CLOUDINARY']:
-                    print("SAving to cloudinary.")
-                    upload_result = upload_to_cloudinary(file)
+                    print("Uploading to Cloudinary with AI enhancement...")
+                    upload_result = ai_enhance_and_upload(file)
                     image_url = upload_result['secure_url'] 
                     product.pictures = image_url
                 else: 
@@ -1052,65 +1147,117 @@ def vendor_pos():
     store_id = session.get('store_id')
     store = Store.query.get_or_404(store_id)
 
-    products = Product.query.filter_by(store_id=store.id).all()
+    products = Product.query.filter_by(store_id=store.id, is_active=True).all()
+    categories = Category.query.filter_by(store_id=store.id, is_active=True).all()
 
     if request.method == 'POST':
-        data = request.json
-        items = data.get('items', [])
-        payment = data.get('payment')
+        try:
+            data = request.get_json(force=True)
+            if not data:
+                return jsonify({'error': 'Invalid JSON data'}), 400
 
-        if not items:
-            return jsonify({'error': 'No items'}), 400
+            items = data.get('items', [])
+            payment = data.get('payment', 'Cash')
 
-        # ---- Create POS Order ----
-        order = Order(
-            store_id=store.id,
-            payment=payment,
-            status='Completed',
-            is_pos=True,
-            location='In-store'
-        )
-        db.session.add(order)
-        db.session.commit()
+            if not items:
+                return jsonify({'error': 'No items in order'}), 400
 
-        # ---- Items + Sales ----
-        for item in items:
-            product = Product.query.get(item['product_id'])
-            qty = int(item['quantity'])
+            # ---- Get or create a system user for POS orders ----
+            system_user = User.query.filter_by(email='pos_system@smarteats.local').first()
+            if not system_user:
+                system_user = User(
+                    username='pos_system',
+                    lastname='POS',
+                    email='pos_system@smarteats.local',
+                    password='not_used'
+                )
+                db.session.add(system_user)
+                db.session.flush()
 
-            if not product or qty <= 0:
-                continue
-            order_item = OrderItem(
-                order_id=order.id,
-                product_id=product.id,
-                quantity=qty,
-                price=product.price
-            )
-            db.session.add(order_item)
-            sale = Sales(
-                order_id=order.id,
-                product_id=product.id,
+            # ---- Create POS Order ----
+            order = Order(
                 store_id=store.id,
-                user_id=None,
-                quantity=qty,
-                price=product.price,
-                date_=datetime.utcnow()
+                user_id=system_user.id,
+                user_email=system_user.email,
+                payment=payment,
+                status='Completed',
+                is_pos=True,
+                location='In-store'
             )
-            db.session.add(sale)
+            db.session.add(order)
+            db.session.flush()
 
+            total_amount = 0.0
 
+            # ---- Items + Sales ----
+            for item in items:
+                product = Product.query.get(item.get('product_id'))
+                qty = int(item.get('quantity', 1))
 
+                if not product or qty <= 0:
+                    continue
 
-        db.session.commit()
+                line_total = product.price * qty
+                total_amount += line_total
 
-        return jsonify({'success': True})
+                order_item = OrderItem(
+                    order_id=order.id,
+                    product_id=product.id,
+                    product_name=product.productname,
+                    product_price=product.price,
+                    quantity=qty
+                )
+                db.session.add(order_item)
 
+                sale = Sales(
+                    order_id=order.id,
+                    product_id=product.id,
+                    product_name=product.productname,
+                    store_id=store.id,
+                    user_id=system_user.id,
+                    quantity=qty,
+                    price=product.price,
+                    date_=datetime.utcnow()
+                )
+                db.session.add(sale)
+
+            db.session.commit()
+
+            # Build receipt data
+            receipt_items = []
+            for item in items:
+                product = Product.query.get(item.get('product_id'))
+                if product:
+                    receipt_items.append({
+                        'name': product.productname,
+                        'quantity': int(item.get('quantity', 1)),
+                        'price': float(product.price)
+                    })
+
+            return jsonify({
+                'success': True,
+                'order_id': order.order_id,
+                'store_name': store.name,
+                'total': round(total_amount, 2),
+                'items': receipt_items
+            })
+
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify({'error': 'Database integrity error. Please try again.'}), 500
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+    csrf_token = generate_csrf()
     return render_template(
         'store/pos.html',
         store=store,
-        products=products
+        store_categories=categories,
+        products=products,
+        csrf_token=csrf_token
     )
- 
+
 
 @store.route('/categories', methods=['GET', 'POST'])
 @login_required
@@ -1183,7 +1330,7 @@ def view_categories(category_id):
 
     products = Product.query.filter_by(
         store_id=store.id,
-        category_name=category_id,
+        category_id=category_id,
         is_active=True
     ).order_by(Product.productname.asc()).all()
 

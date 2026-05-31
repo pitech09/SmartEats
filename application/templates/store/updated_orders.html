@@ -37,13 +37,13 @@
                     <ul class="list-unstyled mb-0 small">
                         {% for item in order.order_items %}
                             <li>
-                                🍔 {{ item.product_name }} × {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})
+                                <i class="fas fa-hamburger"></i> {{ item.product_name }} × {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})
                             </li>
                         {% endfor %}
 
                         {% for cm in order.custom_meals %}
                             <li class="text-warning">
-                                ✍️ {{ cm.name }} (M{{ '%.2f'|format(cm.total_price) }})
+                                <i class="fas fa-pen"></i> {{ cm.name }} (M{{ '%.2f'|format(cm.total_price) }})
                                 {% if cm.ingredients %}
                                     <ul class="mb-0">
                                         {% for ing in cm.ingredients %}

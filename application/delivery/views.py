@@ -5,6 +5,7 @@ from flask import (
     abort, render_template, redirect, url_for, flash, session, request, current_app, jsonify
 )
 from flask_login import login_required, current_user
+from flask_bcrypt import Bcrypt
 from sqlalchemy.exc import IntegrityError
 from . import delivery
 from ..forms import *
@@ -12,6 +13,8 @@ from ..models import *
 from application.notification import notify_customer, notify_store
 from application.utils.notification import create_notification
 import flask_bcrypt
+
+bcrypt = Bcrypt()
 import cloudinary
 from cloudinary.uploader import upload
 
@@ -191,7 +194,7 @@ def ready_orders():
     formpharm = Set_StoreForm()
     formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.filter_by(is_active=True).all()]
     ready = Order.query.filter(
-        Order.status == "Ready",
+        Order.status.in_(["Ready", "Ready "]),
         Order.location != "pickup",
         Order.store_id == session.get('store_id')
     ).all()
@@ -278,3 +281,44 @@ def update_delivery(delivery_id):
         flash('Error updating delivery. Please try again.')
 
     return redirect(url_for('delivery.mydeliveries'))
+
+
+# ---------------- SET STORE ----------------
+@delivery.route('/set_store', methods=['POST'])
+@login_required
+def set_store():
+    formpharm = Set_StoreForm()
+    formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.filter_by(is_active=True).all()]
+    if formpharm.validate_on_submit():
+        session['store_id'] = formpharm.store.data
+        flash(f'Store changed successfully.', 'success')
+    return redirect(url_for('delivery.dashboard'))
+
+
+# ---------------- UPDATE PASSWORD ----------------
+@delivery.route('/updatepassword', methods=['GET', 'POST'])
+@login_required
+def updatepassword():
+    if request.method == 'POST':
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not old_password or not new_password or not confirm_password:
+            flash('All fields are required.', 'danger')
+            return redirect(url_for('delivery.updatepassword'))
+
+        if not bcrypt.check_password_hash(current_user.password, old_password):
+            flash('Old password is incorrect.', 'danger')
+            return redirect(url_for('delivery.updatepassword'))
+
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'danger')
+            return redirect(url_for('delivery.updatepassword'))
+
+        current_user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+        db.session.commit()
+        flash('Password updated successfully.', 'success')
+        return redirect(url_for('delivery.dashboard'))
+
+    return render_template('delivery/update.html')

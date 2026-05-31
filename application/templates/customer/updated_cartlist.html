@@ -1,347 +1,381 @@
 {% extends "layout.html" %}
-{% block title %}Cart - SmartEats{% endblock %}
+{% block title %}Cart – SmartEats{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-  <h2 class="text-center text-success mb-4">Checking out from {{store.name}}</h2>
+<style>
+  .checkout-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+  
+  .order-summary-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    border: 1px solid var(--color-border-light);
+    position: sticky;
+    top: 80px;
+  }
+  
+  @media (max-width: 992px) {
+    .checkout-layout {
+      grid-template-columns: 1fr;
+    }
+    .order-summary-card {
+      position: static;
+    }
+  }
+</style>
 
-  <div class="row g-4">
-    <h3 class="card-title text-success fw-semibold">
-      {% if is_store_open(store.openinghours) %}
-        <span class="badge bg-success ms-2">Store is Open. Enjoy your meal!</span>
-      {% else %}
-        <span class="badge bg-danger ms-2">Store is Closed, Please Come Back During its Operating Hours</span>
-      {% endif %}
-    </h3>
+<div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
 
-    <!-- Payment Codes -->
-    <div class="col-md-4">
-      <div class="card shadow-sm border-success h-100">
-        <div class="card-header bg-success text-white">
-          <h5>Payment Codes</h5>
-        </div>
-        <div class="card-body">
-          <p><strong>Mpesa:</strong> {{ store.mpesa_shortcode }}</p>
-          <p><strong>Mpesa Name:</strong> {{ store.mpesaname }}</p>
-          <p><strong>Ecocash:</strong> {{ store.ecocash_short_code }}</p>
-          <p><strong>Ecocash Name:</strong> {{ store.ecocash_name }}</p>
-          <p class="text-muted small">
-            Use these codes for secure payment. Location will be used to calculate delivery fee.
-          </p>
-        </div>
-      </div>
+  <!-- Page Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
+    <div>
+      <h1 style="font-size:1.5rem;margin:0;">Your Cart</h1>
+      <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:4px 0 0 0;">
+        {% if cart %}From <strong>{{ store.name if store else 'Restaurant' }}</strong>{% endif %}
+      </p>
     </div>
-
-    <!-- Cart Items -->
-    <div class="col-md-8">
-      <div class="card shadow-sm border-primary">
-        <div class="card-header bg-primary text-white">
-          <h5>Cart Items</h5>
-        </div>
-        <div class="card-body">
-
-          {% if not cart or cart.cart_items|length == 0 %}
-            <p class="text-center text-muted">Your cart is empty!</p>
-          {% else %}
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>Item</th>
-                  <th>Price</th>
-                  <th>Qty</th>
-                  <th>Total</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="cart-items">
-                {% for item in cart.cart_items %}
-                  <tr data-item-id="{{ item.id }}">
-                    <td>{{ item.get_name() }}</td>
-                    <td>M{{ '%.2f'|format(item.get_price()) }}</td>
-                    <td class="item-qty">{{ item.quantity }}</td>
-                    <td>M{{ '%.2f'|format(item.get_total()) }}</td>
-                    <td>
-                      <button class="btn btn-outline-danger btn-sm remove-item" data-id="{{ item.id }}">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          {% endif %}
-
-          <!-- Totals -->
-          <div class="d-flex justify-content-between mt-3">
-            <h5>
-              Subtotal:
-              <span id="subtotal" data-base="{{ '%.2f'|format(total_amount) }}">
-                M{{ '%.2f'|format(total_amount) }}
-              </span>
-            </h5>
-          </div>
-
-          <div class="d-flex justify-content-between mt-2">
-            <h5>
-              Delivery Fee:
-              <span id="delivery-fee">M0.00</span>
-            </h5>
-          </div>
-
-          <div class="d-flex justify-content-between mt-2">
-            <h5>
-              Total:
-              <span id="grand-total">{{ '%.2f'|format(total_amount) }}</span>
-            </h5>
-          </div>
-
-          <hr>
-
-          <!-- Map -->
-          <div class="mb-3">
-            <label class="form-label">Drag the marker to your location (or allow browser geolocation):</label>
-            <div id="cart-map" style="height:300px; border:1px solid #ccc; border-radius:8px;"></div>
-          </div>
-
-          <!-- Checkout Form -->
-          <form id="order-form"
-                action="{{ url_for('main.addorder', total_amount=total_amount) }}"
-                method="POST"
-                enctype="multipart/form-data">
-
-            {{ form3.hidden_tag() }}
-
-            <!-- Hidden inputs for location & fee -->
-            <input type="hidden" name="latitude" id="latitude">
-            <input type="hidden" name="longitude" id="longitude">
-            <input type="hidden" name="location_accuracy" id="location-accuracy">
-            <input type="hidden" name="delivery_fee" id="delivery-fee-input">
-
-            <div class="mb-3">
-              {{ form3.payment.label }}
-              {{ form3.payment(class="form-control") }}
-            </div>
-
-            <div class="mb-3">
-              {{ form3.payment_number.label }}
-              {{ form3.payment_number(class="form-control") }}
-            </div>
-
-            <div class="mb-3">
-              {{ form3.deliverymethod.label }}
-              {% for subfield in form3.deliverymethod %}
-                <div class="form-check">
-                  {{ subfield(class="form-check-input delivery-option") }}
-                  {{ subfield.label(class="form-check-label") }}
-                </div>
-              {% endfor %}
-            </div>
-
-            <div class="mb-3">
-              {{ form3.drop_address.label }}
-              {{ form3.drop_address(class="form-control") }}
-            </div>
-
-            <div class="mb-3">
-              <p>Screenshot or photo of your payment:</p>
-              {{ form3.payment_screenshot.label }}
-              {{ form3.payment_screenshot(class="form-control") }}
-            </div>
-
-            <button type="submit"
-                    class="btn btn-success btn-lg w-100 rounded-pill">
-              Place Order
-            </button>
-
-          </form>
-        </div>
-      </div>
-    </div>
-
+    {% if cart and cart.cart_items %}
+    <a href="{{ url_for('main.menu', page_num=1) }}" class="apple-btn apple-btn-secondary">
+      <i class="fas fa-plus"></i> Add More Items
+    </a>
+    {% endif %}
   </div>
+
+  {% if cart and cart.cart_items %}
+  <div class="checkout-layout">
+    <!-- Cart Items -->
+    <div id="cart-items-container">
+      {% for item in cart.cart_items %}
+      <div class="cart-item" data-item-id="{{ item.id }}" data-item-price="{{ item.get_price() }}">
+        <img src="{{ item.product.pictures if item.product else url_for('static', filename='css/images/default.png') }}" 
+             alt="{{ item.get_name() }}" class="cart-item-image" loading="lazy">
+        <div class="cart-item-details">
+          <div class="cart-item-name">{{ item.get_name() }}</div>
+          <div class="cart-item-price" id="item-line-total-{{ item.id }}">M{{ '%.2f'|format(item.get_total()) }}</div>
+        </div>
+        <div class="cart-item-actions">
+          <button class="cart-qty-btn remove-from-cart" data-item-id="{{ item.id }}" aria-label="Remove item">
+            <i class="fas fa-trash-alt" style="font-size:0.75rem;"></i>
+          </button>
+          <button class="cart-qty-btn" data-action="decrease" data-item-id="{{ item.id }}" aria-label="Decrease quantity">
+            <i class="fas fa-minus"></i>
+          </button>
+          <span class="cart-qty-value" id="item-qty-{{ item.id }}">{{ item.quantity }}</span>
+          <button class="cart-qty-btn" data-action="increase" data-item-id="{{ item.id }}" aria-label="Increase quantity">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-summary-card">
+      <h3 style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;margin-bottom:var(--space-lg);">
+        Order Summary
+      </h3>
+
+      <div class="price-breakdown">
+        <div class="price-row">
+          <span class="price-row-label">Subtotal (<span id="item-count">{{ cart.total_items() }}</span> items)</span>
+          <span class="price-row-value" id="subtotal-amount">M{{ '%.2f'|format(cart.total_amount()) }}</span>
+        </div>
+        <div class="price-row">
+          <span class="price-row-label">Delivery Fee</span>
+          <span class="price-row-value" id="delivery-fee-display">
+            <span id="delivery-fee-text">Calculating...</span>
+          </span>
+        </div>
+        
+        <!-- Coupon -->
+        <form id="couponForm" style="margin:var(--space-md) 0;">
+          <div class="apple-input-group">
+            <input type="text" placeholder="Coupon code" aria-label="Coupon code">
+            <button type="submit" class="apple-btn apple-btn-secondary apple-btn-sm">Apply</button>
+          </div>
+        </form>
+
+        <hr class="apple-divider">
+        
+        <div class="price-row price-row-total">
+          <span>Total</span>
+          <span id="cart-total-amount">M{{ '%.2f'|format(cart.total_amount()) }}</span>
+        </div>
+      </div>
+
+      <hr class="apple-divider">
+
+      <!-- Checkout Form -->
+      <form id="checkoutForm" action="{{ url_for('main.addorder') }}" method="post" enctype="multipart/form-data">
+        {{ form3.hidden_tag() }}
+        {{ form3.payment(class='apple-select', style='margin-bottom:var(--space-md);') }}
+        
+        <div style="margin-bottom:var(--space-md);">
+          {{ form3.payment_number.label(class='apple-label') }}
+          {{ form3.payment_number(class='apple-input', placeholder='Enter payment number') }}
+        </div>
+        
+        <div style="margin-bottom:var(--space-md);">
+          {{ form3.drop_address.label(class='apple-label') }}
+          {{ form3.drop_address(class='apple-input', placeholder='Enter delivery address') }}
+        </div>
+
+        <div style="margin-bottom:var(--space-md);">
+          <label class="apple-label">Delivery Method</label>
+          <div class="apple-radio-group">
+            <label class="apple-radio selected">
+              <div class="apple-radio-dot"></div>
+              <div>
+                <strong>Delivery</strong>
+                <p style="font-size:0.8125rem;margin:0;color:var(--color-text-secondary);">Food delivered to your door</p>
+              </div>
+              <input type="radio" name="deliverymethod" value="agent" checked style="display:none;">
+            </label>
+            <label class="apple-radio">
+              <div class="apple-radio-dot"></div>
+              <div>
+                <strong>Pickup</strong>
+                <p style="font-size:0.8125rem;margin:0;color:var(--color-text-secondary);">Collect from restaurant</p>
+              </div>
+              <input type="radio" name="deliverymethod" value="pickup" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-bottom:var(--space-md);">
+          {{ form3.payment_screenshot.label(class='apple-label') }}
+          {{ form3.payment_screenshot(class='apple-input', accept='image/*') }}
+        </div>
+
+        <input type="hidden" name="latitude" id="latitude" value="">
+        <input type="hidden" name="longitude" id="longitude" value="">
+        <input type="hidden" name="delivery_fee" id="delivery-fee" value="0">
+        <input type="hidden" name="location_accuracy" id="location_accuracy" value="">
+
+        <button type="submit" class="apple-btn apple-btn-primary apple-btn-lg apple-btn-block">
+          <i class="fas fa-check"></i> Place Order
+        </button>
+      </form>
+
+      <!-- Store selector for switching -->
+      {% if formpharm %}
+      <hr class="apple-divider">
+      <form action="{{ url_for('main.set_store') }}" method="post" class="apple-input-group">
+        {{ formpharm.hidden_tag() }}
+        <select name="store" class="apple-select" style="flex:1;">
+          {% for value, label in formpharm.store.choices %}
+          <option value="{{ value }}" {% if store and store.id == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="apple-btn apple-btn-secondary">Change</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Empty Cart -->
+  <div class="apple-empty" style="padding:var(--space-4xl) var(--space-lg);">
+    <div class="apple-empty-icon">
+      <i class="fas fa-shopping-bag"></i>
+    </div>
+    <div class="apple-empty-title">Your cart is empty</div>
+    <div class="apple-empty-text">
+      Looks like you haven't added any meals yet. Browse restaurants and find something delicious!
+    </div>
+    <a href="{{ url_for('main.restuarants') }}" class="apple-btn apple-btn-primary apple-btn-lg">
+      <i class="fas fa-store"></i> Browse Restaurants
+    </a>
+  </div>
+  {% endif %}
 </div>
 
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- JS -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const subtotalEl = document.getElementById('subtotal');
-    const deliveryEl = document.getElementById('delivery-fee');
-    const grandEl = document.getElementById('grand-total');
-    const feeInput = document.getElementById('delivery-fee-input');
-    let baseTotal = parseFloat(subtotalEl.dataset.base);
+  document.addEventListener('DOMContentLoaded', function() {
+    var subtotal = {{ cart.total_amount() if cart else 0 }};
+    var deliveryFee = 0;
+    var customerLat = null;
+    var customerLng = null;
 
-    const latInput = document.getElementById('latitude');
-    const lngInput = document.getElementById('longitude');
-    const accuracyInput = document.getElementById('location-accuracy');
-
-    const storeLat = {{ store.latitude|default(-28.895383, true) }};
-    const storeLng = {{ store.longitude|default(24.767190, true) }};
-    const storeRadius = 500;
-
-    function distanceMeters(lat1, lon1, lat2, lon2){
-        const R = 6371000;
-        const toRad = x => x * Math.PI/180;
-        const dLat = toRad(lat2 - lat1);
-        const dLon = toRad(lon2 - lon1);
-        const a = Math.sin(dLat/2)**2 +
-                  Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+    // Get location for delivery fee calculation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        customerLat = pos.coords.latitude;
+        customerLng = pos.coords.longitude;
+        document.getElementById('latitude').value = customerLat;
+        document.getElementById('longitude').value = customerLng;
+        document.getElementById('location_accuracy').value = pos.coords.accuracy;
+        
+        // Fetch delivery fee from server
+        fetchDeliveryFee(customerLat, customerLng);
+      }, function() {
+        document.getElementById('delivery-fee-text').textContent = 'Location unavailable';
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    } else {
+      document.getElementById('delivery-fee-text').textContent = 'Location not supported';
     }
 
-    function calculateDeliveryFee(meters){
-        const insideMinFee = 8;
-        const normalMinFee = 13;
-        const maxFee = 10000;
-        const ratePerMeter = 0.007;
-        let fee = meters <= storeRadius ? insideMinFee : Math.max(meters * ratePerMeter, normalMinFee);
-        return Math.min(fee, maxFee);
-    }
-
-    const map = L.map('cart-map').setView([storeLat, storeLng], 12);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    const storeMarker = L.marker([storeLat, storeLng]).addTo(map).bindPopup('Store Location').openPopup();
-    const storeCircle = L.circle([storeLat, storeLng], {
-        radius: storeRadius,
-        color: 'blue',
-        fillColor: '#add8e6',
-        fillOpacity: 0.3
-    }).addTo(map);
-
-    let line, labelMarker, accuracyCircle, watchId;
-
-    function updateLineAndTotals(customerLat, customerLng, accuracy){
-        const meters = distanceMeters(storeLat, storeLng, customerLat, customerLng);
-        const fee = calculateDeliveryFee(meters);
-        const distanceLabel = meters > 1000 ? (meters/1000).toFixed(2) + ' km' : meters.toFixed(0) + ' m';
-
-        if(line) map.removeLayer(line);
-        if(labelMarker) map.removeLayer(labelMarker);
-
-        line = L.polyline([[storeLat, storeLng], [customerLat, customerLng]], {color:'red'}).addTo(map);
-        const midpointLat = (storeLat + customerLat)/2;
-        const midpointLng = (storeLng + customerLng)/2;
-        labelMarker = L.marker([midpointLat, midpointLng], {
-            icon: L.divIcon({
-                className: 'distance-label',
-                html: `<div style="background:white;padding:2px 4px;border:1px solid red;border-radius:4px;font-size:12px;">
-                        ${distanceLabel} | M${fee.toFixed(2)}
-                       </div>`,
-                iconSize: [100,20]
-            })
-        }).addTo(map);
-
-        deliveryEl.textContent = `M${fee.toFixed(2)}`;
-        grandEl.textContent = (baseTotal + fee).toFixed(2);
-
-        latInput.value = customerLat;
-        lngInput.value = customerLng;
-        if(Number.isFinite(accuracy)){
-            accuracyInput.value = accuracy.toFixed(0);
-            if(accuracyCircle) map.removeLayer(accuracyCircle);
-            accuracyCircle = L.circle([customerLat, customerLng], {
-                radius: accuracy,
-                color: '#0071e3',
-                fillColor: '#0071e3',
-                fillOpacity: 0.08,
-                weight: 1
-            }).addTo(map);
-        }
-        feeInput.value = fee.toFixed(2);
-
-        storeCircle.setStyle({
-            fillColor: meters <= storeRadius ? '#90ee90' : '#add8e6',
-            color: meters <= storeRadius ? '#008000' : 'blue'
+    function fetchDeliveryFee(lat, lng) {
+      fetch('{{ url_for("main.api_delivery_fee") }}?lat=' + lat + '&lng=' + lng)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.fee !== null && data.fee !== undefined) {
+            deliveryFee = data.fee;
+            document.getElementById('delivery-fee').value = deliveryFee;
+            document.getElementById('delivery-fee-text').textContent = 'M' + deliveryFee.toFixed(2);
+          } else {
+            deliveryFee = 0;
+            document.getElementById('delivery-fee').value = 0;
+            document.getElementById('delivery-fee-text').textContent = data.message || 'Unable to calculate';
+          }
+          updateTotal();
+        })
+        .catch(function() {
+          document.getElementById('delivery-fee-text').textContent = 'Unable to calculate';
         });
     }
 
-    const customerMarker = L.marker([storeLat, storeLng + 0.01], {draggable:true}).addTo(map).bindPopup('Your Location').openPopup();
-    updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng);
-
-    customerMarker.on('drag', e => {
-        const pos = e.target.getLatLng();
-        accuracyInput.value = '';
-        if(accuracyCircle) map.removeLayer(accuracyCircle);
-        updateLineAndTotals(pos.lat, pos.lng);
-    });
-
-    // Automatic geolocation
-    if(navigator.geolocation){
-        const geoOptions = {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-        };
-        const applyPosition = position => {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
-            customerMarker.setLatLng([userLat, userLng]);
-            map.setView([userLat, userLng], accuracy && accuracy < 80 ? 17 : 15);
-            updateLineAndTotals(userLat, userLng, accuracy);
-            if(watchId && accuracy && accuracy <= 50){
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-        };
-        navigator.geolocation.getCurrentPosition(applyPosition, err => {
-            console.warn("Geolocation failed or denied.");
-        }, geoOptions);
-        watchId = navigator.geolocation.watchPosition(applyPosition, err => {
-            console.warn("Geolocation watch failed.");
-        }, geoOptions);
+    function updateTotal() {
+      var total = subtotal + deliveryFee;
+      document.getElementById('cart-total-amount').textContent = 'M' + total.toFixed(2);
+      document.getElementById('subtotal-amount').textContent = 'M' + subtotal.toFixed(2);
     }
 
-    map.fitBounds([[storeLat, storeLng],[customerMarker.getLatLng().lat, customerMarker.getLatLng().lng]]);
+    // --- Quantity Increase/Decrease Handlers ---
+    document.querySelectorAll('[data-action="increase"]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var itemId = this.dataset.itemId;
+        var cartItem = this.closest('.cart-item');
+        var qtySpan = document.getElementById('item-qty-' + itemId);
+        var lineTotalEl = document.getElementById('item-line-total-' + itemId);
+        var itemPrice = parseFloat(cartItem.dataset.itemPrice);
 
-    document.querySelectorAll('.delivery-option').forEach(opt => {
-        opt.addEventListener('change', () => {
-            const selected = document.querySelector('.delivery-option:checked');
-            if(!selected || selected.value !== 'agent'){
-                deliveryEl.textContent = "M0.00";
-                grandEl.textContent = baseTotal.toFixed(2);
-                feeInput.value = "0.00";
+        fetch('/add_to_cart_ajax', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ product_id: {{ cart.cart_items[0].product_id if cart and cart.cart_items and cart.cart_items[0].product else 'null' }}, custom_meal_id: {{ cart.cart_items[0].custom_meal_id if cart and cart.cart_items and cart.cart_items[0].custom_meal else 'null' }} })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            // Reload the page to get fresh quantities/prices from server
+            location.reload();
+          }
+        })
+        .catch(function(err) { console.debug('increase error', err); });
+      });
+    });
+
+    document.querySelectorAll('[data-action="decrease"]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var itemId = this.dataset.itemId;
+        fetch('/decrement_cart_item/' + itemId, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            if (data.new_quantity === 0) {
+              // Item removed — reload the page
+              location.reload();
             } else {
-                const pos = customerMarker.getLatLng();
-                updateLineAndTotals(pos.lat, pos.lng, parseFloat(accuracyInput.value));
+              // Update quantity display
+              var qtySpan = document.getElementById('item-qty-' + itemId);
+              if (qtySpan) qtySpan.textContent = data.new_quantity;
+
+              // Update line total
+              var cartItem = document.querySelector('[data-item-id="' + itemId + '"]');
+              var itemPrice = parseFloat(cartItem.dataset.itemPrice);
+              var lineTotalEl = document.getElementById('item-line-total-' + itemId);
+              if (lineTotalEl) {
+                var newLineTotal = data.new_quantity * itemPrice;
+                lineTotalEl.textContent = 'M' + newLineTotal.toFixed(2);
+              }
+
+              // Update subtotal from server
+              subtotal = data.cart_total;
+              updateTotal();
+
+              // Update item count
+              var allQtys = document.querySelectorAll('.cart-qty-value');
+              var totalCount = 0;
+              allQtys.forEach(function(q) { totalCount += parseInt(q.textContent || 0); });
+              document.getElementById('item-count').textContent = totalCount;
             }
-        });
+          }
+        })
+        .catch(function(err) { console.debug('decrease error', err); });
+      });
     });
 
-    document.querySelectorAll('.remove-item').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const itemId = btn.dataset.id;
-            const res = await fetch(`/decrement_cart_item/${itemId}`, {method:'POST'});
-            const result = await res.json();
-            if(result.success){
-                const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
-                const qtyEl = row.querySelector('.item-qty');
-                if(result.new_quantity > 0) qtyEl.textContent = result.new_quantity;
-                else row.remove();
-                baseTotal = parseFloat(result.cart_total);
-                subtotalEl.dataset.base = baseTotal;
-                subtotalEl.textContent = `M${baseTotal.toFixed(2)}`;
-                updateLineAndTotals(customerMarker.getLatLng().lat, customerMarker.getLatLng().lng, parseFloat(accuracyInput.value));
-            }
-        });
+    // --- Remove from cart ---
+    document.querySelectorAll('.remove-from-cart').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var itemId = this.dataset.itemId;
+        fetch('/remove_from_cart_ajax/' + itemId, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            location.reload();
+          }
+        })
+        .catch(function(err) { console.debug('remove error', err); });
+      });
     });
 
-});
+    // Delivery method toggle
+    var radioLabels = document.querySelectorAll('.apple-radio');
+    radioLabels.forEach(function(radio) {
+      radio.addEventListener('click', function() {
+        radioLabels.forEach(function(r) { r.classList.remove('selected'); });
+        this.classList.add('selected');
+        var radioInput = this.querySelector('input[type="radio"]');
+        if (radioInput) radioInput.checked = true;
+        
+        // Update delivery fee based on method
+        var method = radioInput ? radioInput.value : 'agent';
+        if (method === 'pickup') {
+          deliveryFee = 0;
+          document.getElementById('delivery-fee').value = 0;
+          document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';
+        } else {
+          // Re-fetch delivery fee for delivery method
+          if (customerLat && customerLng) {
+            fetchDeliveryFee(customerLat, customerLng);
+          } else {
+            document.getElementById('delivery-fee-text').textContent = 'Calculating...';
+          }
+        }
+        updateTotal();
+      });
+    });
+
+    // Set initial delivery method state
+    var initialMethod = document.querySelector('input[name="deliverymethod"]:checked');
+    if (initialMethod && initialMethod.value === 'pickup') {
+      document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';
+      document.getElementById('delivery-fee').value = 0;
+      updateTotal();
+    }
+  });
 </script>
-
-<style>
-    .card { border-radius: 15px; }
-    .card-header { font-weight: bold; }
-    .table-hover tbody tr:hover { background-color: #e6f7f1; }
-    .remove-item:hover { transform: scale(1.1); transition: 0.2s; }
-    #subtotal, #grand-total { font-weight: bold; color: #00b37e; }
-    #delivery-fee { font-weight: bold; color: #ff7f50; }
-</style>
 {% endblock %}

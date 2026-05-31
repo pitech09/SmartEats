@@ -1,65 +1,204 @@
 {% extends "layout.html" %}
+{% block title %}Restaurants – SmartEats{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<style>
+  .filter-bar {
+    display: flex;
+    gap: var(--space-sm);
+    overflow-x: auto;
+    padding-bottom: var(--space-sm);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .restaurant-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+  }
+  
+  @media (max-width: 576px) {
+    .restaurant-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 
-    <h2 class="text-success fw-bold mb-4">Available Stores</h2>
-    <!-- Search Bar -->
-    <div class="mb-4">
-        <form id="searchForm" action="{{ url_for('main.searcher', page_num=1) }}" method="post" class="d-flex justify-content-center">
-        {{ form2.hidden_tag() }}
-        <div class="input-group w-75">
-            {{ form2.keyword(class='form-control border-0 shadow-sm', placeholder='Search for store by name or district or town...') }}
-            <button class="btn btn-success" type="submit">
-            <i class="fas fa-search"></i>
-            </button>
-        </div>
-        </form>
+<div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
+
+  <!-- Page Header -->
+  <div style="margin-bottom:var(--space-xl);">
+    <h1 style="font-size:1.75rem;margin-bottom:4px;">Restaurants Near You</h1>
+    <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:0;">
+      Discover the best local restaurants and cuisines
+    </p>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div style="display:flex;flex-direction:column;gap:var(--space-md);margin-bottom:var(--space-xl);">
+    <form id="searchForm" action="{{ url_for('main.searcher', page_num=1) }}" method="post" class="apple-search" style="max-width:100%;">
+      {{ form2.hidden_tag() }}
+      <i class="fas fa-search apple-search-icon"></i>
+      {{ form2.keyword(class='apple-search-input', placeholder='Search restaurants by name, location, or cuisine...') }}
+      <button type="submit" style="display:none;"></button>
+    </form>
+    
+    <div class="filter-bar">
+      <a href="{{ url_for('main.restuarants') }}" class="category-chip {% if not selected_location and not open_now %}active{% endif %}">
+        <i class="fas fa-th-large"></i> All
+      </a>
+      <a href="{{ url_for('main.restuarants', location='Maputsoe') }}" class="category-chip {% if selected_location == 'Maputsoe' %}active{% endif %}">
+        <i class="fas fa-location-dot"></i> Maputsoe
+      </a>
+      <a href="{{ url_for('main.restuarants', location='Roma') }}" class="category-chip {% if selected_location == 'Roma' %}active{% endif %}">
+        <i class="fas fa-location-dot"></i> Roma
+      </a>
+      <a href="{{ url_for('main.restuarants', location='Leribe') }}" class="category-chip {% if selected_location == 'Leribe' %}active{% endif %}">
+        <i class="fas fa-location-dot"></i> Leribe
+      </a>
+      <a href="{{ url_for('main.restuarants', open_now='1') }}" class="category-chip {% if open_now == '1' %}active{% endif %}">
+        <i class="fas fa-clock"></i> Open Now
+      </a>
     </div>
-    {% if stores %}
-        <div class="row g-4">
-            {% for store in stores %}
-            <div class="col-md-4">
-                <div class="card border-0 shadow-lg rounded-4 h-100">
+  </div>
 
-                    <!-- Card Body -->
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title text-success fw-semibold">
-                            {{ store.name }}
-                        </h5>
-
-                        <p class="card-text text-muted">
-                            Located: {{ store.town or "Not provided" }}, {{store.district or "Not Provided"}}
-
-                        </p>
-                        <h5 class="card-title text-success fw-semibold">
-                            {% if is_store_open(store.openinghours) %}
-                                <span class="badge bg-success ms-2">Open</span>
-                            {% else %}
-                                <span class="badge bg-danger ms-2">Closed</span>
-                            {% endif %}
-                    </h5>
-
-                        <div class="mt-auto d-flex justify-content-between align-items-center">
-                            <a href="{{ url_for('main.store_details', store_id=store.id) }}" 
-                               class="btn btn-outline-success btn-sm rounded-pill px-3">
-                                View Details
-                            </a>
-                            <a href="{{ url_for('main.set_storee', store_id=store.id) }}" 
-                               class="btn btn-success btn-sm rounded-pill px-3">
-                                Choose Restaurant
-                            </a>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-    {% else %}
-        <div class="alert alert-success rounded-4 shadow-sm">
-            No stores Available in this area.
-        </div>
+  <!-- Active Filter Info -->
+  {% if selected_location or open_now == '1' %}
+  <div style="margin-bottom:var(--space-lg);display:flex;align-items:center;gap:var(--space-sm);">
+    <span style="font-size:0.875rem;color:var(--color-text-secondary);">Filtered by:</span>
+    {% if selected_location %}
+    <span class="apple-badge apple-badge-info">
+      {{ selected_location }}
+      <a href="{{ url_for('main.restuarants', open_now=open_now) }}" style="color:inherit;text-decoration:none;margin-left:4px;">
+        <i class="fas fa-times"></i>
+      </a>
+    </span>
     {% endif %}
+    {% if open_now == '1' %}
+    <span class="apple-badge apple-badge-success">
+      Open Now
+      <a href="{{ url_for('main.restuarants', location=selected_location) }}" style="color:inherit;text-decoration:none;margin-left:4px;">
+        <i class="fas fa-times"></i>
+      </a>
+    </span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Restaurant Grid -->
+  {% if stores %}
+  <div class="restaurant-grid">
+    {% for store in stores %}
+    <div class="restaurant-card">
+      <div class="restaurant-card-image">
+        <img src="{{ url_for('static', filename='css/images/profiles/default.png') }}" alt="{{ store.name }}" loading="lazy">
+        {% if is_store_open is defined and is_store_open(store.openinghours) %}
+        <span class="restaurant-card-status open">Open</span>
+        {% else %}
+        <span class="restaurant-card-status closed">Closed</span>
+        {% endif %}
+      </div>
+      <div class="restaurant-card-body">
+        <h3 class="restaurant-card-name">{{ store.name }}</h3>
+        
+        <div class="restaurant-card-meta">
+          <span class="restaurant-card-rating">
+            <i class="fas fa-star"></i> 
+            <span>{{ 4.5 }}</span>
+          </span>
+          <span class="restaurant-card-delivery">
+            <i class="fas fa-clock"></i> 25-35 min
+          </span>
+          {% if store.town and store.town != 'None' %}
+          <span class="restaurant-card-distance">
+            <i class="fas fa-location-dot"></i> {{ store.town }}
+          </span>
+          {% endif %}
+          {% if store.district and store.district != 'None' %}
+          <span class="restaurant-card-cuisine">{{ store.district }}</span>
+          {% endif %}
+        </div>
+        
+        {% if store.openinghours and store.openinghours != 'None' %}
+        <p style="font-size:0.75rem;color:var(--color-text-secondary);margin:0 0 12px 0;">
+          <i class="fas fa-clock"></i> {{ store.openinghours }}
+        </p>
+        {% endif %}
+        
+        <div style="display:flex;gap:8px;">
+          <a href="{{ url_for('main.store_details', store_id=store.id) }}" class="apple-btn apple-btn-secondary apple-btn-sm" style="flex:1;">
+            <i class="fas fa-info-circle"></i> Details
+          </a>
+          {% if current_user.is_authenticated %}
+          <a href="{{ url_for('main.set_storee', store_id=store.id) }}" class="apple-btn apple-btn-primary apple-btn-sm" style="flex:1;">
+            <i class="fas fa-arrow-right"></i> Order
+          </a>
+          {% else %}
+          <a href="{{ url_for('auth.newlogin') }}" class="apple-btn apple-btn-primary apple-btn-sm" style="flex:1;">
+            <i class="fas fa-sign-in-alt"></i> Sign In to Order
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages and total_pages > 1 %}
+  <div style="display:flex;justify-content:center;gap:var(--space-sm);margin-top:var(--space-xl);">
+    {% if page_num is defined and page_num > 1 %}
+    <a href="{{ url_for('main.restuarants', page=page_num-1, location=selected_location, open_now=open_now) }}" 
+       class="apple-btn apple-btn-secondary">
+      <i class="fas fa-chevron-left"></i>
+    </a>
+    {% endif %}
+    {% for p in range(1, total_pages + 1) %}
+    <a href="{{ url_for('main.restuarants', page=p, location=selected_location, open_now=open_now) }}" 
+       class="apple-btn apple-btn-sm {% if p == (page_num or 1) %}apple-btn-primary{% else %}apple-btn-secondary{% endif %}">
+      {{ p }}
+    </a>
+    {% endfor %}
+    {% if page_num is defined and page_num < total_pages %}
+    <a href="{{ url_for('main.restuarants', page=page_num+1, location=selected_location, open_now=open_now) }}" 
+       class="apple-btn apple-btn-secondary">
+      <i class="fas fa-chevron-right"></i>
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <!-- Empty State -->
+  <div class="apple-empty" style="padding:var(--space-4xl) var(--space-lg);">
+    <div class="apple-empty-icon">
+      <i class="fas fa-store"></i>
+    </div>
+    <div class="apple-empty-title">No Restaurants Found</div>
+    <div class="apple-empty-text">
+      {% if selected_location or open_now == '1' %}
+        No restaurants match your current filters. Try adjusting your filters.
+      {% elif form2.keyword.data %}
+        No restaurants matching "{{ form2.keyword.data }}". Try a different search term.
+      {% else %}
+        There are no restaurants available in your area yet. Check back soon!
+      {% endif %}
+    </div>
+    {% if selected_location or open_now == '1' %}
+    <a href="{{ url_for('main.restuarants') }}" class="apple-btn apple-btn-primary">
+      <i class="fas fa-times"></i> Clear Filters
+    </a>
+    {% else %}
+    <a href="{{ url_for('auth.registerstore') }}" class="apple-btn apple-btn-primary">
+      <i class="fas fa-plus"></i> Register Your Restaurant
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

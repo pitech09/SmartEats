@@ -1,66 +1,245 @@
 {% extends "layout.html" %}
-{% block title %}My Orders - SmartEats{% endblock %}
-{% block content %}
+{% block title %}My Orders – SmartEats{% endblock %}
 
+{% block content %}
 <style>
-.order-list { margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; }
-.order-list .btn { border-radius: 50px; padding: 0.55rem 1.4rem; font-weight: 500; background-color: #e7f0ff; border: 1px solid #bcd4ff; color: #0a5bd3; transition: all 0.28s ease; }
-.order-list .btn:hover { background-color: #d4f7df; border-color: #8ce3a4; color: #166e2e; transform: translateY(-3px); box-shadow: 0 6px 14px rgba(0,0,0,0.08); cursor: pointer; }
-.order-card { background: #fff; border-radius: 14px; padding: 18px 22px; margin-bottom: 18px; border: 1px solid #eef1f5; box-shadow: 0 4px 12px rgba(0,0,0,0.04); transition: all 0.3s ease; }
-.order-card:hover { transform: translateY(-4px); box-shadow: 0 8px 18px rgba(0,0,0,0.08); }
-.order-card h3 { margin-bottom: 10px; color: #222; font-weight: 600; }
-.order-card p { margin: 4px 0; color: #555; font-size: 0.95rem; }
-.empty-message { padding: 20px; font-size: 1.1rem; color: #444; border-radius: 12px; background: #f8f9fb; text-align: center; border: 1px solid #e2e6eb; }
-ul { padding-left: 18px; margin: 6px 0; }
-ul li { margin-bottom: 4px; font-size: 0.92rem; color: #333; }
+  .order-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid var(--color-border-light);
+    transition: all var(--transition-base);
+    margin-bottom: var(--space-lg);
+  }
+  
+  .order-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .order-header {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  
+  .order-body {
+    padding: var(--space-lg);
+  }
+  
+  .order-item-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  
+  .order-item-row:last-child {
+    border-bottom: none;
+  }
+  
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+  
+  .status-badge.pending {
+    background: #FFF3E0;
+    color: #B76E00;
+  }
+  
+  .status-badge.processing {
+    background: #E3F2FD;
+    color: #1565C0;
+  }
+  
+  .status-badge.accepted {
+    background: #E8F5E9;
+    color: #2E7D32;
+  }
+  
+  .status-badge.completed {
+    background: #E8F5E9;
+    color: #1B5E20;
+  }
+  
+  .status-badge.cancelled {
+    background: #FFEBEE;
+    color: #C62828;
+  }
+  
+  @media (max-width: 576px) {
+    .order-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
 </style>
 
-<div class="order-list">
-    <button class="btn" onclick="window.location.href='{{ url_for('main.myorders')}}'">Active/Pending Orders</button>
-    <button class="btn" onclick="window.location.href='{{ url_for('main.completed_order') }}'">Order History</button>
-    <button class="btn" onclick="window.location.href='{{ url_for('main.cancelled_orders')}}'">Cancelled Orders</button>
-</div>
+<div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
 
-<section class="order-list" id="active-orders">
-    {% if not order %}
-        <div class="empty-message">
-            You have no active orders just yet. Navigate to menu and add your order.
+  <!-- Page Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
+    <div>
+      <h1 style="font-size:1.5rem;margin:0;">My Orders</h1>
+      <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:4px 0 0 0;">Track and manage your active orders</p>
+    </div>
+    <div style="display:flex;gap:var(--space-sm);">
+      <a href="{{ url_for('main.completed_order') }}" class="apple-btn apple-btn-secondary">
+        <i class="fas fa-history"></i> History
+      </a>
+      <a href="{{ url_for('main.restuarants') }}" class="apple-btn apple-btn-primary">
+        <i class="fas fa-plus"></i> New Order
+      </a>
+    </div>
+  </div>
+
+  {% if order %}
+  {% for o in order %}
+  <div class="order-card">
+    <div class="order-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap;">
+          <h3 style="font-family:var(--font-display);font-size:1.0625rem;font-weight:600;margin:0;">
+            Order #{{ o.order_id }}
+          </h3>
+          {% if o.status == 'Pending' %}
+          <span class="status-badge pending"><i class="fas fa-clock"></i> Pending</span>
+          {% elif o.status == 'Processing' %}
+          <span class="status-badge processing"><i class="fas fa-cog fa-spin"></i> Processing</span>
+          {% elif o.status == 'Accepted' %}
+          <span class="status-badge accepted"><i class="fas fa-check"></i> Accepted</span>
+          {% elif o.status == 'Completed' %}
+          <span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span>
+          {% elif o.status == 'Cancelled' %}
+          <span class="status-badge cancelled"><i class="fas fa-times"></i> Cancelled</span>
+          {% else %}
+          <span class="status-badge pending"><i class="fas fa-clock"></i> {{ o.status }}</span>
+          {% endif %}
         </div>
-    {% else %}
-        {% for o in order %}
-        <div class="order-card">
-            <h3>Order ID: {{ o.order_id }}</h3>
-            <p>Status: {{ o.status }}</p>
-            <p>Source: {{ o.store.name if o.store else 'N/A' }}</p>
-            <p>Destination: {{ o.location }}</p>
-            <p>Delivery By: {{ o.deliveryguy or 'N/A' }}</p>
-            <p>Order Date: {{ o.create_at.strftime('%Y-%m-%d @ %H:%M') }}</p>
-            <p>Delivery Fee: M{{ '%.2f'|format(o.deliveryfee) }}</p>
-            <hr>
-            <h5>Items:</h5>
-            <ul>
-                <!-- Regular products -->
-                {% for item in o.order_items %}
-                <li>{{ item.product_name }} x {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})</li>
-                {% endfor %}
+        <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:4px 0 0 0;">
+          {{ o.create_at.strftime('%b %d, %Y at %I:%M %p') if o.create_at else 'Date not available' }}
+        </p>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:600;font-size:1.125rem;color:var(--color-text-primary);">M{{ '%.2f'|format(o.deliveryfee or 0) }}</div>
+        <div style="font-size:0.8125rem;color:var(--color-text-secondary);">
+          {% if o.location == 'pickup' %}Pickup{% else %}Delivery{% endif %}
+        </div>
+      </div>
+    </div>
 
-                <!-- Custom meals -->
-                {% for cm in o.custom_meals %}
-                <li>
-                    {{ cm.name }} x 1 (M{{ '%.2f'|format(cm.total_price) }})
-                    {% if cm.ingredients %}
-                    <ul>
-                        {% for ing in cm.ingredients %}
-                        <li>{{ ing.ingredient_name }} x {{ ing.quantity }} (M{{ '%.2f'|format(ing.ingredient_price) }})</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
+    <div class="order-body">
+      <!-- Order Items -->
+      <div style="margin-bottom:var(--space-md);">
+        <h4 style="font-family:var(--font-display);font-size:0.9375rem;font-weight:600;margin-bottom:var(--space-sm);color:var(--color-text-secondary);">ITEMS</h4>
+        {% if o.order_items %}
+        {% for item in o.order_items %}
+        <div class="order-item-row">
+          <div style="flex:1;">
+            <div style="font-weight:500;">{{ item.quantity }}x {{ item.product_name }}</div>
+          </div>
+          <div style="font-weight:600;">M{{ '%.2f'|format(item.product_price * item.quantity) }}</div>
         </div>
         {% endfor %}
-    {% endif %}
-</section>
+        {% else %}
+        <p style="font-size:0.875rem;color:var(--color-text-secondary);">No items found</p>
+        {% endif %}
+      </div>
 
+      <!-- Order Timeline -->
+      <div>
+        <h4 style="font-family:var(--font-display);font-size:0.9375rem;font-weight:600;margin-bottom:var(--space-md);color:var(--color-text-secondary);">TRACKING</h4>
+        <div class="order-timeline">
+          <div class="order-timeline-item">
+            <div class="order-timeline-dot completed"></div>
+            <div class="order-timeline-time">{{ o.create_at.strftime('%I:%M %p') if o.create_at else '' }}</div>
+            <div class="order-timeline-label">Order Placed</div>
+          </div>
+          <div class="order-timeline-item">
+            <div class="order-timeline-dot {% if o.status not in ['Pending', 'Cancelled'] %}completed{% elif o.status == 'Pending' %}active{% endif %}"></div>
+            <div class="order-timeline-time">-</div>
+            <div class="order-timeline-label">Order Confirmed</div>
+          </div>
+          <div class="order-timeline-item">
+            <div class="order-timeline-dot {% if o.status == 'Accepted' %}active{% elif o.status in ['Completed'] %}completed{% endif %}"></div>
+            <div class="order-timeline-time">-</div>
+            <div class="order-timeline-label">Preparing Your Food</div>
+          </div>
+          <div class="order-timeline-item">
+            <div class="order-timeline-dot {% if o.status == 'Completed' %}completed{% endif %}"></div>
+            <div class="order-timeline-time">-</div>
+            <div class="order-timeline-label">
+              {% if o.location == 'pickup' %}Ready for Pickup{% else %}Out for Delivery{% endif %}
+            </div>
+          </div>
+          <div class="order-timeline-item">
+            <div class="order-timeline-dot {% if o.status == 'Completed' %}completed{% endif %}"></div>
+            <div class="order-timeline-time">-</div>
+            <div class="order-timeline-label">Delivered ✓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Info -->
+      {% if o.location and o.location != 'pickup' %}
+      <div style="margin-top:var(--space-md);padding-top:var(--space-md);border-top:1px solid var(--color-border-light);">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.875rem;color:var(--color-text-secondary);">
+          <i class="fas fa-location-dot" style="color:var(--color-accent);"></i>
+          Deliver to: <strong style="color:var(--color-text-primary);">{{ o.location }}</strong>
+        </div>
+        {% if o.customer_phone %}
+        <div style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.875rem;color:var(--color-text-secondary);margin-top:4px;">
+          <i class="fas fa-phone" style="color:var(--color-accent);"></i>
+          Contact: <strong style="color:var(--color-text-primary);">{{ o.customer_phone }}</strong>
+        </div>
+        {% endif %}
+        {% if o.deliveryguy and o.deliveryguy != 'Not Taken' %}
+        <div style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.875rem;color:var(--color-text-secondary);margin-top:4px;">
+          <i class="fas fa-motorcycle" style="color:var(--color-accent);"></i>
+          Driver: <strong style="color:var(--color-text-primary);">{{ o.deliveryguy }}</strong>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Order Footer Actions -->
+    {% if o.status in ['Pending', 'Processing', 'Accepted'] %}
+    <div style="padding:var(--space-md) var(--space-lg);border-top:1px solid var(--color-border-light);display:flex;gap:var(--space-sm);flex-wrap:wrap;">
+      {% if current_user.is_authenticated %}
+      <a href="#" class="apple-btn apple-btn-secondary apple-btn-sm">
+        <i class="fas fa-headset"></i> Contact Support
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <!-- Empty State -->
+  <div class="apple-empty" style="padding:var(--space-4xl) var(--space-lg);">
+    <div class="apple-empty-icon">
+      <i class="fas fa-box-open"></i>
+    </div>
+    <div class="apple-empty-title">No Active Orders</div>
+    <div class="apple-empty-text">
+      You don't have any active orders. Browse restaurants and place your first order!
+    </div>
+    <a href="{{ url_for('main.restuarants') }}" class="apple-btn apple-btn-primary apple-btn-lg">
+      <i class="fas fa-store"></i> Browse Restaurants
+    </a>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

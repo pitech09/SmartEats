@@ -1,65 +1,263 @@
 {% extends "layout.html" %}
+{% block title %}{{ restuarant.name }} – Details{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<style>
+  .restaurant-hero {
+    height: 320px;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    overflow: hidden;
+    position: relative;
+    margin: calc(var(--space-xl) * -1) 0 var(--space-xl) 0;
+  }
+  
+  .restaurant-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .restaurant-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+  }
+  
+  .restaurant-hero-content {
+    position: absolute;
+    bottom: var(--space-xl);
+    left: var(--space-xl);
+    right: var(--space-xl);
+    color: white;
+  }
+  
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+  
+  .info-card {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-light);
+  }
+  
+  .info-card-title {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin-bottom: var(--space-md);
+    color: var(--color-text-primary);
+  }
+  
+  .detail-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  
+  .detail-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: rgba(0, 113, 227, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-accent);
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  
+  .detail-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+  }
+  
+  .detail-value {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+  
+  @media (max-width: 768px) {
+    .restaurant-hero {
+      height: 220px;
+      border-radius: 0;
+      margin-top: calc(var(--space-xl) * -1);
+    }
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 
-    <div class="card border-0 shadow-lg rounded-4">
-        <div class="card-body p-4">
+<!-- Restaurant Hero -->
+<div class="restaurant-hero">
+  <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80" 
+       alt="{{ restuarant.name }}" loading="lazy">
+  <div class="restaurant-hero-overlay"></div>
+  <div class="restaurant-hero-content">
+    <h1 style="font-size:2rem;margin:0 0 4px 0;color:white;">{{ restuarant.name }}</h1>
+    <div style="display:flex;flex-wrap:wrap;gap:var(--space-md);align-items:center;">
+      <span><i class="fas fa-star" style="color:var(--color-warning);"></i> {{ 4.5 }}</span>
+      <span><i class="fas fa-clock"></i> {{ restuarant.openinghours or 'Not specified' }}</span>
+      <span><i class="fas fa-location-dot"></i> {{ restuarant.town }}{% if restuarant.district and restuarant.district != 'None' %}, {{ restuarant.district }}{% endif %}</span>
+    </div>
+  </div>
+</div>
 
-            <!-- Restaurant Name -->
-            <h2 class="text-success fw-bold mb-3">
-                {{ restuarant.name }}
-            </h2>
+<div class="container" style="padding-bottom:var(--space-2xl);">
+  <div class="detail-grid">
+    <!-- Main content -->
+    <div>
+      <!-- About -->
+      <div class="info-card" style="margin-bottom:var(--space-lg);">
+        <h2 class="info-card-title">About {{ restuarant.name }}</h2>
+        <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:0;">
+          {{ restuarant.name }} is located in {{ restuarant.town or 'our service area' }}, 
+          {{ restuarant.district or 'Lesotho' }}. We serve fresh, delicious meals 
+          prepared with quality ingredients. Order online for delivery or pickup.
+        </p>
+        {% if registered_for %}
+        <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin-top:var(--space-md);">
+          <i class="fas fa-calendar"></i> Registered for {{ registered_for }}
+        </p>
+        {% endif %}
+      </div>
 
-            <!-- Image -->
-            {% if restuarant.image_url %}
-                <div class="text-center mb-4">
-                    <img src="{{ restuarant.image_url }}"
-                         alt="{{ restuarant.name }}"
-                         class="img-fluid rounded-4 shadow-sm"
-                         style="max-height: 260px; object-fit: cover;">
-                </div>
-            {% endif %}
-
-            <!-- Details List -->
-            <ul class="list-group mb-4 rounded-4">
-                <li class="list-group-item py-3">
-                    <strong class="text-success">Location:</strong>
-                    <span class="text-muted">{{ restuarant.address or "Not specified" }}</span>
-                </li>
-                <li class="list-group-item py-3">
-                    <strong class="text-success">Contact:</strong>
-                    <span class="text-muted">{{ restuarant.phone or "N/A" }}</span>
-                </li>
-                <li class="list-group-item py-3">
-                    <strong class="text-success">Email:</strong>
-                    <span class="text-muted">{{ restuarant.email or "N/A" }}</span>
-                </li>
-                <li class="list-group-item py-3">
-                    <strong class="text-success">Opening Hours:</strong>
-                    <span class="text-muted">{{ restuarant.openinghours or "Not available" }}</span>
-                </li>
-                <li class="list-group-item py-3">
-                    <strong class="text-success">Registered:</strong>
-                    <span class="text-muted">{{ registered_for }} ago</span>
-                </li>
-            </ul>
-
-            <!-- Buttons -->
-            <div class="d-flex justify-content-between">
-                <a href="{{ url_for('main.restuarants') }}"
-                   class="btn btn-outline-success rounded-pill px-4">
-                    Back to Stores
-                </a>
-
-                <a href="{{ url_for('main.set_storee', store_id=restuarant.id) }}"
-                   class="btn btn-success rounded-pill px-4">
-                    Choose Store
-                </a>
-            </div>
-
+      <!-- Info -->
+      <div class="info-card" style="margin-bottom:var(--space-lg);">
+        <h2 class="info-card-title">Restaurant Info</h2>
+        <div class="detail-row">
+          <div class="detail-icon"><i class="fas fa-clock"></i></div>
+          <div><div class="detail-value">Hours</div><div class="detail-label">{{ restuarant.openinghours or 'Not specified' }}</div></div>
         </div>
+        <div class="detail-row">
+          <div class="detail-icon"><i class="fas fa-phone"></i></div>
+          <div><div class="detail-value">Phone</div><div class="detail-label">{{ restuarant.phone or 'Not provided' }}</div></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-icon"><i class="fas fa-envelope"></i></div>
+          <div><div class="detail-value">Email</div><div class="detail-label">{{ restuarant.email or 'Not provided' }}</div></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-icon"><i class="fas fa-location-dot"></i></div>
+          <div><div class="detail-value">Location</div><div class="detail-label">{{ restuarant.town or 'N/A' }}, {{ restuarant.district or 'N/A' }}</div></div>
+        </div>
+      </div>
+
+      <!-- Sample Menu Items (placeholder reviews) -->
+      <div class="info-card">
+        <h2 class="info-card-title">What Customers Say</h2>
+        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-md);">
+          <div style="text-align:center;">
+            <div style="font-size:2rem;font-weight:700;color:var(--color-warning);">4.5</div>
+            <div class="apple-stars" style="justify-content:center;">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+            </div>
+            <div style="font-size:0.8125rem;color:var(--color-text-secondary);">24 reviews</div>
+          </div>
+          <div class="rating-breakdown" style="flex:1;">
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">5</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:70%;"></div></div>
+              <span class="rating-bar-count">16</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">4</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:20%;"></div></div>
+              <span class="rating-bar-count">5</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">3</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:8%;"></div></div>
+              <span class="rating-bar-count">2</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">2</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%;"></div></div>
+              <span class="rating-bar-count">0</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">1</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:4%;"></div></div>
+              <span class="rating-bar-count">1</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sample review -->
+        <div class="review-card" style="box-shadow:none;border:1px solid var(--color-border-light);padding:var(--space-md);">
+          <div class="review-header">
+            <img src="https://i.pravatar.cc/40?img=3" alt="Reviewer" class="review-avatar">
+            <div class="review-user-info">
+              <div class="review-user-name">Teboho M.</div>
+              <div class="review-date"><i class="fas fa-check-circle" style="color:var(--color-success);font-size:0.75rem;"></i> Verified Order</div>
+            </div>
+            <div class="apple-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+          </div>
+          <div class="review-body">Excellent food! The portions are generous and the delivery was faster than expected.</div>
+          <div class="review-actions">
+            <button class="review-helpful-btn"><i class="far fa-thumbs-up"></i> Helpful (12)</button>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- Sidebar -->
+    <div style="position:sticky;top:80px;">
+      <div class="info-card" style="margin-bottom:var(--space-lg);">
+        <div style="text-align:center;margin-bottom:var(--space-md);">
+          {% if restuarant.openinghours and '24/7' in restuarant.openinghours.lower() %}
+          <span class="apple-badge apple-badge-success" style="font-size:0.875rem;padding:4px 16px;">
+            <i class="fas fa-clock"></i> Open 24/7
+          </span>
+          {% elif is_store_open(restuarant.openinghours) %}
+          <span class="apple-badge apple-badge-success" style="font-size:0.875rem;padding:4px 16px;">
+            <i class="fas fa-check-circle"></i> Open Now
+          </span>
+          {% else %}
+          <span class="apple-badge apple-badge-danger" style="font-size:0.875rem;padding:4px 16px;">
+            <i class="fas fa-clock"></i> Closed
+          </span>
+          {% endif %}
+        </div>
+        
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.set_storee', store_id=restuarant.id) }}" class="apple-btn apple-btn-primary apple-btn-lg apple-btn-block" style="margin-bottom:var(--space-sm);">
+          <i class="fas fa-arrow-right"></i> View Menu & Order
+        </a>
+        {% else %}
+        <a href="{{ url_for('auth.newlogin') }}" class="apple-btn apple-btn-primary apple-btn-lg apple-btn-block" style="margin-bottom:var(--space-sm);">
+          <i class="fas fa-sign-in-alt"></i> Sign In to Order
+        </a>
+        {% endif %}
+        
+        <a href="{{ url_for('main.restuarants') }}" class="apple-btn apple-btn-secondary apple-btn-block">
+          <i class="fas fa-arrow-left"></i> All Restaurants
+        </a>
+      </div>
+      
+      <!-- Delivery info -->
+      <div class="info-card">
+        <h3 class="info-card-title">Delivery Info</h3>
+        <div style="font-size:0.875rem;color:var(--color-text-secondary);">
+          <p><i class="fas fa-map-pin" style="margin-right:8px;color:var(--color-accent);"></i> Delivery available in {{ restuarant.district or 'local area' }}</p>
+          <p><i class="fas fa-truck" style="margin-right:8px;color:var(--color-accent);"></i> Estimated delivery: 25-35 min</p>
+          <p><i class="fas fa-money-bill" style="margin-right:8px;color:var(--color-accent);"></i> Cash, EcoCash, M-Pesa accepted</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

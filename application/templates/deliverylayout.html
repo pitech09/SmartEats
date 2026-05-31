@@ -22,9 +22,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/adminstyles.css')}}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/_Layout.css')}}"/>
 
-  <!-- Pace.js Loader -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/green/pace-theme-minimal.css') }}">
-  <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
+  <!-- Pace.js Loader (CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/templates/pace-theme-minimal/pace-theme-minimal.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RXFP2GFTF4"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -98,8 +98,8 @@
               </li>
             {% else %}
               <li class="nav-item"><a href="{{ url_for('auth.newlogin') }}" class="btn btn-outline-success rounded-pill">Login</a></li>
-              <li class="nav-item"><a href="{{ url_for('auth.register', Options=1) }}" class="btn btn-outline-success rounded-pill">Register</a></li>
-              <li class="nav-item"><a href="{{ url_for('auth.registerpharmacy') }}" class="btn btn-outline-success rounded-pill">Store Register</a></li>
+              <li class="nav-item"><a href="{{ url_for('auth.register') }}" class="btn btn-outline-success rounded-pill">Register</a></li>
+              <li class="nav-item"><a href="{{ url_for('auth.registerstore') }}" class="btn btn-outline-success rounded-pill">Store Register</a></li>
             {% endif %}
           </ul>
         </div>
@@ -131,7 +131,7 @@
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='lib/jquery/dist/jquery.min.js') }}"></script>
   <script src="{{ url_for('static', filename='lib/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/site.js') }}"></script>
+  <!-- site.js removed: no local file available -->
   <script>$(document).on('ajaxStart', function(){ Pace.restart(); });</script>
 </body>
 </html>

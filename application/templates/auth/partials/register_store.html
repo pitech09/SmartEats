@@ -9,7 +9,7 @@
     <h5 class="mb-2">This is a good start.</h5>
     <p class="mb-4">Reach more customers today. Increase sales hassle free.</p>
 
-    <form id="registerStoreForm" class="mb-3" action="{{ url_for('auth.ajax_registerstore') }}" method="POST">
+    <form id="registerStoreForm" class="mb-3" action="{{ url_for('auth.registerstore') }}" method="POST">
       {{ store_form.hidden_tag() }}
 
       {% for field in [

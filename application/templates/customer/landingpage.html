@@ -1,218 +1,613 @@
 {% extends "layout.html" %}
-{% block title %}SmartEats | Fresh Meals Delivered{% endblock %}
+{% block title %}SmartEats – Premium Food Delivery in Lesotho{% endblock %}
 
 {% block content %}
-
 <style>
-/* ===== Hero Section ===== */
-.hero {
-    background: linear-gradient(135deg, #FF4B3E, #FFB347, #FFD93D, #6FCF97);
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
-    color: #fff;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    border-radius: 1rem;
-    padding: 3rem 1rem;
-    transition: transform 0.3s;
-}
-.hero:hover { transform: scale(1.01); }
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.hero .btn { transition: transform 0.2s, box-shadow 0.2s; }
-.hero .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
-
-/* ===== Cards ===== */
-.se-carousel-card, .store-card, .hcl-card {
-    border-radius: 1rem;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    background: #fff;
-}
-.se-carousel-card:hover, .store-card:hover, .hcl-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 20px rgba(0,0,0,0.25);
-}
-
-/* Carousel image box */
-.se-carousel-image-box {
+  /* Landing page hero overlay */
+  .hero-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, 
+      rgba(0,0,0,0.15) 0%, 
+      rgba(0,0,0,0.4) 50%, 
+      rgba(0,0,0,0.75) 100%
+    );
+    z-index: 1;
+  }
+  
+  .hero-content {
     position: relative;
-    height: 280px;
-    background: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    z-index: 2;
+  }
+  
+  /* Decorative food image grid */
+  .food-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    position: absolute;
+    inset: 0;
     overflow: hidden;
-}
-.se-carousel-image-box img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s ease; }
-.se-carousel-image-box:hover img { transform: scale(1.03); }
-
-/* Overlay */
-.se-carousel-overlay {
+  }
+  
+  .food-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+    transition: transform 0.6s ease;
+  }
+  
+  .food-grid-item {
+    overflow: hidden;
+  }
+  
+  .food-grid-item:nth-child(1) { grid-row: 1 / 3; }
+  .food-grid-item:nth-child(2) { grid-column: 2; grid-row: 1; }
+  .food-grid-item:nth-child(3) { grid-column: 2; grid-row: 2; }
+  
+  /* Category card hover */
+  .category-card {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    aspect-ratio: 1/1;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  
+  .category-card:hover {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .category-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+  }
+  
+  .category-card:hover img {
+    transform: scale(1.1);
+  }
+  
+  .category-card-label {
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 100%;
-    background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
-    color: #fff;
-    padding: 10px 15px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    font-size: 1rem;
+    right: 0;
+    padding: var(--space-lg) var(--space-md) var(--space-md);
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    color: white;
+    font-family: var(--font-display);
     font-weight: 600;
-}
-.se-carousel-image-box:hover .se-carousel-overlay { opacity: 1; }
-
-/* Store Cards */
-.store-card { text-align: center; padding: 10px; }
-.store-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 0.8rem; }
-.store-card h6 { margin-top: 0.5rem; font-weight: 600; }
-
-/* HCL Cards */
-.hcl-card { text-align: center; padding: 2rem 1rem; color: #fff; transition: transform 0.3s, box-shadow 0.3s; }
-.hcl-card h5 { font-weight: 600; }
-.hcl-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-
-/* Carousel controls */
-.carousel-control-prev-icon, .carousel-control-next-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-
-/* Responsive */
-@media (max-width: 768px) {
-    .se-carousel-image-box { height: 200px; }
-    .store-card img { height: 140px; }
-    .hcl-card { padding: 1.5rem 1rem; }
-}
-@media (max-width: 480px) {
-    .se-carousel-image-box { height: 150px; }
-    .store-card img { height: 120px; }
-    .store-card h6 { font-size: 0.95rem; }
-    .hcl-card { padding: 1rem; font-size: 0.9rem; }
-}
+    font-size: 1.125rem;
+  }
+  
+  /* Featured meal card - larger */
+  .featured-meal-card {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: var(--color-card);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    cursor: pointer;
+  }
+  
+  .featured-meal-card:hover {
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px);
+  }
+  
+  .featured-meal-card .meal-image-wrapper {
+    height: 240px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .featured-meal-card .meal-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+  }
+  
+  .featured-meal-card:hover .meal-image-wrapper img {
+    transform: scale(1.05);
+  }
+  
+  /* Stats section */
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--color-text-primary);
+  }
+  
+  .stat-label {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+  }
+  
+  /* Marquee-like scrolling for testimonials */
+  .testimonials-scroll {
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .testimonials-track {
+    display: flex;
+    gap: var(--space-lg);
+    animation: scroll 30s linear infinite;
+    width: max-content;
+  }
+  
+  .testimonials-track:hover {
+    animation-play-state: paused;
+  }
+  
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  .testimonial-card {
+    min-width: 320px;
+    max-width: 360px;
+  }
+  
+  @media (max-width: 768px) {
+    .featured-meal-card .meal-image-wrapper {
+      height: 180px;
+    }
+    
+    .stat-number {
+      font-size: 1.75rem;
+    }
+    
+    .testimonial-card {
+      min-width: 260px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .apple-hero h1 {
+      font-size: 2rem;
+    }
+  }
 </style>
 
-<div class="container">
-
-<!-- Hero Section -->
-<section class="hero text-center mb-5">
-    <h1 class="display-4 mb-3">Delicious Meals Delivered Fast!</h1>
-    <p class="lead mb-4">Browse top restaurants in Maputsoe, Roma & Leribe. Order your favorites in just a few taps.</p>
-    <a href="{{url_for('auth.newlogin')}}" class="btn btn-primary btn-lg me-2">Order Now</a>
-    <a href="{{url_for('auth.registerstore')}}" class="btn btn-outline-light btn-lg">Join as a Restaurant</a>
+<!-- ===== HERO SECTION ===== -->
+<section class="apple-hero" style="position:relative;min-height:85vh;display:flex;align-items:center;background:var(--color-card);padding:0;overflow:hidden;">
+  <!-- Background Image Grid -->
+  <div class="food-grid">
+    <div class="food-grid-item">
+      <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80" alt="Delicious food" loading="lazy">
+    </div>
+    <div class="food-grid-item">
+      <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" alt="Pizza" loading="lazy">
+    </div>
+    <div class="food-grid-item">
+      <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" alt="Grilled food" loading="lazy">
+    </div>
+  </div>
+  
+  <!-- Gradient Overlay -->
+  <div class="hero-gradient"></div>
+  
+  <!-- Content -->
+  <div class="hero-content" style="width:100%;padding:var(--space-2xl) var(--space-lg);">
+    <div class="container" style="max-width:720px;">
+      <p class="apple-badge apple-badge-info" style="margin:0 auto var(--space-lg);display:inline-flex;font-size:0.8125rem;background:rgba(255,255,255,0.2);color:white;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15);">
+        <i class="fas fa-motorcycle" style="margin-right:6px;"></i> 
+        Food delivery in Lesotho
+      </p>
+      
+      <h1 style="color:white;font-size:clamp(2.5rem,6vw,4rem);margin-bottom:var(--space-md);">
+        Great food<br>
+        <span style="background:linear-gradient(135deg,#FFD60A,#FF9F0A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">delivered fast</span>
+      </h1>
+      
+      <p style="color:rgba(255,255,255,0.7);font-size:1.25rem;max-width:560px;margin:0 auto var(--space-xl);">
+        Order from the best local restaurants in Maputsoe, Roma & Leribe. 
+        Fresh, hot meals delivered to your door.
+      </p>
+      
+      <div class="apple-hero-actions" style="flex-direction:column;gap:var(--space-lg);">
+        <!-- Search -->
+        <div class="apple-search" style="max-width:560px;width:100%;">
+          <i class="fas fa-search apple-search-icon"></i>
+          <input type="text" class="apple-search-input" placeholder="Search for restaurants or meals..." 
+                 style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.2);padding:16px 20px 16px 48px;font-size:1.0625rem;">
+          <div class="apple-search-results"></div>
+        </div>
+        
+        <div style="display:flex;gap:var(--space-md);flex-wrap:wrap;justify-content:center;">
+          <a href="{{ url_for('auth.newlogin') }}" class="apple-btn apple-btn-lg" 
+             style="background:var(--color-accent);color:white;padding:14px 32px;font-size:1.0625rem;">
+            <i class="fas fa-arrow-right"></i> Order Now
+          </a>
+          <a href="{{ url_for('auth.registerstore') }}" class="apple-btn apple-btn-lg" 
+             style="background:rgba(255,255,255,0.12);color:white;border:1px solid rgba(255,255,255,0.25);padding:14px 32px;font-size:1.0625rem;">
+            <i class="fas fa-store"></i> Partner With Us
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- Ads Carousel -->
-{% if ads %}
-<div id="adsCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
-    <div class="carousel-inner">
-        {% for ad in ads %}
-        <div class="carousel-item {% if loop.first %}active{% endif %}">
-            <a class="text-decoration-none" href="{% if ad.link_type == 'product' %}{{ url_for('main.product_detail', product_id=ad.product_id) }}{% elif ad.link_type == 'store' %}{{ url_for('main.go_to_store', store_id=ad.store_id) }}{% else %}{{ ad.external_url }}{% endif %}">
-                <div class="card shadow-sm border-0 se-carousel-card">
-                    <div class="se-carousel-image-box">
-                        <img src="{{ ad.image }}" alt="{{ ad.title }}">
-                        <div class="se-carousel-overlay">{{ ad.title }}</div>
-                    </div>
-                    <div class="card-body text-center"><span class="badge bg-success">Tap to view</span></div>
-                </div>
-            </a>
-        </div>
-        {% endfor %}
+<!-- ===== STATS SECTION ===== -->
+<section class="apple-section" style="padding:var(--space-2xl) 0;background:var(--color-card);border-bottom:1px solid var(--color-border-light);">
+  <div class="container">
+    <div class="row text-center g-4">
+      <div class="col-4">
+        <div class="stat-number">50+</div>
+        <div class="stat-label">Restaurants</div>
+      </div>
+      <div class="col-4">
+        <div class="stat-number">1,000+</div>
+        <div class="stat-label">Meals Delivered</div>
+      </div>
+      <div class="col-4">
+        <div class="stat-number">98%</div>
+        <div class="stat-label">Satisfaction</div>
+      </div>
     </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#adsCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#adsCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span>
-    </button>
-</div>
+  </div>
+</section>
+
+<!-- ===== CATEGORIES SECTION ===== -->
+<section class="apple-section">
+  <div class="container">
+    <div class="apple-section-header">
+      <h2 class="apple-section-title">Browse by Category</h2>
+    </div>
+    
+    <div class="row g-3">
+      <div class="col-4 col-md-3">
+        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
+          <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80" alt="Pizza" loading="lazy">
+          <div class="category-card-label"><i class="fas fa-pizza-slice"></i> Pizza</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-3">
+        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
+          <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=400&q=80" alt="Burgers" loading="lazy">
+          <div class="category-card-label"><i class="fas fa-hamburger"></i> Burgers</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-3">
+        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
+          <img src="https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&w=400&q=80" alt="African" loading="lazy">
+          <div class="category-card-label"><i class="fas fa-globe-africa"></i> African</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-3">
+        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
+          <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=400&q=80" alt="Desserts" loading="lazy">
+          <div class="category-card-label"><i class="fas fa-cookie-bite"></i> Desserts</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-3">
+        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
+          <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80" alt="Salads" loading="lazy">
+          <div class="category-card-label"><i class="fas fa-leaf"></i> Salads</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-3">
+        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
+          <img src="https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=400&q=80" alt="Drinks" loading="lazy">
+          <div class="category-card-label"><i class="fas fa-glass-water"></i> Drinks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== POPULAR RESTAURANTS ===== -->
+{% if restaurants %}
+<section class="apple-section" style="background:var(--color-card);">
+  <div class="container">
+    <div class="apple-section-header">
+      <h2 class="apple-section-title">Popular Restaurants</h2>
+      <a href="{{ url_for('auth.register') }}" class="apple-section-link">View All <i class="fas fa-arrow-right"></i></a>
+    </div>
+    
+    <div class="row g-4">
+      {% for rest in restaurants %}
+      <div class="col-md-4 col-sm-6">
+        <div class="restaurant-card">
+          <div class="restaurant-card-image">
+            <img src="{{ url_for('static', filename='css/images/profiles/default.png') }}" alt="{{ rest.name }}" loading="lazy">
+            <span class="restaurant-card-status open">Open</span>
+          </div>
+          <div class="restaurant-card-body">
+            <h3 class="restaurant-card-name">{{ rest.name }}</h3>
+            <div class="restaurant-card-meta">
+              <span class="restaurant-card-rating">
+                <i class="fas fa-star"></i> {{ 4.5 }}
+              </span>
+              <span class="restaurant-card-delivery">
+                <i class="fas fa-clock"></i> 25-35 min
+              </span>
+              {% if rest.district %}
+              <span class="restaurant-card-distance">
+                <i class="fas fa-location-dot"></i> {{ rest.district }}
+              </span>
+              {% endif %}
+              {% if rest.town %}
+              <span class="restaurant-card-cuisine">{{ rest.town }}</span>
+              {% endif %}
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <a href="{{ url_for('auth.register') }}" class="apple-btn apple-btn-primary apple-btn-sm" style="flex:1;">
+                <i class="fas fa-arrow-right"></i> Order
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
 {% endif %}
 
-<!-- Meals Carousel -->
+<!-- ===== FEATURED MEALS ===== -->
 {% if meals %}
-<div id="mealsCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
-    <div class="carousel-inner">
-        {% for meal in meals %}
-        <div class="carousel-item {% if loop.first %}active{% endif %}">
-            <a class="text-decoration-none" href="{{ url_for('main.viewproduct', product_id=meal.id) }}">
-                <div class="card shadow-sm border-0 se-carousel-card">
-                    <div class="se-carousel-image-box">
-                        <img src="{{ meal.pictures }}" alt="{{ meal.productname }}">
-                        <div class="se-carousel-overlay">{{ meal.productname }}</div>
-                    </div>
-                    <div class="card-body text-center">
-                        {% if meal.price %}<div class="text-muted mb-1">{{ meal.price }}</div>{% endif %}
-                        {% if meal.store_name %}<small class="text-secondary">{{ meal.store_name }}</small>{% elif meal.store and meal.store.name %}<small class="text-secondary">{{ meal.store.name }}</small>{% endif %}
-                        <div class="mt-2"><span class="badge bg-success">Order</span></div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        {% endfor %}
+<section class="apple-section">
+  <div class="container">
+    <div class="apple-section-header">
+      <h2 class="apple-section-title">Featured Meals</h2>
+      <a href="{{ url_for('auth.register') }}" class="apple-section-link">View All <i class="fas fa-arrow-right"></i></a>
     </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#mealsCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#mealsCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span>
-    </button>
-</div>
+    
+    <div class="row g-4">
+      {% for meal in meals[:6] %}
+      <div class="col-md-4 col-sm-6">
+        <div class="featured-meal-card">
+          <div class="meal-image-wrapper">
+            <img src="{{ meal.pictures }}" alt="{{ meal.productname }}" loading="lazy">
+          </div>
+          <div style="padding:var(--space-md);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+              <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:600;margin:0;">{{ meal.productname }}</h3>
+              <span style="font-weight:600;color:var(--color-accent);font-size:1rem;">M{{ '%.2f'|format(meal.price) }}</span>
+            </div>
+            {% if meal.store %}
+            <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:0 0 12px 0;">
+              <i class="fas fa-store" style="margin-right:4px;"></i> {{ meal.store.name }}
+            </p>
+            {% endif %}
+            <a href="{{ url_for('auth.register') }}" class="apple-btn apple-btn-primary apple-btn-sm" style="width:100%;">
+              <i class="fas fa-plus"></i> Add to Cart
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
 {% endif %}
 
-<!-- Popular Restaurants -->
-<section class="text-center py-5 mb-5">
-    <h2 class="mb-4">Popular Restaurants</h2>
-    <div class="row justify-content-center g-3">
-        {% for rest in restaurants %}
-        <div class="col-md-3 col-sm-6">
-            <div class="store-card shadow-sm p-2 rounded">
-                <img src="{{url_for('static', filename='css/images/profiles/default.png') }}" alt="{{ rest.name }}">
-                <h6 class="fw-semibold mt-2">{{ rest.name }}</h6>
-                {% if rest.district %}<small class="text-muted">{{ rest.district }}</small>{% endif %}
-            </div>
-        </div>
-        {% endfor %}
+<!-- ===== PROMOTION BANNER ===== -->
+<section class="apple-section">
+  <div class="container">
+    <div class="promo-banner">
+      <div>
+        <div class="promo-banner-title">First Order Free Delivery</div>
+        <div class="promo-banner-text" style="margin-top:4px;">Use code <strong>FIRSTMEAL</strong> on your first order. T&Cs apply.</div>
+      </div>
+      <a href="{{ url_for('auth.register') }}" class="apple-btn" style="background:white;color:var(--color-text-primary);padding:12px 24px;font-weight:600;">
+        Order Now <i class="fas fa-arrow-right"></i>
+      </a>
     </div>
+  </div>
 </section>
 
-<!-- How It Works -->
-<section class="py-5 mb-5">
-    <h2 class="text-center mb-4">How It Works</h2>
-    <div class="row g-3 justify-content-center">
-        <div class="col-md-3 col-sm-6">
-            <div class="hcl-card rounded" style="background-color: #FF6B6B;">
-                <h5>Browse Restaurants</h5>
-                <p>Find your favorite meals in seconds.</p>
-            </div>
+<!-- ===== HOW IT WORKS ===== -->
+<section class="apple-section" style="background:var(--color-card);">
+  <div class="container">
+    <h2 class="apple-section-title text-center" style="margin-bottom:var(--space-2xl);">How It Works</h2>
+    
+    <div class="row g-4">
+      <div class="col-md-3 col-sm-6">
+        <div class="text-center">
+          <div style="width:64px;height:64px;border-radius:var(--radius-xl);background:rgba(0,113,227,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);font-size:1.5rem;color:var(--color-accent);">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <h5 style="font-weight:600;margin-bottom:4px;">Choose Location</h5>
+          <p style="font-size:0.875rem;margin:0;">Set your delivery address and browse nearby restaurants.</p>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="hcl-card rounded" style="background-color: #4DD0E1;">
-                <h5>Add to Cart</h5>
-                <p>Select meals and place your order quickly.</p>
-            </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="text-center">
+          <div style="width:64px;height:64px;border-radius:var(--radius-xl);background:rgba(52,199,89,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);font-size:1.5rem;color:var(--color-success);">
+            <i class="fas fa-utensils"></i>
+          </div>
+          <h5 style="font-weight:600;margin-bottom:4px;">Pick Your Meal</h5>
+          <p style="font-size:0.875rem;margin:0;">Browse menus, read reviews, and select your favorites.</p>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="hcl-card rounded" style="background-color: #8BC34A;">
-                <h5>Track Delivery</h5>
-                <p>Watch your order arrive in real-time.</p>
-            </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="text-center">
+          <div style="width:64px;height:64px;border-radius:var(--radius-xl);background:rgba(255,159,10,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);font-size:1.5rem;color:var(--color-warning);">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          <h5 style="font-weight:600;margin-bottom:4px;">Place Order</h5>
+          <p style="font-size:0.875rem;margin:0;">Add to cart, choose payment, and confirm your order.</p>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="hcl-card rounded" style="background-color: #FFD54F; color:#333;">
-                <h5>Enjoy!</h5>
-                <p>Fresh and hot meals delivered to your door.</p>
-            </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="text-center">
+          <div style="width:64px;height:64px;border-radius:var(--radius-xl);background:rgba(52,199,89,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);font-size:1.5rem;color:var(--color-success);">
+            <i class="fas fa-motorcycle"></i>
+          </div>
+          <h5 style="font-weight:600;margin-bottom:4px;">Track & Enjoy</h5>
+          <p style="font-size:0.875rem;margin:0;">Track your delivery in real-time and enjoy your meal!</p>
         </div>
+      </div>
     </div>
+  </div>
 </section>
 
-<!-- About Section -->
-<section class="text-center py-5 mb-5">
-    <h2 class="mb-3">About SmartEats</h2>
-    <p>SmartEats is a Lesotho-based food delivery platform founded by Khauhelo Makara. We connect people with delicious local food quickly and reliably.</p>
-    <a href="{{url_for('main.about')}}" class="btn btn-outline-primary">Learn More</a>
+<!-- ===== TESTIMONIALS ===== -->
+<section class="apple-section">
+  <div class="container">
+    <h2 class="apple-section-title text-center" style="margin-bottom:var(--space-2xl);">What Our Customers Say</h2>
+    
+    <div class="testimonials-scroll">
+      <div class="testimonials-track">
+        <!-- Testimonial 1 -->
+        <div class="testimonial-card">
+          <img src="https://i.pravatar.cc/100?img=1" alt="Sarah" class="testimonial-avatar" loading="lazy">
+          <div class="testimonial-quote">"The food arrived hot and fresh. SmartEats has completely changed how I eat!"</div>
+          <div class="testimonial-name">Sarah M.</div>
+          <div class="testimonial-location">Maputsoe</div>
+        </div>
+        
+        <!-- Testimonial 2 -->
+        <div class="testimonial-card">
+          <img src="https://i.pravatar.cc/100?img=12" alt="John" class="testimonial-avatar" loading="lazy">
+          <div class="testimonial-quote">"Incredible variety of restaurants. I discover new places every week!"</div>
+          <div class="testimonial-name">John K.</div>
+          <div class="testimonial-location">Roma</div>
+        </div>
+        
+        <!-- Testimonial 3 -->
+        <div class="testimonial-card">
+          <img src="https://i.pravatar.cc/100?img=5" alt="Mpho" class="testimonial-avatar" loading="lazy">
+          <div class="testimonial-quote">"The tracking feature is amazing. I know exactly when my food arrives."</div>
+          <div class="testimonial-name">Mpho T.</div>
+          <div class="testimonial-location">Leribe</div>
+        </div>
+        
+        <!-- Testimonial 4 (duplicate for scroll) -->
+        <div class="testimonial-card">
+          <img src="https://i.pravatar.cc/100?img=9" alt="Lerato" class="testimonial-avatar" loading="lazy">
+          <div class="testimonial-quote">"Best food delivery service in Lesotho. Fast, reliable, and delicious!"</div>
+          <div class="testimonial-name">Lerato N.</div>
+          <div class="testimonial-location">Maseru</div>
+        </div>
+        
+        <!-- Duplicates for seamless scroll -->
+        <div class="testimonial-card">
+          <img src="https://i.pravatar.cc/100?img=1" alt="Sarah" class="testimonial-avatar" loading="lazy">
+          <div class="testimonial-quote">"The food arrived hot and fresh. SmartEats has completely changed how I eat!"</div>
+          <div class="testimonial-name">Sarah M.</div>
+          <div class="testimonial-location">Maputsoe</div>
+        </div>
+        
+        <div class="testimonial-card">
+          <img src="https://i.pravatar.cc/100?img=12" alt="John" class="testimonial-avatar" loading="lazy">
+          <div class="testimonial-quote">"Incredible variety of restaurants. I discover new places every week!"</div>
+          <div class="testimonial-name">John K.</div>
+          <div class="testimonial-location">Roma</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-</div>
-{% endblock %}s
+<!-- ===== DOWNLOAD APP CTA ===== -->
+<section class="apple-section">
+  <div class="container">
+    <div class="download-cta">
+      <h2>Get the SmartEats App</h2>
+      <p>Order on the go. Download the app for the best food delivery experience.</p>
+      <div class="download-badges">
+        <a href="#" class="download-badge">
+          <i class="fab fa-apple"></i>
+          <div style="text-align:left;">
+            <div style="font-size:0.625rem;opacity:0.7;">Download on the</div>
+            <div style="font-size:1rem;font-weight:600;">App Store</div>
+          </div>
+        </a>
+        <a href="#" class="download-badge">
+          <i class="fab fa-google-play"></i>
+          <div style="text-align:left;">
+            <div style="font-size:0.625rem;opacity:0.7;">Get it on</div>
+            <div style="font-size:1rem;font-weight:600;">Google Play</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ABOUT SECTION (pre-footer) ===== -->
+<section class="apple-section" style="padding-bottom:0;">
+  <div class="container text-center">
+    <p style="font-size:0.9375rem;color:var(--color-text-secondary);max-width:600px;margin:0 auto;">
+      <strong style="color:var(--color-text-primary);">SmartEats</strong> is a Lesotho-based food delivery platform 
+      founded by Khauhelo Makara. We connect people with delicious local food quickly and reliably.
+    </p>
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Enable the search on the landing page
+    const searchInput = document.querySelector('.apple-hero .apple-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        const resultsContainer = this.closest('.apple-search').querySelector('.apple-search-results');
+        
+        if (query.length < 2) {
+          if (resultsContainer) resultsContainer.classList.remove('visible');
+          return;
+        }
+        
+        if (resultsContainer) {
+          resultsContainer.innerHTML = '<div class="apple-search-result-item" style="justify-content:center;"><div class="apple-skeleton" style="width:100%;height:40px;"></div></div>';
+          resultsContainer.classList.add('visible');
+        }
+
+        fetch('/api/search?q=' + encodeURIComponent(query))
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (!resultsContainer) return;
+            resultsContainer.innerHTML = '';
+            
+            if (data.restaurants && data.restaurants.length > 0) {
+              data.restaurants.forEach(function(r) {
+                const item = document.createElement('a');
+                item.href = r.url || '{{ url_for('auth.register') }}';
+                item.className = 'apple-search-result-item';
+                item.innerHTML = '<i class="fas fa-store" style="color:var(--color-accent);"></i> <div><strong>' + r.name + '</strong><br><span class="text-caption">' + (r.district || '') + '</span></div>';
+                resultsContainer.appendChild(item);
+              });
+            }
+            
+            if (data.meals && data.meals.length > 0) {
+              data.meals.forEach(function(m) {
+                const item = document.createElement('a');
+                item.href = m.url || '{{ url_for('auth.register') }}';
+                item.className = 'apple-search-result-item';
+                item.innerHTML = '<img src="' + (m.image || '/static/css/images/default.png') + '" alt="' + m.name + '"> <div><strong>' + m.name + '</strong><br><span class="text-caption">' + (m.price || '') + '</span></div>';
+                resultsContainer.appendChild(item);
+              });
+            }
+            
+            if ((!data.restaurants || data.restaurants.length === 0) && (!data.meals || data.meals.length === 0)) {
+              resultsContainer.innerHTML = '<div class="apple-search-result-item" style="justify-content:center;color:var(--color-text-secondary);">No results found</div>';
+            }
+            
+            resultsContainer.classList.add('visible');
+          })
+          .catch(function() {
+            if (resultsContainer) {
+              resultsContainer.innerHTML = '<div class="apple-search-result-item" style="justify-content:center;color:var(--color-text-secondary);">Something went wrong</div>';
+            }
+          });
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -1,61 +1,124 @@
 {% extends "layout.html" %}
-{% block title %}Login Into Account - SmartEats{% endblock %}
+{% block title %}Sign In – SmartEats{% endblock %}
 
 {% block content %}
-<div class="container-xxl">
-  <div class="authentication-wrapper authentication-basic container-p-y">
-    <div class="authentication-inner">
+<style>
+  .auth-page {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2xl) var(--space-lg);
+  }
+  
+  .auth-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border-light);
+  }
+  
+  .auth-logo {
+    text-align: center;
+    margin-bottom: var(--space-xl);
+  }
+  
+  .auth-logo img {
+    height: 48px;
+    width: auto;
+    margin-bottom: var(--space-sm);
+  }
+  
+  .auth-logo h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .auth-logo p {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 4px 0 0 0;
+  }
+  
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin: var(--space-lg) 0;
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+  }
+  
+  .auth-divider::before,
+  .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border-light);
+  }
+</style>
 
-      <div class="card shadow-sm">
-        <div class="card-body">
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <img src="{{ url_for('static', filename='worka.png') }}" alt="SmartEats">
+      <h1>Welcome Back</h1>
+      <p>Sign in to your account to continue</p>
+    </div>
 
-          <h4 class="mb-2">Welcome to SmartEats! </h4>
-          <p class="mb-4">Please sign-in to your account and start the adventure</p>
+    <form method="POST" action="{{ url_for('auth.newlogin') }}">
+      {{ form.hidden_tag() }}
 
-          <form id="formAuthentication" class="mb-3" action="{{ url_for('auth.newlogin') }}" method="POST">
-            {{ form.hidden_tag() }}
-
-            <!-- Email -->
-            <div class="mb-3">
-              {{ form.email.label(class="form-label") }}
-              {{ form.email(class="form-control", placeholder="example@email.com") }}
-
-              {% for error in form.email.errors %}
-              <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-
-            <!-- Password -->
-            <div class="mb-3 form-password-toggle">
-              <div class="d-flex justify-content-between">
-                {{ form.password.label(class="form-label") }}
-              </div>
-
-              <div class="input-group input-group-merge">
-                {{ form.password(class="form-control", placeholder="••••••••") }}
-
-                <span class="input-group-text cursor-pointer">
-                  <i class="fas fa-eye-slash"></i>
-                </span>
-              </div>
-
-              {% for error in form.password.errors %}
-              <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-
-            <!-- Submit -->
-            <div class="mb-3">
-              <button class="btn btn-success d-grid w-100" type="submit">
-                Sign in
-              </button>
-            </div>
-
-          </form>
-
-        </div>
+      <div style="margin-bottom:var(--space-lg);">
+        <label class="apple-label">{{ form.email.label.text }}</label>
+        {{ form.email(class='apple-input', placeholder='you@example.com', autocomplete='email') }}
+        {% for error in form.email.errors %}
+        <span style="font-size:0.75rem;color:var(--color-danger);">{{ error }}</span>
+        {% endfor %}
       </div>
 
+      <div style="margin-bottom:var(--space-lg);">
+        <label class="apple-label">{{ form.password.label.text }}</label>
+        {{ form.password(class='apple-input', placeholder='Enter your password', autocomplete='current-password') }}
+        {% for error in form.password.errors %}
+        <span style="font-size:0.75rem;color:var(--color-danger);">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg);">
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;color:var(--color-text-secondary);cursor:pointer;">
+          <input type="checkbox" name="remember" style="width:16px;height:16px;accent-color:var(--color-accent);"> Remember me
+        </label>
+        <a href="{{ url_for('auth.fotgot_password') }}" style="font-size:0.875rem;color:var(--color-accent);">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="apple-btn apple-btn-primary apple-btn-lg apple-btn-block" style="margin-bottom:var(--space-md);">
+        <i class="fas fa-arrow-right"></i> Sign In
+      </button>
+    </form>
+
+    <div class="auth-divider">or</div>
+
+    <div style="text-align:center;">
+      <p style="font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:var(--space-md);">
+        Don't have an account?
+      </p>
+      <a href="{{ url_for('auth.register') }}" class="apple-btn apple-btn-secondary apple-btn-block">
+        <i class="fas fa-user-plus"></i> Create Account
+      </a>
+    </div>
+
+    <hr class="apple-divider">
+
+    <div style="text-align:center;">
+      <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:0;">
+        Want to list your restaurant?
+        <a href="{{ url_for('auth.registerstore') }}" style="color:var(--color-accent);font-weight:500;">Partner with us</a>
+      </p>
     </div>
   </div>
 </div>

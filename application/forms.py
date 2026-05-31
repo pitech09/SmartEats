@@ -37,6 +37,7 @@ class UpdateForm(FlaskForm):
     Email = EmailField('Email',
                         validators=[DataRequired(),
                                     Length(min=5, max=30)])
+    picture = FileField('Upload Profile Picture', validators=[Optional(), FileAllowed(['jpg', 'jpeg', 'png', 'gif'])])
     submit = SubmitField('Update')
 
 class Search(FlaskForm):

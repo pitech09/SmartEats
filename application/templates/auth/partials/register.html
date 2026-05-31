@@ -1,10 +1,10 @@
 <div class="card shadow-sm">
   <div class="card-body">
 
-    <h4 class="mb-2">Sign Up Today with SmartEats! 👋</h4>
+    <h4 class="mb-2">Sign Up Today with SmartEats!</h4>
     <p class="mb-4">Your time is valuable. Let us handle the rest while you live your life.</p>
 
-    <form id="registerForm" class="mb-3" action="{{ url_for('auth.ajax_register') }}" method="POST">
+    <form id="registerForm" class="mb-3" action="{{ url_for('auth.register') }}" method="POST"></form>
       {{ register_form.hidden_tag() }}
 
       <!-- First Name -->

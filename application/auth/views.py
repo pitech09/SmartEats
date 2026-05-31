@@ -309,3 +309,9 @@ def reset(token):
 @auth.route("/unconfirmed")
 def unconfirmed():
     return render_template("auth/email/unconfirmed.html")
+
+
+@auth.route("/forgot_password")
+def fotgot_password():
+    """Redirect forgot password link to the resend email page."""
+    return redirect(url_for("auth.resend_email"))

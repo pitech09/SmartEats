@@ -14,7 +14,7 @@
     {% endblock %}
   </title>
 
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico')}}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png')}}">
 
   <!-- Fonts & Styles -->
   <link href="{{url_for('static', filename='css/fontawesome-free/css/all.min.css')}}" rel="stylesheet" />
@@ -27,8 +27,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css')}}"/>
 
   <!-- Pace.js Loader -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='lib/pace/themes/green/pace-theme-minimal.css') }}">
-  <script src="{{ url_for('static', filename='lib/pace/pace.min.js') }}"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/templates/pace-theme-minimal/pace-theme-minimal.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script>
 
   <style>
     /************** GLOBAL BRAND COLORS **************/

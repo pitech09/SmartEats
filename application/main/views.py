@@ -257,6 +257,49 @@ def home():
     return render_template("customer/home.html", user=current_user, total_count=total_count,
                            total_amount=total_amount, ads=ads, pharmacies=pharmacies, formpharm=formpharm)
 
+@main.route("/api/search")
+def api_search():
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return jsonify({"restaurants": [], "meals": []})
+
+    # Search restaurants
+    restaurants = Store.query.filter(
+        Store.is_active == True,
+        or_(
+            Store.name.ilike(f"%{q}%"),
+            Store.district.ilike(f"%{q}%"),
+            Store.town.ilike(f"%{q}%")
+        )
+    ).limit(5).all()
+
+    # Search meals
+    meals = Product.query.filter(
+        Product.is_active == True,
+        or_(
+            Product.productname.ilike(f"%{q}%"),
+            Product.description.ilike(f"%{q}%")
+        )
+    ).limit(5).all()
+
+    return jsonify({
+        "restaurants": [{
+            "id": r.id,
+            "name": r.name,
+            "district": r.district or "",
+            "town": r.town or "",
+            "url": url_for('main.store_details', store_id=r.id) if current_user.is_authenticated else url_for('auth.newlogin')
+        } for r in restaurants],
+        "meals": [{
+            "id": m.id,
+            "name": m.productname,
+            "price": f"M{m.price:.2f}",
+            "image": m.pictures or url_for('static', filename='css/images/default.png'),
+            "store": m.store.name if m.store else "",
+            "url": url_for('main.viewproduct', product_id=m.id) if current_user.is_authenticated else url_for('auth.newlogin')
+        } for m in meals]
+    })
+
 @main.route("/", methods=["POST", "GET"])
 def landing():
     ads = Ad.query.all()
@@ -470,32 +513,44 @@ def addorder():
         flash("Invalid submission.", "warning")
         return redirect(url_for('main.cart'))
 
-    # -----------------------------
-    # Get customer coordinates & client fee
-    # -----------------------------
-    try:
-        customer_lat = float(request.form.get('latitude'))
-        customer_lng = float(request.form.get('longitude'))
-        client_fee = float(request.form.get('delivery_fee') or 0)
-        location_accuracy = request.form.get('location_accuracy')
-        location_accuracy = float(location_accuracy) if location_accuracy else None
-    except (TypeError, ValueError):
-        flash("Invalid location data.", "warning")
-        return redirect(url_for('main.cart'))
-
-    if not (-90 <= customer_lat <= 90 and -180 <= customer_lng <= 180):
-        flash("Invalid map coordinates.", "warning")
-        return redirect(url_for('main.cart'))
-
     customer_phone = normalize_phone_number(form.payment_number.data)
 
     # -----------------------------
-    # Recalculate delivery fee on server
+    # Delivery method handling
     # -----------------------------
-    if form.deliverymethod.data == 'agent':
-        if None in [customer_lat, customer_lng, store.latitude, store.longitude]:
-            flash("Location access required for delivery.", "warning")
+    delivery_method = form.deliverymethod.data
+    delivery_fee = 0
+    customer_lat = None
+    customer_lng = None
+    location_accuracy = None
+
+    if delivery_method == 'agent':
+        # -----------------------------
+        # Get customer coordinates & client fee (only for delivery)
+        # -----------------------------
+        try:
+            customer_lat = float(request.form.get('latitude') or 0)
+            customer_lng = float(request.form.get('longitude') or 0)
+            client_fee = float(request.form.get('delivery_fee') or 0)
+            location_accuracy = request.form.get('location_accuracy')
+            location_accuracy = float(location_accuracy) if location_accuracy else None
+        except (TypeError, ValueError):
+            customer_lat = None
+            customer_lng = None
+            client_fee = 0
+
+        if not customer_lat or not customer_lng:
+            flash("Location access is required for delivery orders. Please enable location and try again.", "warning")
             return redirect(url_for('main.cart'))
+
+        if not (-90 <= customer_lat <= 90 and -180 <= customer_lng <= 180):
+            flash("Invalid map coordinates.", "warning")
+            return redirect(url_for('main.cart'))
+
+        if store.latitude is None or store.longitude is None:
+            flash("This store has not set their delivery location yet. Please try pickup.", "warning")
+            return redirect(url_for('main.cart'))
+
         if location_accuracy and location_accuracy > 1500:
             current_app.logger.warning(
                 f"Low accuracy location | User:{current_user.id} Accuracy:{location_accuracy}m"
@@ -512,8 +567,9 @@ def addorder():
             return redirect(url_for('main.cart'))
 
         delivery_fee = server_fee
+        drop_location = form.drop_address.data or 'Delivery'
     else:
-        delivery_fee = 0
+        drop_location = 'pickup'
 
     # -----------------------------
     # Create Order
@@ -529,7 +585,7 @@ def addorder():
         customer_phone=customer_phone,
         location_accuracy_m=location_accuracy,
         deliveryfee=delivery_fee,
-        location=form.drop_address.data if form.deliverymethod.data != 'pickup' else 'pickup'
+        location=drop_location
     )
 
     # -----------------------------
@@ -766,8 +822,8 @@ def remove_from_cart_ajax(item_id):
         cart_count = 0
         cart_total = 0.0
     else:
-        cart_count = sum(i.quantity for i in cart.cart_items)
-        cart_total = sum(i.product.price * i.quantity for i in cart.cart_items)
+        cart_count = cart.total_items()
+        cart_total = cart.total_amount()
     try:
         socketio.emit("cart_updated", {"cart_count": cart_count, "cart_total": cart_total}, room=str(current_user.id))
     except Exception as e:
@@ -782,8 +838,8 @@ def cart_status():
     cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
     if not cart:
         return jsonify(success=True, cart_count=0, cart_total=0.0)
-    return jsonify(success=True, cart_count=sum(i.quantity for i in cart.cart_items),
-                   cart_total=sum(i.product.price * i.quantity for i in cart.cart_items))
+    return jsonify(success=True, cart_count=cart.total_items(),
+                   cart_total=cart.total_amount())
 
 # ---------------- ACCOUNT ----------------
 @main.route("/account", methods=["GET", "POST"])
@@ -866,26 +922,82 @@ def set_storee(store_id):
     flash(f'You are now viewing {store.name}', 'success')
     return redirect(url_for('main.menu', page_num=1))
 
+@main.route("/api/delivery_fee")
+@login_required
+def api_delivery_fee():
+    """Calculate delivery fee based on customer location and current store."""
+    store_id = session.get('store_id')
+    if not store_id:
+        return jsonify({"error": "No store selected"}), 400
+
+    store = Store.query.get(store_id)
+    if not store:
+        return jsonify({"error": "Store not found"}), 404
+
+    lat = request.args.get('lat', type=float)
+    lng = request.args.get('lng', type=float)
+
+    if not lat or not lng:
+        return jsonify({"fee": None, "message": "Location not available"})
+
+    if store.latitude is None or store.longitude is None:
+        return jsonify({"fee": None, "message": "Store location not set"})
+
+    fee = calculate_delivery_fee(store.latitude, store.longitude, lat, lng)
+    return jsonify({"fee": fee})
+
+
 @main.route('/stores')
 def restuarants():
     form2 = Search()
-    user_district = current_user.district
-    user_town = current_user.town
+    selected_location = request.args.get('location', '').strip()
+    open_now = request.args.get('open_now', '').strip()
 
-    rank_case = case(
-        (Store.town == user_town, 0),
-        (Store.district == user_district, 1),
-        else_=2
-    )
+    if current_user.is_authenticated:
+        user_district = current_user.district
+        user_town = current_user.town
 
-    stores = Store.query.filter(
-        Store.is_active == True
-    ).order_by(
-        rank_case,  # prioritize rank
-        Store.name.asc()  # then alphabetical by name
-    ).all()
+        rank_case = case(
+            (Store.town == user_town, 0),
+            (Store.district == user_district, 1),
+            else_=2
+        )
 
-    return render_template('customer/restuarants.html', stores=stores, form2=form2, is_store_open=is_store_open)
+        query = Store.query.filter(Store.is_active == True)
+
+        # Filter by location (town or district)
+        if selected_location:
+            query = query.filter(
+                or_(
+                    Store.town.ilike(f"%{selected_location}%"),
+                    Store.district.ilike(f"%{selected_location}%")
+                )
+            )
+
+        stores = query.order_by(
+            rank_case,
+            Store.name.asc()
+        ).all()
+    else:
+        query = Store.query.filter(Store.is_active == True)
+
+        # Filter by location (town or district)
+        if selected_location:
+            query = query.filter(
+                or_(
+                    Store.town.ilike(f"%{selected_location}%"),
+                    Store.district.ilike(f"%{selected_location}%")
+                )
+            )
+
+        stores = query.order_by(Store.name.asc()).all()
+
+    # Filter by open status
+    if open_now == '1':
+        stores = [s for s in stores if is_store_open(s.openinghours)]
+
+    return render_template('customer/restuarants.html', stores=stores, form2=form2,
+                           is_store_open=is_store_open, selected_location=selected_location, open_now=open_now)
 
 @main.route("/store/<int:store_id>")
 @login_required
@@ -904,8 +1016,8 @@ def store_details(store_id):
         store_id=restuarant.id
     ).first()
 
-    total_count = sum(i.quantity for i in cart.cart_items) if cart else 0
-    total_amount = sum(i.product.price * i.quantity for i in cart.cart_items) if cart else 0.0
+    total_count = cart.total_items() if cart else 0
+    total_amount = cart.total_amount() if cart else 0.0
 
     return render_template(
         "customer/restuarantdetails.html",
@@ -934,11 +1046,20 @@ def viewproduct(product_id):
 @login_required
 def search(page_num=1):
     form2 = Search()
+    store_id = session.get("store_id")
+    if not store_id:
+        flash("Please select a store first", "warning")
+        return redirect(url_for("main.restuarants"))
+
+    mystore = Store.query.get_or_404(store_id)
 
     if form2.validate_on_submit():
         search_term = form2.keyword.data.strip()
 
+        # Filter by current store AND search term
         products = Product.query.filter(
+            Product.store_id == store_id,
+            Product.is_active == True,
             or_(
                 Product.productname.ilike(f"%{search_term}%"),
                 Product.description.ilike(f"%{search_term}%")
@@ -954,15 +1075,31 @@ def search(page_num=1):
             + (1 if len(products) % PRODUCTS_PER_PAGE > 0 else 0)
         )
 
-        store = Store.query.get_or_404(session.get("store_id"))
+        # Get categories for the menu template
+        categories = Category.query.filter_by(store_id=mystore.id, is_active=True).all()
+
+        # Cart count
+        cart = Cart.query.filter_by(user_id=current_user.id, store_id=mystore.id).first()
+        total_count = sum(item.quantity for item in cart.cart_items) if cart else 0
+
+        # Populate store choices for the form
+        formpharm = Set_StoreForm()
+        formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
 
         return render_template(
             "customer/updated_menu.html",
             products=current_products,
             form2=form2,
+            formpharm=formpharm,
+            form=CartlistForm(),
             page_num=page_num,
-            store=store,
-            total_pages=total_pages
+            store=mystore,
+            total_pages=total_pages,
+            categories=categories,
+            selected_category_id=None,
+            total_count=total_count,
+            user=current_user,
+            search_term=search_term
         )
 
     return redirect(url_for("main.menu", page_num=1))
@@ -998,7 +1135,8 @@ def searcher(page_num=1):
             form2=form2,
             page_num=page_num,
             total_pages=total_pages,
-            search_term=search_term
+            search_term=search_term,
+            is_store_open=is_store_open
         )
 
     # GET request or empty search: just show all stores
@@ -1014,7 +1152,8 @@ def searcher(page_num=1):
         stores=current_stores,
         form2=form2,
         page_num=page_num,
-        total_pages=total_pages
+        total_pages=total_pages,
+        is_store_open=is_store_open
     )
 
 @main.route('/terms')
@@ -1024,6 +1163,30 @@ def terms_conditions():
 @main.route('/privacy policy')
 def privacy_policy():
     return render_template('customer/policy.html')
+
+@main.route('/increment_cart_item/<int:item_id>', methods=['POST'])
+@login_required
+def increment_cart_item(item_id):
+    item = CartItem.query.get_or_404(item_id)
+
+    # Make sure this item belongs to the current user's cart
+    cart = Cart.query.get(item.cart_id)
+    if not cart or cart.user_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
+    # Increment quantity
+    item.quantity += 1
+    db.session.commit()
+
+    # Recalculate cart total using the model method (handles custom meals)
+    cart_total = cart.total_amount()
+
+    return jsonify({
+        'success': True,
+        'new_quantity': item.quantity,
+        'cart_total': cart_total
+    })
+
 
 @main.route('/decrement_cart_item/<int:item_id>', methods=['POST'])
 @login_required
@@ -1044,9 +1207,8 @@ def decrement_cart_item(item_id):
         db.session.commit()
         item.quantity = 0  # ensure front-end knows quantity is 0
 
-    # Optional: calculate new cart total
-    cart_items = CartItem.query.filter_by(cart_id=cart.id).all()
-    cart_total = sum(i.quantity * i.product.price for i in cart_items)
+    # Recalculate cart total using the model method (handles custom meals)
+    cart_total = cart.total_amount()
 
     return jsonify({
         'success': True,
