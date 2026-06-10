@@ -212,12 +212,17 @@ socket.on("connect", () => {
 <div id="content-wrapper" class="d-flex flex-column">
 <div id="content">
 
-<nav class="navbar navbar-expand navbar-light bg-white shadow mb-4">
-  <ul class="navbar-nav ml-auto">
-    <li class="nav-item">
-      <span class="nav-link">{{ current_user.name }}</span>
-    </li>
-  </ul>
+<nav class="navbar navbar-expand navbar-light bg-white shadow mb-4" style="position:sticky;top:0;z-index:100;">
+  <!-- Sidebar Toggle -->
+  <button id="sidebarToggleBtn" class="btn btn-link d-md-none rounded-circle mr-3" style="font-size:1.25rem;color:var(--color-text-secondary);" title="Toggle Sidebar">
+    <i class="fas fa-bars"></i>
+  </button>
+  <button id="sidebarToggleTop" class="btn btn-link d-none d-md-inline-block mr-3" style="font-size:1.125rem;color:var(--color-text-secondary);border:none;" title="Collapse Sidebar">
+    <i class="fas fa-chevron-left" id="toggleIcon"></i>
+  </button>
+  <div class="ml-auto">
+    <span class="nav-link" style="font-weight:600;color:var(--color-text-primary);">{{ current_user.name }}</span>
+  </div>
 </nav>
 
 <div class="container-fluid">
@@ -241,5 +246,133 @@ socket.on("connect", () => {
 <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
 
 {% block scripts %}{% endblock %}
+
+<script>
+(function() {
+  var sidebar = document.getElementById('accordionSidebar');
+  var toggleBtn = document.getElementById('sidebarToggleBtn');
+  var toggleTop = document.getElementById('sidebarToggleTop');
+  var toggleIcon = document.getElementById('toggleIcon');
+  var wrapper = document.getElementById('wrapper');
+  
+  // Mobile toggle
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('show');
+    });
+  }
+  
+  // Desktop collapse
+  if (toggleTop) {
+    toggleTop.addEventListener('click', function() {
+      sidebar.classList.toggle('collapsed');
+      wrapper.classList.toggle('sidebar-collapsed');
+      
+      // Update icon direction
+      if (sidebar.classList.contains('collapsed')) {
+        toggleIcon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+      } else {
+        toggleIcon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+      }
+      
+      // Save state
+      try { localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed')); } catch(e) {}
+    });
+  }
+  
+  // Restore state
+  try {
+    if (localStorage.getItem('sidebar-collapsed') === 'true') {
+      sidebar.classList.add('collapsed');
+      wrapper.classList.add('sidebar-collapsed');
+      if (toggleIcon) toggleIcon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+    }
+  } catch(e) {}
+})();
+</script>
+
+<style>
+/* --- Collapsible Sidebar Styles --- */
+.sidebar.collapsed {
+  width: 80px !important;
+  min-width: 80px !important;
+  transition: width 0.25s ease;
+}
+
+.sidebar.collapsed .sidebar-brand-text,
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .sidebar-heading,
+.sidebar.collapsed .sidebar-divider + .sidebar-heading {
+  display: none !important;
+}
+
+.sidebar.collapsed .nav-item {
+  text-align: center;
+}
+
+.sidebar.collapsed .nav-link {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+
+.sidebar.collapsed .nav-link i {
+  font-size: 1.125rem;
+  margin-bottom: 0;
+}
+
+.sidebar.collapsed .sidebar-brand {
+  padding: 12px 0;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-brand::after {
+  content: '\f1ea';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.sidebar.collapsed ~ #content-wrapper {
+  margin-left: 80px !important;
+  transition: margin-left 0.25s ease;
+}
+
+#content-wrapper {
+  transition: margin-left 0.25s ease;
+}
+
+/* Hover expand hint on collapsed sidebar */
+.sidebar.collapsed:hover {
+  width: 240px !important;
+  min-width: 240px !important;
+}
+
+.sidebar.collapsed:hover .sidebar-brand-text,
+.sidebar.collapsed:hover .nav-link span,
+.sidebar.collapsed:hover .sidebar-heading {
+  display: inline !important;
+}
+
+.sidebar.collapsed:hover .sidebar-brand::after {
+  display: none;
+}
+
+.sidebar.collapsed:hover .nav-link {
+  flex-direction: row;
+  padding: 10px 15px;
+  font-size: 14px;
+}
+
+.sidebar.collapsed:hover .sidebar-brand {
+  justify-content: center;
+  padding: 16px;
+}
+
+</style>
 </body>
 </html>

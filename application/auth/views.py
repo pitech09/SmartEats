@@ -209,33 +209,46 @@ def newlogin():
             (Staff, "store")
         ]
 
+        found_account = None
         for model, role in user_sets:
             account = model.query.filter_by(email=email).first()
-            if account and bcrypt.check_password_hash(account.password, password):
-                if hasattr(account, "confirmed") and not account.confirmed:
-                    flash("Please confirm your email first.", "warning")
-                    return redirect(url_for("auth.newlogin"))
+            if account:
+                found_account = (account, role)
+                break
 
-                login_user(account)
-                session["user_type"] = role
-                session["email"] = account.email
+        if not found_account:
+            flash("No account found with that email address.", "danger")
+            return redirect(url_for("auth.newlogin"))
 
-                notify_customer(account.id)
-                send_sound(account.id, "login")
+        account, role = found_account
 
-                if role == "customer":
-                    return redirect(url_for("main.restuarants"))
-                elif role == "administrator":
-                    session["admin_id"] = account.id
-                    return redirect(url_for("admin.admindash"))
-                elif role == "store":
-                    session["store_id"] = account.id
-                    return redirect(url_for("store.adminpage"))
-                elif role == "delivery_guy":
-                    session["delivery_guy_id"] = account.id
-                    return redirect(url_for("delivery.dashboard"))
+        if not bcrypt.check_password_hash(account.password, password):
+            flash("Incorrect password. Please try again.", "danger")
+            return redirect(url_for("auth.newlogin"))
 
-        flash("Invalid login credentials", "danger")
+        if hasattr(account, "confirmed") and not account.confirmed:
+            flash("Please confirm your email first.", "warning")
+            return redirect(url_for("auth.newlogin"))
+
+        login_user(account)
+        session["user_type"] = role
+        session["email"] = account.email
+
+        notify_customer(account.id)
+        send_sound(account.id, "login")
+
+        if role == "customer":
+            return redirect(url_for("main.restuarants"))
+        elif role == "administrator":
+            session["admin_id"] = account.id
+            return redirect(url_for("admin.admindash"))
+        elif role == "store":
+            session["store_id"] = account.id
+            return redirect(url_for("store.adminpage"))
+        elif role == "delivery_guy":
+            session["delivery_guy_id"] = account.id
+            session["store_id"] = account.store_id
+            return redirect(url_for("delivery.ready_orders"))
 
     return render_template("auth/newlogin.html", form=form, formpharm=formpharm)
 

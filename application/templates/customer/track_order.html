@@ -1,0 +1,380 @@
+{% extends "layout.html" %}
+{% block title %}Track Order #{{ order.order_id }} - SmartEats{% endblock %}
+
+{% block content %}
+<style>
+  #track-map {
+    height: 400px;
+    width: 100%;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-light);
+    z-index: 1;
+  }
+  
+  .eta-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    border: 1px solid var(--color-border-light);
+    text-align: center;
+  }
+  
+  .eta-time {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-accent);
+    line-height: 1;
+  }
+  
+  .eta-label {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+  }
+  
+  .delivery-dot {
+    width: 10px;
+    height: 10px;
+    background: #34C759;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  
+  .status-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) 0;
+    position: relative;
+  }
+  
+  .status-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .status-step .step-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    border: 3px solid var(--color-border-light);
+    background: var(--color-card);
+    color: var(--color-text-secondary);
+    transition: all 0.3s ease;
+  }
+  
+  .status-step.completed .step-dot {
+    background: #34C759;
+    border-color: #34C759;
+    color: white;
+  }
+  
+  .status-step.active .step-dot {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    box-shadow: 0 0 0 4px rgba(0,113,227,0.15);
+    animation: pulse-step 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-step {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(0,113,227,0.15); }
+    50% { box-shadow: 0 0 0 8px rgba(0,113,227,0.05); }
+  }
+  
+  .status-step .step-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: center;
+  }
+  
+  .status-step.completed .step-label {
+    color: #34C759;
+  }
+  
+  .status-step.active .step-label {
+    color: var(--color-accent);
+  }
+  
+  .progress-bar-bg {
+    position: absolute;
+    top: 44px;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: var(--color-border-light);
+    z-index: 1;
+  }
+  
+  .progress-bar-fill {
+    height: 100%;
+    background: #34C759;
+    transition: width 0.5s ease;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 768px) {
+    #track-map { height: 300px; }
+    .eta-time { font-size: 2rem; }
+    .status-step .step-label { font-size: 0.65rem; }
+  }
+</style>
+
+<div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg);flex-wrap:wrap;gap:var(--space-md);">
+    <div>
+      <h1 style="font-size:1.5rem;margin:0;">Track Order</h1>
+      <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:4px 0 0 0;">
+        Order #{{ order.order_id }} - {{ order.store.name if order.store else 'Restaurant' }}
+      </p>
+    </div>
+    <span class="status-badge {% if order.status == 'Pending' %}pending{% elif order.status == 'Approved' %}processing{% elif order.status == 'Ready' %}accepted{% elif order.status == 'Out for Delivery' %}accepted{% elif order.status == 'Completed' %}completed{% elif order.status == 'Cancelled' %}cancelled{% else %}pending{% endif %}">
+      {{ order.status }}
+    </span>
+  </div>
+
+  <!-- Status Progress Bar -->
+  {% set status_order = ['Pending', 'Approved', 'Ready', 'Out for Delivery', 'Completed'] %}
+  {% set current_idx = status_order.index(order.status) if order.status in status_order else -1 %}
+  
+  <div class="info-card" style="background:var(--color-card);border-radius:var(--radius-xl);padding:var(--space-xl);border:1px solid var(--color-border-light);margin-bottom:var(--space-lg);">
+    <div class="status-progress">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width: {{ ((current_idx) / (status_order|length - 1)) * 100 if current_idx >= 0 else 0 }}%"></div>
+      </div>
+      
+      {% for step in status_order %}
+      {% set step_idx = loop.index0 %}
+      <div class="status-step {% if step_idx < current_idx %}completed{% elif step_idx == current_idx %}active{% endif %}">
+        <div class="step-dot">
+          {% if step_idx < current_idx %}<i class="fas fa-check" style="font-size:0.75rem;"></i>
+          {% elif step_idx == current_idx %}<i class="fas fa-circle" style="font-size:0.6rem;"></i>
+          {% else %}{{ step_idx + 1 }}{% endif %}
+        </div>
+        <div class="step-label">
+          {% if step == 'Pending' %}Ordered
+          {% elif step == 'Approved' %}Confirmed
+          {% elif step == 'Ready' %}Prepared
+          {% elif step == 'Out for Delivery' %}On the Way
+          {% elif step == 'Completed' %}Delivered
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Order Items Summary -->
+    <div style="margin-top:var(--space-md);padding-top:var(--space-md);border-top:1px solid var(--color-border-light);">
+      {% if order.order_items %}
+      {% for item in order.order_items %}
+      <div style="display:flex;justify-content:space-between;font-size:0.875rem;padding:2px 0;">
+        <span>{{ item.quantity }}x {{ item.product_name }}</span>
+        <span style="font-weight:600;">M{{ '%.2f'|format(item.product_price * item.quantity) }}</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+      <div style="display:flex;justify-content:space-between;font-size:0.875rem;padding:4px 0 0;border-top:1px solid var(--color-border-light);margin-top:4px;">
+        <span>Delivery Fee</span>
+        <span>M{{ '%.2f'|format(order.deliveryfee or 0) }}</span>
+      </div>
+    </div>
+  </div>
+
+  {% if order.status == 'Out for Delivery' and order.customer_lat and order.customer_lng %}
+  <!-- Live Tracking (only for Out for Delivery) -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="eta-card">
+        <div class="eta-label">Estimated Arrival</div>
+        <div class="eta-time" id="eta-display">--</div>
+        <div class="eta-label" style="margin-top:8px;">
+          <span class="delivery-dot"></span> <span id="driver-status">Live</span>
+        </div>
+        <div style="margin-top:12px;font-size:0.8125rem;color:var(--color-text-secondary);" id="distance-display">
+          <i class="fas fa-route"></i> Distance: --
+        </div>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <div id="track-map"></div>
+      
+      {% if order.deliveryguy and order.deliveryguy != 'Not Taken' %}
+      <div style="display:flex;align-items:center;gap:var(--space-sm);margin-top:var(--space-sm);font-size:0.875rem;color:var(--color-text-secondary);">
+        <i class="fas fa-motorcycle" style="color:var(--color-accent);"></i>
+        Your driver: <strong>{{ order.deliveryguy }}</strong>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Delivery Details -->
+  {% if order.location and order.location != 'pickup' %}
+  <div class="info-card" style="background:var(--color-card);border-radius:var(--radius-xl);padding:var(--space-xl);border:1px solid var(--color-border-light);">
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:var(--space-md);">Delivery Details</h3>
+    <div style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:4px;">
+      <i class="fas fa-location-dot" style="color:var(--color-accent);"></i>
+      Address: <strong style="color:var(--color-text-primary);">{{ order.location }}</strong>
+    </div>
+    {% if order.customer_phone %}
+    <div style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.875rem;color:var(--color-text-secondary);">
+      <i class="fas fa-phone" style="color:var(--color-accent);"></i>
+      Contact: <strong style="color:var(--color-text-primary);">{{ order.customer_phone }}</strong>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+{% if order.status == 'Out for Delivery' and order.customer_lat and order.customer_lng %}
+<!-- Leaflet -->
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}"/>
+<script src="{{ url_for('static', filename='lib/leaflet.js') }}"></script>
+
+<script>
+(function() {
+  var storeLat = {{ order.store.latitude or 0 }};
+  var storeLng = {{ order.store.longitude or 0 }};
+  var custLat = {{ order.customer_lat }};
+  var custLng = {{ order.customer_lng }};
+  var orderId = "{{ order.id }}";
+  
+  var map = L.map('track-map', { zoomControl: true, attributionControl: false })
+    .setView([custLat, custLng], 14);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  
+  var driverIcon = L.divIcon({
+    html: '<div style="background:#34C759;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-motorcycle"></i></div>',
+    className: '', iconSize: [30, 30], iconAnchor: [15, 15]
+  });
+  
+  var destIcon = L.divIcon({
+    html: '<div style="background:#FF3B30;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-home"></i></div>',
+    className: '', iconSize: [30, 30], iconAnchor: [15, 15]
+  });
+  
+  L.marker([custLat, custLng], { icon: destIcon })
+    .addTo(map)
+    .bindPopup('<strong>Your Location</strong><br>{{ order.location }}');
+  
+  var driverMarker = L.marker([storeLat || custLat, storeLng || custLng], { icon: driverIcon })
+    .addTo(map)
+    .bindPopup('Driver');
+  
+  var routeLine = L.polyline([[storeLat, storeLng], [custLat, custLng]], {
+    color: '#0071E3', weight: 2, opacity: 0.4, dashArray: '6, 8'
+  }).addTo(map);
+
+  if (storeLat && storeLng) {
+    fetch('https://router.project-osrm.org/route/v1/driving/' +
+          storeLng + ',' + storeLat + ';' + custLng + ',' + custLat +
+          '?overview=full&geometries=geojson')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          var coords = data.routes[0].geometry.coordinates.map(function(c) {
+            return [c[1], c[0]];
+          });
+          routeLine.setLatLngs(coords);
+          routeLine.setStyle({ color: '#0071E3', weight: 3, opacity: 0.6, dashArray: '' });
+        }
+      })
+      .catch(function() {});
+  }
+  
+  var bearingLine = L.polyline([], {
+    color: '#34C759', weight: 3, opacity: 0.8
+  }).addTo(map);
+  
+  setTimeout(function() {
+    var bounds = L.latLngBounds([custLat, custLng], [storeLat || custLat, storeLng || custLng]);
+    map.fitBounds(bounds.pad(0.3));
+  }, 300);
+  
+  function updateETA(lat, lng) {
+    fetch('https://router.project-osrm.org/route/v1/driving/' +
+          lat + ',' + lng + ';' + custLng + ',' + custLat +
+          '?overview=false')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          var distKm = (data.routes[0].distance / 1000).toFixed(1);
+          var etaMin = Math.ceil(data.routes[0].duration / 60);
+          document.getElementById('distance-display').innerHTML =
+            '<i class="fas fa-route"></i> Distance: ' + distKm + ' km';
+          if (etaMin < 2) {
+            document.getElementById('eta-display').textContent = 'Arriving soon!';
+          } else {
+            var now = new Date();
+            now.setMinutes(now.getMinutes() + etaMin);
+            document.getElementById('eta-display').textContent =
+              now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+        }
+      })
+      .catch(function() {
+        document.getElementById('distance-display').innerHTML =
+          '<i class="fas fa-route"></i> Getting route...';
+      });
+  }
+  
+  function pollDriver() {
+    fetch('/api/delivery/' + orderId)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.latitude && data.longitude) {
+          var lat = data.latitude, lng = data.longitude;
+          driverMarker.setLatLng([lat, lng]);
+          bearingLine.setLatLngs([[lat, lng], [custLat, custLng]]);
+          updateETA(lat, lng);
+          document.getElementById('driver-status').textContent = data.status || 'On the way';
+        }
+      })
+      .catch(function() {});
+  }
+  
+  setInterval(pollDriver, 5000);
+  pollDriver();
+})();
+</script>
+{% endif %}
+
+<style>
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.status-badge.pending { background: #FFF3E0; color: #B76E00; }
+.status-badge.processing { background: #E3F2FD; color: #1565C0; }
+.status-badge.accepted { background: #E8F5E9; color: #2E7D32; }
+.status-badge.completed { background: #E8F5E9; color: #1B5E20; }
+.status-badge.cancelled { background: #FFEBEE; color: #C62828; }
+</style>
+{% endblock %}

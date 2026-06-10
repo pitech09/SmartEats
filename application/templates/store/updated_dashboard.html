@@ -2,102 +2,597 @@
 {% block title %}{{ store.name }} Dashboard - SmartEats{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
+<style>
+  .dash-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
 
-    <!-- Notifications -->
-    <div class="d-flex justify-content-end mb-3">
-        <div class="badge bg-danger p-2">
-            Notifications: {{ count }}
-        </div>
+  /* --- Page Header --- */
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .dash-header h1 {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+  }
+
+  .dash-header-sub {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    margin: 4px 0 0 0;
+  }
+
+  .notif-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--color-danger);
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+    transition: transform var(--transition-fast);
+    cursor: pointer;
+  }
+
+  .notif-badge:hover {
+    transform: scale(1.05);
+  }
+
+  /* --- Stat Cards --- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .stat-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .stat-card .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    margin-bottom: var(--space-md);
+  }
+
+  .stat-card .stat-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: var(--space-xs);
+  }
+
+  .stat-card .stat-value {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .stat-card .stat-trend {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-top: var(--space-xs);
+  }
+
+  /* --- Stat accent colors --- */
+  .stat-card.sales-daily::before  { background: var(--color-accent); }
+  .stat-card.sales-daily .stat-icon { background: rgba(0,113,227,0.1); color: var(--color-accent); }
+
+  .stat-card.sales-monthly::before { background: var(--color-success); }
+  .stat-card.sales-monthly .stat-icon { background: rgba(52,199,89,0.1); color: var(--color-success); }
+
+  .stat-card.sales-yearly::before  { background: var(--color-warning); }
+  .stat-card.sales-yearly .stat-icon { background: rgba(255,159,10,0.1); color: var(--color-warning); }
+
+  .stat-card.pending::before { background: var(--color-danger); }
+  .stat-card.pending .stat-icon { background: rgba(255,59,48,0.1); color: var(--color-danger); }
+
+  /* --- Chart Section --- */
+  .chart-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .chart-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+  }
+
+  .chart-card-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .chart-card-subtitle {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    margin: 2px 0 0 0;
+  }
+
+  /* --- New Orders Panel --- */
+  .orders-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: var(--space-xl);
+  }
+
+  .orders-card-header {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .orders-card-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .orders-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .order-item {
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-md);
+    transition: background var(--transition-fast);
+  }
+
+  .order-item:last-child {
+    border-bottom: none;
+  }
+
+  .order-item:hover {
+    background: rgba(0,113,227,0.03);
+  }
+
+  .order-item-info h4 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  .order-item-info p {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    margin: 2px 0 0 0;
+  }
+
+  .order-item-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-shrink: 0;
+  }
+
+  .order-fee {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--color-text-primary);
+  }
+
+  .badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .badge-status.pending    { background: #FFF3E0; color: #B76E00; }
+  .badge-status.approved   { background: #E3F2FD; color: #1565C0; }
+  .badge-status.ready      { background: #E8F5E9; color: #2E7D32; }
+
+  .empty-state {
+    padding: var(--space-3xl) var(--space-lg);
+    text-align: center;
+    color: var(--color-text-secondary);
+  }
+
+  .empty-state i {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    margin-bottom: var(--space-md);
+    display: block;
+  }
+
+  /* --- Quick Actions --- */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    color: var(--color-text-primary);
+    transition: all var(--transition-base);
+  }
+
+  .quick-action:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--color-accent);
+  }
+
+  .quick-action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: rgba(0,113,227,0.08);
+    color: var(--color-accent);
+  }
+
+  .quick-action-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .quick-actions { grid-template-columns: repeat(2, 1fr); }
+    .stat-card .stat-value { font-size: 1.375rem; }
+  }
+
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="dash-container">
+
+  <!-- Page Header -->
+  <div class="dash-header">
+    <div>
+      <h1>{{ store.name }}</h1>
+      <p class="dash-header-sub">Store Dashboard</p>
+    </div>
+    {% if count > 0 %}
+    <a href="{{ url_for('store.ready_orders') }}" class="notif-badge">
+      <i class="fas fa-bell"></i> {{ count }} new orders
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card sales-daily">
+      <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+      <div class="stat-label">Daily Sales</div>
+      <div class="stat-value">M{{ '%.2f'|format(total_daily_sales) }}</div>
+      <div class="stat-trend">Today's revenue</div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row g-3">
-        <div class="col-md-3">
-            <div class="card text-white bg-primary h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Daily Sales</h6>
-                    <h4>M{{ total_daily_sales }}</h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-white bg-success h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Monthly Sales</h6>
-                    <h4>M{{ total_monthly_sales }}</h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-white bg-warning h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Annual Sales</h6>
-                    <h4>M{{ total_annual_sales }}</h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-white bg-danger h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Pending Orders</h6>
-                    <h4>{{ pending_orders }}</h4>
-                </div>
-            </div>
-        </div>
+    <div class="stat-card sales-monthly">
+      <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+      <div class="stat-label">Monthly Sales</div>
+      <div class="stat-value">M{{ '%.2f'|format(total_monthly_sales) }}</div>
+      <div class="stat-trend">This month</div>
     </div>
 
-    <!-- Daily Sales Chart -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    Daily Sales Chart
-                </div>
-                <div class="card-body">
-                    <canvas id="dailySalesChart" height="100"></canvas>
-                </div>
-            </div>
-        </div>
+    <div class="stat-card sales-yearly">
+      <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+      <div class="stat-label">Annual Sales</div>
+      <div class="stat-value">M{{ '%.2f'|format(total_annual_sales) }}</div>
+      <div class="stat-trend">This year</div>
     </div>
+
+    <div class="stat-card pending">
+      <div class="stat-icon"><i class="fas fa-clock"></i></div>
+      <div class="stat-label">Pending Orders</div>
+      <div class="stat-value">{{ pending_orders }}</div>
+      <div class="stat-trend">Awaiting action</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <a href="{{ url_for('store.ready_orders') }}" class="quick-action">
+      <div class="quick-action-icon"><i class="fas fa-receipt"></i></div>
+      <span class="quick-action-label">Orders</span>
+    </a>
+    <a href="{{ url_for('store.products') }}" class="quick-action">
+      <div class="quick-action-icon"><i class="fas fa-box"></i></div>
+      <span class="quick-action-label">Products</span>
+    </a>
+    <a href="{{ url_for('store.manage_categories') }}" class="quick-action">
+      <div class="quick-action-icon"><i class="fas fa-tags"></i></div>
+      <span class="quick-action-label">Categories</span>
+    </a>
+    <a href="{{ url_for('store.vendor_analytics') }}" class="quick-action">
+      <div class="quick-action-icon"><i class="fas fa-chart-pie"></i></div>
+      <span class="quick-action-label">Analytics</span>
+    </a>
+    <a href="{{ url_for('store.addstaff') }}" class="quick-action">
+      <div class="quick-action-icon"><i class="fas fa-user-plus"></i></div>
+      <span class="quick-action-label">Add Staff</span>
+    </a>
+    <a href="{{ url_for('store.updatestore') }}" class="quick-action">
+      <div class="quick-action-icon"><i class="fas fa-cog"></i></div>
+      <span class="quick-action-label">Settings</span>
+    </a>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <h3 class="chart-card-title">Sales Overview</h3>
+        <p class="chart-card-subtitle">Daily revenue for the current period</p>
+      </div>
+    </div>
+    <div style="position:relative; height:180px;">
+      <canvas id="dailySalesChart"></canvas>
+    </div>
+  </div>
+
+  <!-- New Orders (real-time via SocketIO) -->
+  <div class="orders-card">
+    <div class="orders-card-header">
+      <div>
+        <h3 class="orders-card-title">
+          <i class="fas fa-bolt" style="color:var(--color-warning);margin-right:6px;"></i>
+          New Orders
+        </h3>
+      </div>
+      <span class="badge-status pending" id="order-count-badge" style="font-size:0.8125rem;">
+        {{ pending_orders }} pending
+      </span>
+    </div>
+
+    {% if new_orders %}
+    <ul class="orders-list" id="orders-list">
+      {% for order in new_orders %}
+      <li class="order-item" data-order-id="{{ order.id }}">
+        <div class="order-item-info">
+          <h4>
+            <i class="fas fa-receipt" style="color:var(--color-accent);margin-right:4px;"></i>
+            Order #{{ order.order_id }}
+          </h4>
+          <p>
+            {{ order.user_email or 'Customer' }}
+            · {{ order.location }}
+            · {{ order.create_at.strftime('%I:%M %p') if order.create_at else '' }}
+          </p>
+        </div>
+        <div class="order-item-meta">
+          <span class="order-fee">M{{ '%.2f'|format(order.deliveryfee or 0) }}</span>
+          <span class="badge-status approved">New</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <p>No new orders right now</p>
+    </div>
+    {% endif %}
+  </div>
 
 </div>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-// Safe fallback if backend didn't provide daily_data
 const dates = {{ daily_data.dates|default([])|tojson }};
 const totals = {{ daily_data.totals|default([])|tojson }};
 
 const ctx = document.getElementById('dailySalesChart').getContext('2d');
-const chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: dates,
-        datasets: [{
-            label: 'Daily Sales (M)',
-            data: totals,
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true,
-            pointRadius: 3
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: true } },
-        scales: {
-            y: { beginAtZero: true },
-            x: { ticks: { maxRotation: 90, minRotation: 45 } }
+const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+gradient.addColorStop(0, 'rgba(0,113,227,0.15)');
+gradient.addColorStop(1, 'rgba(0,113,227,0.01)');
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: dates,
+    datasets: [{
+      label: 'Daily Sales (M)',
+      data: totals,
+      backgroundColor: gradient,
+      borderColor: '#0071E3',
+      borderWidth: 2.5,
+      tension: 0.4,
+      fill: true,
+      pointRadius: 4,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: '#0071E3',
+      pointBorderWidth: 2,
+      pointHoverRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1D1D1F',
+        titleFont: { family: "'SF Pro Display', system-ui", weight: '600' },
+        bodyFont: { family: "'SF Pro Text', system-ui" },
+        cornerRadius: 10,
+        padding: 12,
+        displayColors: false,
+        callbacks: {
+          label: function(ctx) { return 'M' + ctx.parsed.y.toFixed(2); }
         }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(0,0,0,0.04)' },
+        ticks: {
+          font: { family: "'SF Pro Text', system-ui", size: 11 },
+          color: '#6E6E73',
+          callback: function(v) { return 'M' + v; }
+        }
+      },
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { family: "'SF Pro Text', system-ui", size: 11 },
+          color: '#6E6E73',
+          maxRotation: 0,
+          autoSkip: true,
+          maxTicksLimit: 10
+        }
+      }
     }
+  }
 });
+</script>
+
+<!-- SocketIO Real-time New Order Notifications -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+<script>
+(function() {
+  var storeId = {{ store.id }};
+  var socket = io();
+  var audio = new Audio('{{ url_for("static", filename="sounds/new_order.wav") }}');
+
+  socket.on('connect', function() {
+    socket.emit('join', { room: 'store_' + storeId });
+  });
+
+  socket.on('new_order', function(data) {
+    // Play sound
+    audio.play().catch(function() {});
+
+    // Add order to the list
+    var list = document.getElementById('orders-list');
+    if (!list) {
+      // Replace empty state with a list
+      var emptyState = document.querySelector('.empty-state');
+      if (emptyState) {
+        var card = emptyState.closest('.orders-card');
+        emptyState.remove();
+        var ul = document.createElement('ul');
+        ul.className = 'orders-list';
+        ul.id = 'orders-list';
+        card.appendChild(ul);
+        list = ul;
+      }
+    }
+
+    if (list) {
+      var li = document.createElement('li');
+      li.className = 'order-item';
+      li.style.opacity = '0';
+      li.style.transform = 'translateY(-10px)';
+      li.innerHTML = '<div class="order-item-info">' +
+        '<h4><i class="fas fa-receipt" style="color:var(--color-accent);margin-right:4px;"></i>Order #' + data.order_id + '</h4>' +
+        '<p>' + (data.customer_email || 'Customer') + ' · ' + (data.location || '') + ' · ' + (data.created_at || '') + '</p>' +
+        '</div><div class="order-item-meta">' +
+        '<span class="order-fee">M' + (data.delivery_fee || 0).toFixed(2) + '</span>' +
+        '<span class="badge-status approved">New</span></div>';
+      list.insertBefore(li, list.firstChild);
+
+      // Animate in
+      requestAnimationFrame(function() {
+        li.style.transition = 'all 0.3s ease';
+        li.style.opacity = '1';
+        li.style.transform = 'translateY(0)';
+      });
+    }
+
+    // Flash the notification badge
+    var badge = document.querySelector('.notif-badge');
+    if (badge) {
+      badge.style.transform = 'scale(1.15)';
+      setTimeout(function() { badge.style.transform = 'scale(1)'; }, 200);
+    }
+  });
+})();
 </script>
 {% endblock %}

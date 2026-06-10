@@ -78,9 +78,9 @@ def haversine_meters(lat1, lon1, lat2, lon2):
 
 def calculate_delivery_fee(store_lat, store_lng, cust_lat, cust_lng,
                            store_radius=500,
-                           inside_min_fee=8,
+                           inside_min_fee=10,
                            normal_min_fee=13,
-                           rate_per_meter=0.007,
+                           rate_per_meter=0.01,
                            max_fee=10000):
 
     distance_m = haversine_meters(
@@ -646,9 +646,10 @@ def addorder():
             db.session.add(sale)
 
     total_amount += delivery_fee
-    neworder.deliveryfee = round(total_amount, 2)
+    # NOTE: deliveryfee was already set at order creation (line 587) — do NOT overwrite with total
     print(f"[DEBUG] Total order amount (including delivery): {total_amount}")
     print(f"[DEBUG] Calculated delivery fee: {delivery_fee}")
+    print(f"[DEBUG] Stored delivery fee on order: {neworder.deliveryfee}")
 
     # -----------------------------
     # Clear Cart
@@ -673,6 +674,13 @@ def addorder():
         room=f'store_{store.id}'
     )
 
+    # Play sound notification for the store dashboard
+    try:
+        from application.notification import notify_store
+        notify_store(store.id)
+    except Exception:
+        pass
+
     flash("Order successfully placed.", "success")
     return redirect(url_for('main.myorders'))
 
@@ -680,34 +688,61 @@ def addorder():
 @main.route('/myorders')
 @login_required
 def myorders():
-    store_id = session.get('store_id')
-    if not store_id:
-        flash("Please select a store first.")
-        return redirect(url_for('main.home'))
+    # Show ALL active orders for this customer (across any store)
+    ACTIVE_STATUSES = [
+        "Pending", "Processing", "Accepted",
+        "Approved", "Ready", "Out for Delivery"
+    ]
 
-    # Fetch active/pending orders with their items
     orders = (
         Order.query
-        .filter_by(user_id=current_user.id, store_id=store_id)
-        .filter(Order.status.in_(["Pending", "Processing", "Accepted"]))
-        .options(joinedload(Order.order_items))  # <-- load items
+        .filter_by(user_id=current_user.id)
+        .filter(Order.status.in_(ACTIVE_STATUSES))
+        .options(joinedload(Order.order_items))
         .order_by(Order.create_at.desc())
         .all()
     )
 
     return render_template('customer/myorder.html', order=orders)
 
-@main.route('/complete_orders')
+@main.route('/order_history')
 @login_required
-def completed_order():
-    # Fetch all orders for current user where status is "Completed"
-    completed_orders = Order.query.filter_by(user_id=current_user.id, status='Completed')\
-                                  .order_by(Order.create_at.desc()).all()
-    
-    return render_template(
-        'customer/updated_complete.html',
-        completed_orders=completed_orders
+def order_history():
+    # Show ALL past orders (completed, delivered, collected, cancelled)
+    FINAL_STATUSES = [
+        "Completed", "Delivered", "Collected", "Cancelled"
+    ]
+
+    past_orders = (
+        Order.query
+        .filter_by(user_id=current_user.id)
+        .filter(Order.status.in_(FINAL_STATUSES))
+        .options(joinedload(Order.order_items))
+        .order_by(Order.create_at.desc())
+        .all()
     )
+
+    return render_template(
+        'customer/updated_orderhistory.html',
+        past_orders=past_orders
+    )
+
+
+@main.route('/track_order/<int:order_id>')
+@login_required
+def track_order(order_id):
+    """Customer live tracking page — shows progress bar and live map for Out for Delivery."""
+    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first_or_404()
+    return render_template('customer/track_order.html', order=order)
+
+
+@main.route('/api/delivery/<int:order_id>')
+def api_delivery_public(order_id):
+    """Public API for customers to poll driver location."""
+    delivery_obj = Delivery.query.filter_by(order_id=order_id).first()
+    if delivery_obj:
+        return jsonify(delivery_obj.to_dict())
+    return jsonify({"error": "Delivery not found"}), 404
 
 
 @main.route('/cancelled_orders')

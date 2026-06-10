@@ -46,24 +46,35 @@
 
     <!-- Filter Buttons -->
     <div class="order-filters">
-        <button type="button" class="btn btn-outline-success" onclick="window.location.href='{{ url_for('main.myorders') }}'">Active/Pending Orders</button>
-        <button type="button" class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('main.completed_order') }}'">Order History</button>
+        <button type="button" class="btn btn-outline-success" onclick="window.location.href='{{ url_for('main.myorders') }}'">Active Orders</button>
+        <button type="button" class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('main.order_history') }}'">Order History</button>
         <button type="button" class="btn btn-outline-danger" onclick="window.location.href='{{ url_for('main.cancelled_orders') }}'">Cancelled Orders</button>
     </div>
 
     <!-- Orders List -->
     <section class="order-list">
-        {% if not orders %}
+        {% if not past_orders %}
             <div class="empty-message">
                 <p>You have no order history yet.</p>
-                <p>Browse the <a href="{{ url_for('main.menu', page_num=1) }}">menu</a> to place orders.</p>
+                <p>Browse the <a href="{{ url_for('main.restuarants') }}">restaurants</a> to place orders.</p>
             </div>
         {% else %}
-            {% for order in orders %}
+            {% for order in past_orders %}
             <div class="order-card">
-                <h3>Order ID: {{ order.order_id }}</h3>
+                <h3>Order #{{ order.order_id }}</h3>
+                <p><strong>Restaurant:</strong> {{ order.store.name if order.store else 'N/A' }}</p>
+                <p><strong>Status:</strong> {{ order.status }}</p>
+                <p><strong>Total:</strong> M{{ '%.2f'|format(order.deliveryfee or 0) }}</p>
                 <p><strong>Destination:</strong> {{ order.location }}</p>
-                <p><strong>Order Date:</strong> {{ order.create_at.strftime('%Y-%m-%d @ %H:%M') }}</p>
+                <p><strong>Order Date:</strong> {{ order.create_at.strftime('%d %b %Y @ %H:%M') if order.create_at else 'N/A' }}</p>
+                {% if order.order_items %}
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee;">
+                    <strong>Items:</strong>
+                    {% for item in order.order_items %}
+                    <p style="margin:2px 0 2px 15px;font-size:0.9rem;">{{ item.quantity }}x {{ item.product_name }} — M{{ '%.2f'|format(item.product_price * item.quantity) }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         {% endif %}

@@ -83,8 +83,10 @@
   });
 
   // Utility: calculate visible total with delivery flag
+  // Reads the current delivery fee from the hidden input field (set by cart page JS)
   function calculateDisplayedTotal(base, deliverySelected) {
-    const deliveryFee = 6.00; // change if you use store-specific fees
+    const feeEl = document.getElementById('delivery-fee');
+    const deliveryFee = feeEl ? parseFloat(feeEl.value) || 0 : 0;
     return deliverySelected ? (base + deliveryFee) : base;
   }
 

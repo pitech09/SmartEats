@@ -1,0 +1,316 @@
+{% extends "deliverylayout.html" %}
+{% block title %}Navigate to Order #{{ order.order_id }} - SmartEats{% endblock %}
+
+{% block content %}
+<style>
+  #nav-map {
+    height: calc(100vh - 200px);
+    min-height: 400px;
+    width: 100%;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-light);
+    z-index: 1;
+  }
+  
+  .nav-info-panel {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
+    border: 1px solid var(--color-border-light);
+    margin-bottom: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  
+  .nav-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9375rem;
+  }
+  
+  .nav-info-item i {
+    color: var(--color-accent);
+    width: 20px;
+    text-align: center;
+  }
+  
+  .nav-info-value {
+    font-weight: 600;
+  }
+  
+  .live-dot {
+    width: 10px;
+    height: 10px;
+    background: #34C759;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  
+  .distance-badge {
+    background: rgba(0,113,227,0.1);
+    color: var(--color-accent);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    #nav-map { height: calc(100vh - 250px); }
+  }
+</style>
+
+<div class="container mt-3 mb-3">
+  <!-- Info Panel -->
+  <div class="nav-info-panel">
+    <div class="nav-info-item">
+      <i class="fas fa-box"></i>
+      Order: <span class="nav-info-value">#{{ order.order_id }}</span>
+    </div>
+    <div class="nav-info-item">
+      <i class="fas fa-store"></i>
+      From: <span class="nav-info-value">{{ store.name }}</span>
+    </div>
+    <div class="nav-info-item">
+      <i class="fas fa-map-pin"></i>
+      To: <span class="nav-info-value">{{ order.location }}</span>
+    </div>
+    <div class="nav-info-item">
+      <span class="live-dot"></span> <span id="live-status">Tracking</span>
+    </div>
+    <div>
+      <span class="distance-badge" id="distance-display">
+        <i class="fas fa-route"></i> -- m
+      </span>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div id="nav-map"></div>
+</div>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}"/>
+<script src="{{ url_for('static', filename='lib/leaflet.js') }}"></script>
+
+<script>
+(function() {
+  var orderId = "{{ order.id }}";
+  var storeLat = {{ store.latitude }};
+  var storeLng = {{ store.longitude }};
+  var custLat = {{ order.customer_lat }};
+  var custLng = {{ order.customer_lng }};
+  var customerAddress = "{{ order.location }}";
+
+  // ---- Init map centered on route midpoint ----
+  var midLat = (storeLat + custLat) / 2;
+  var midLng = (storeLng + custLng) / 2;
+  var map = L.map('nav-map', {
+    zoomControl: true,
+    attributionControl: false
+  }).setView([midLat, midLng], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+  }).addTo(map);
+
+  // ---- Custom Icons ----
+  var storeIcon = L.divIcon({
+    html: '<div style="background:#0071E3;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-store"></i></div>',
+    className: '',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+
+  var destIcon = L.divIcon({
+    html: '<div style="background:#FF3B30;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-map-pin"></i></div>',
+    className: '',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+
+  var driverIcon = L.divIcon({
+    html: '<div style="background:#34C759;color:white;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-motorcycle"></i></div>',
+    className: '',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+
+  // ---- Markers ----
+  var storeMarker = L.marker([storeLat, storeLng], { icon: storeIcon })
+    .addTo(map)
+    .bindPopup('<strong>' + '{{ store.name }}' + '</strong><br>Pickup point');
+
+  var destMarker = L.marker([custLat, custLng], { icon: destIcon })
+    .addTo(map)
+    .bindPopup('<strong>Delivery</strong><br>' + customerAddress);
+
+  var driverMarker = L.marker([storeLat, storeLng], { icon: driverIcon })
+    .addTo(map)
+    .bindPopup('<strong>You</strong><br>Your current position');
+
+  // ---- Route line (straight dashed fallback until OSRM loads) ----
+  var routeLine = L.polyline([
+    [storeLat, storeLng],
+    [custLat, custLng]
+  ], {
+    color: '#0071E3',
+    weight: 3,
+    opacity: 0.6,
+    dashArray: '8, 12'
+  }).addTo(map);
+
+  // ---- Bearing line from driver to destination ----
+  var bearingLine = L.polyline([], {
+    color: '#34C759',
+    weight: 2,
+    opacity: 0.8
+  }).addTo(map);
+
+  // ---- Fetch actual driving route from OSRM (open source routing) ----
+  function fetchOSRMRoute(fromLat, fromLng, toLat, toLng) {
+    var url = 'https://router.project-osrm.org/route/v1/driving/' +
+              fromLng + ',' + fromLat + ';' + toLng + ',' + toLat +
+              '?overview=full&geometries=geojson&steps=true&alternatives=false';
+    
+    return fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          var route = data.routes[0];
+          var coords = route.geometry.coordinates.map(function(c) {
+            return [c[1], c[0]]; // swap lng,lat → lat,lng for Leaflet
+          });
+          
+          // Update route line with actual road path
+          routeLine.setLatLngs(coords);
+          routeLine.setStyle({ color: '#0071E3', weight: 4, opacity: 0.8, dashArray: '' });
+          
+          // Update info panel with driving distance & time
+          var distKm = (route.distance / 1000).toFixed(1);
+          var durationMin = Math.round(route.duration / 60);
+          document.getElementById('distance-display').innerHTML =
+            '<i class="fas fa-route"></i> ' + distKm + ' km · ' + durationMin + ' min drive';
+          
+          return route;
+        }
+      })
+      .catch(function() {
+        // Fallback: keep the straight dashed line (already added)
+      });
+  }
+
+  // ---- Update distance & ETA via OSRM (no straight-line) ----
+  function updateDistance(lat, lng) {
+    fetch('https://router.project-osrm.org/route/v1/driving/' +
+          lat + ',' + lng + ';' + custLng + ',' + custLat +
+          '?overview=false')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          var distKm = (data.routes[0].distance / 1000).toFixed(1);
+          var etaMin = Math.ceil(data.routes[0].duration / 60);
+          document.getElementById('distance-display').innerHTML =
+            '<i class="fas fa-route"></i> ' + distKm + ' km · ETA ' + etaMin + ' min';
+        }
+      })
+      .catch(function() {
+        document.getElementById('distance-display').innerHTML =
+          '<i class="fas fa-route"></i> Getting route...';
+      });
+  }
+
+  // ---- GPS Tracking ----
+  var watchId = null;
+  var lastLat = storeLat;
+  var lastLng = storeLng;
+  var locationHistory = [];
+
+  function startTracking() {
+    if (!navigator.geolocation) {
+      document.getElementById('live-status').textContent = 'GPS unavailable';
+      return;
+    }
+
+    watchId = navigator.geolocation.watchPosition(
+      function(pos) {
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
+        var accuracy = pos.coords.accuracy;
+
+        // Skip inaccurate readings (wifi cache >100m)
+        if (accuracy > 100) {
+          document.getElementById('live-status').textContent = 'Acquiring GPS (' + Math.round(accuracy) + 'm)';
+          return;
+        }
+
+        document.getElementById('live-status').textContent = 'Live (' + Math.round(accuracy) + 'm)';
+
+        // Update driver marker
+        driverMarker.setLatLng([lat, lng]);
+
+        // Update bearing line (driver → destination)
+        bearingLine.setLatLngs([[lat, lng], [custLat, custLng]]);
+
+        // Update distance
+        updateDistance(lat, lng);
+
+        // Pan map to keep driver in view
+        map.panTo([lat, lng], { animate: true, duration: 0.5 });
+
+        // Store history for trail
+        locationHistory.push([lat, lng]);
+        lastLat = lat;
+        lastLng = lng;
+      },
+      function(err) {
+        document.getElementById('live-status').textContent = 'GPS error (' + err.code + ')';
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  }
+
+  // ---- Start tracking ----
+  startTracking();
+
+  // ---- Fallback: update every 5 seconds even if GPS is slow ----
+  // (watchPosition already does continuous updates, this is extra safety)
+  var fallbackTimer = setInterval(function() {
+    if (watchId === null) {
+      startTracking();
+    }
+  }, 5000);
+
+  // ---- Fit map to show all markers on first load ----
+  setTimeout(function() {
+    var group = L.featureGroup([storeMarker, destMarker]);
+    map.fitBounds(group.getBounds().pad(0.2));
+  }, 500);
+
+  // ---- Fetch OSRM driving route between store and customer ----
+  fetchOSRMRoute(storeLat, storeLng, custLat, custLng);
+
+  // ---- Cleanup on page unload ----
+  window.addEventListener('beforeunload', function() {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+    }
+    clearInterval(fallbackTimer);
+  });
+})();
+</script>
+{% endblock %}

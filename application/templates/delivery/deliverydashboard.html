@@ -2,76 +2,253 @@
 {% block title %}{{ store.name }} Ready Orders - SmartEats{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-  <h1 class="mb-4">{{ store.name }} - Ready Orders</h1>
+<style>
+  .dd-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .dd-header {
+    margin-bottom: var(--space-xl);
+  }
+
+  .dd-header h1 {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+  }
+
+  .dd-header-sub {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    margin: 4px 0 0 0;
+  }
+
+  .dd-empty {
+    text-align: center;
+    padding: var(--space-4xl) var(--space-lg);
+  }
+
+  .dd-empty-icon {
+    font-size: 3rem;
+    color: var(--color-border);
+    margin-bottom: var(--space-lg);
+  }
+
+  .dd-empty h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-sm) 0;
+  }
+
+  .dd-empty p {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  .dd-orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .dd-order-card {
+    background: var(--color-card);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    transition: all var(--transition-base);
+  }
+
+  .dd-order-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .dd-order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dd-order-id {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .dd-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: #E8F5E9;
+    color: #2E7D32;
+  }
+
+  .dd-order-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .dd-detail-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+  }
+
+  .dd-detail-row i {
+    width: 16px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+  }
+
+  .dd-detail-row strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .dd-order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border-light);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+  }
+
+  .dd-order-footer i {
+    margin-right: 4px;
+  }
+
+  .dd-fee {
+    font-weight: 600;
+    color: var(--color-success);
+  }
+
+  .dd-take-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: var(--color-success);
+    color: white;
+    font-family: var(--font-text);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    margin-top: auto;
+  }
+
+  .dd-take-btn:hover {
+    background: #2DB84E;
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .dd-take-btn:active {
+    transform: scale(0.97);
+  }
+
+  @media (max-width: 768px) {
+    .dd-orders-grid {
+      grid-template-columns: 1fr;
+    }
+    .dd-header h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+
+<div class="dd-container">
+  <div class="dd-header">
+    <h1>{{ store.name }}</h1>
+    <p class="dd-header-sub">Ready Orders</p>
+  </div>
 
   {% if not ready_orders %}
-    <div class="alert alert-info text-center">
-      <i class="fas fa-box-open fa-2x mb-2"></i>
-      <p class="mb-0">There are no ready orders at the moment.</p>
+    <div class="dd-empty">
+      <div class="dd-empty-icon">
+        <i class="fas fa-box-open"></i>
+      </div>
+      <h3>No ready orders</h3>
+      <p>There are no ready orders at the moment.</p>
     </div>
   {% else %}
-    <div class="row g-4">
+    <div class="dd-orders-grid">
       {% for order in ready_orders %}
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100 border-0">
-            <!-- Card Header -->
-            <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom-0">
-              <h5 class="mb-0">Order #{{ order.order_id }}</h5>
-              <span class="badge bg-success">Ready</span>
-            </div>
-
-            <!-- Card Body -->
-            <div class="card-body d-flex flex-column">
-              <h6 class="card-subtitle text-muted mb-2">
-                <i class="fas fa-user me-1"></i> {{ order.user.lastname }} {{ order.user.username }}
-              </h6>
-
-              <p class="mb-2"><i class="fas fa-map-marker-alt me-1"></i> {{ order.location }}</p>
-
-              {% if order.total_amount %}
-                <p class="mb-2"><i class="fas fa-coins me-1"></i> Total: M{{ '%.2f'|format(order.total_amount) }}</p>
-              {% endif %}
-
-              {% if order.deliveryfee %}
-                <p class="mb-2"><i class="fas fa-truck-fast me-1"></i> Delivery Fee: M{{ '%.2f'|format(order.deliveryfee) }}</p>
-              {% endif %}
-
-              <!-- Take Order Button -->
-              <button 
-                class="btn btn-success btn-sm w-100 rounded-pill mt-auto"
-                onclick="window.location.href='{{ url_for('delivery.takeorder', order_id=order.id) }}'">
-                Take Order
-              </button>
-            </div>
-
-            <!-- Card Footer -->
-            <div class="card-footer text-muted small d-flex justify-content-between align-items-center">
-              {% if order.created_at %}
-                <span><i class="fas fa-clock me-1"></i> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-              {% endif %}
-              {% if order.total_amount %}
-                <span class="text-success fw-bold"><i class="fas fa-money-bill-wave me-1"></i> Fee: M{{ '%.2f'|format(order.deliveryfee or 0) }}</span>
-              {% endif %}
-            </div>
+        <div class="dd-order-card">
+          <div class="dd-order-header">
+            <h5 class="dd-order-id">Order #{{ order.order_id }}</h5>
+            <span class="dd-badge">Ready</span>
           </div>
+
+          <div class="dd-order-details">
+            <div class="dd-detail-row">
+              <i class="fas fa-user"></i>
+              <span>{{ order.user.lastname }} {{ order.user.username }}</span>
+            </div>
+            <div class="dd-detail-row">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>{{ order.location }}</span>
+            </div>
+            {% if order.total_amount %}
+              <div class="dd-detail-row">
+                <i class="fas fa-coins"></i>
+                <span>Total: <strong>M{{ '%.2f'|format(order.total_amount) }}</strong></span>
+              </div>
+            {% endif %}
+            {% if order.deliveryfee %}
+              <div class="dd-detail-row">
+                <i class="fas fa-truck-fast"></i>
+                <span>Delivery Fee: <strong>M{{ '%.2f'|format(order.deliveryfee) }}</strong></span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="dd-order-footer">
+            {% if order.created_at %}
+              <span><i class="fas fa-clock"></i>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            {% endif %}
+            {% if order.total_amount %}
+              <span class="dd-fee"><i class="fas fa-money-bill-wave"></i>M{{ '%.2f'|format(order.deliveryfee or 0) }}</span>
+            {% endif %}
+          </div>
+
+          <a href="{{ url_for('delivery.takeorder', order_id=order.id) }}" class="dd-take-btn">
+            <i class="fas fa-hand-pointer"></i> Take Order
+          </a>
         </div>
       {% endfor %}
     </div>
   {% endif %}
 </div>
-
-<!-- Optional Hover Animation -->
-<style>
-.card:hover {
-  transform: translateY(-4px);
-  transition: 0.2s;
-}
-.card-header {
-  font-weight: 600;
-}
-.badge {
-  font-size: 0.8rem;
-}
-</style>
 {% endblock %}

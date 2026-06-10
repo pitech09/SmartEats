@@ -271,6 +271,8 @@ class DeliveryGuy(UserMixin, db.Model):
     image_file = db.Column(db.String(140), default="account.png")
     password = db.Column(db.String(100), nullable=False)
     isfree = db.Column(db.Boolean, default=True)
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=True)
+    store = db.relationship("Store", backref="delivery_guys", lazy="select")
 
 
 class Delivery(db.Model):
@@ -292,11 +294,24 @@ class Delivery(db.Model):
     )
     delivery_guy_id = db.Column(db.Integer, db.ForeignKey("deliveryguy.id"))
     customer_pic = db.Column(db.Text)
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
     order = db.relationship(
         "Order",
         backref=db.backref("delivery", uselist=False),
         lazy="select"
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "customer_name": self.customer_name,
+            "status": self.status,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "deliveryfee": self.deliveryfee,
+        }
 
 # ----------------- Sales -----------------
 class Sales(db.Model):

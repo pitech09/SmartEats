@@ -151,13 +151,21 @@ def takeorder(order_id):
         return redirect(url_for("delivery.dashboard"))
 
     user = User.query.get(order.user_id)
+    
+    # Get store location as initial driver position
+    store = Store.query.get(order.store_id)
+    driver_lat = store.latitude if store else None
+    driver_lng = store.longitude if store else None
+    
     new_delivery = Delivery(
         customer_name=user.lastname if user else "Customer",
         address=order.location,
         status="Out for Delivery",
         order_id=order.id,
         delivery_guy_id=current_user.id,
-        deliveryfee=order.deliveryfee
+        deliveryfee=order.deliveryfee,
+        latitude=driver_lat,
+        longitude=driver_lng
     )
 
     order.status = "Out for Delivery"
@@ -188,23 +196,33 @@ def get_delivery_status(order_id):
 @delivery.route('/ready_orders', methods=["GET"])
 @login_required
 def ready_orders():
-    store = Store.query.get_or_404(session.get('store_id'))
+    # Delivery guy can only see their assigned store's ready orders
+    store_id = current_user.store_id or session.get('store_id')
+    if not store_id:
+        flash("You are not assigned to any store.")
+        return redirect(url_for('auth.newlogin'))
+    
+    store = Store.query.get_or_404(store_id)
+    session['store_id'] = store_id  # ensure session is set
+    
     myform = updatedeliveryform()
     delivery_update = updatedeliveryform()
-    formpharm = Set_StoreForm()
-    formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.filter_by(is_active=True).all()]
+    
     ready = Order.query.filter(
         Order.status.in_(["Ready", "Ready "]),
         Order.location != "pickup",
-        Order.store_id == session.get('store_id')
+        Order.store_id == store_id
     ).all()
+    
+    total_count = len(ready)
+    
     return render_template(
         'delivery/deliverydashboard.html',
         ready_orders=ready,
         myform=myform,
         delivery_update=delivery_update,
         store=store,
-        formpharm=formpharm
+        total_count=total_count,
     )
 
 
@@ -228,6 +246,30 @@ def mydeliveries():
         deliveries=deliveries,
         delivery_update=delivery_update,
         formpharm=formpharm
+    )
+
+
+# ---------------- NAVIGATE TO ORDER ----------------
+@delivery.route('/navigate/<int:order_id>', methods=["GET"])
+@login_required
+def navigate(order_id):
+    """Show a live map for navigating to the customer's delivery location."""
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+    
+    order = Order.query.filter_by(
+        id=order_id,
+        store_id=store_id
+    ).first_or_404()
+    
+    if not order.customer_lat or not order.customer_lng:
+        flash("This order has no customer location data.", "warning")
+        return redirect(url_for('delivery.mydeliveries'))
+    
+    return render_template(
+        'delivery/navigate.html',
+        store=store,
+        order=order
     )
 
 

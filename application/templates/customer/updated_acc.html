@@ -159,7 +159,7 @@
           <div class="dashboard-card-value">{{ current_user.orders|length if current_user.orders else 0 }}</div>
           <div class="dashboard-card-label">Active Orders</div>
         </a>
-        <a href="{{ url_for('main.completed_order') }}" class="dashboard-card">
+        <a href="{{ url_for('main.order_history') }}" class="dashboard-card">
           <div class="dashboard-card-icon" style="background:rgba(52,199,89,0.1);color:var(--color-success);">
             <i class="fas fa-check-circle"></i>
           </div>

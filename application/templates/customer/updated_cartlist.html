@@ -202,20 +202,87 @@
     var customerLat = null;
     var customerLng = null;
 
-    // Get location for delivery fee calculation
+    // GPS-first location acquisition
+    // WiFi often returns wrong coordinates; we force true GPS via watchPosition
+    // which continuously feeds better readings as the GPS chip locks on.
+    var locationWatchId = null;
+    var locationTimeoutId = null;
+    var maxAccuracy = 100;           // metres — reject anything worse than GPS-grade
+    var maxAttempts = 8;             // give up after this many attempts
+    var attemptCount = 0;
+    var locationResolved = false;
+
+    function acceptPosition(pos) {
+      if (locationResolved) return;  // already got a good fix
+      locationResolved = true;
+
+      // Stop watching & timeout
+      if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
+      if (locationTimeoutId !== null) clearTimeout(locationTimeoutId);
+
+      customerLat = pos.coords.latitude;
+      customerLng = pos.coords.longitude;
+      document.getElementById('latitude').value = customerLat;
+      document.getElementById('longitude').value = customerLng;
+      document.getElementById('location_accuracy').value = pos.coords.accuracy;
+
+      document.getElementById('delivery-fee-text').textContent = 'Calculating...';
+      fetchDeliveryFee(customerLat, customerLng);
+    }
+
+    function handlePositionError(err) {
+      if (locationResolved) return;
+      attemptCount++;
+      if (attemptCount >= maxAttempts) {
+        if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
+        // Use whatever we have (last good fallback) or show error
+        document.getElementById('delivery-fee-text').textContent = 'GPS unavailable — enable location';
+        document.getElementById('delivery-fee').value = 0;
+      }
+    }
+
+    function handlePositionUpdate(pos) {
+      var acc = pos.coords.accuracy;
+      // GPS typically gives < 50m; WiFi triangulation can be 500m+
+      if (acc <= maxAccuracy) {
+        acceptPosition(pos);
+        return;
+      }
+      // Still too inaccurate — keep waiting for GPS to lock
+    }
+
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function(pos) {
-        customerLat = pos.coords.latitude;
-        customerLng = pos.coords.longitude;
-        document.getElementById('latitude').value = customerLat;
-        document.getElementById('longitude').value = customerLng;
-        document.getElementById('location_accuracy').value = pos.coords.accuracy;
-        
-        // Fetch delivery fee from server
-        fetchDeliveryFee(customerLat, customerLng);
-      }, function() {
-        document.getElementById('delivery-fee-text').textContent = 'Location unavailable';
-      }, { enableHighAccuracy: true, timeout: 10000 });
+      // Start watching — this forces the browser to use GPS chip, not WiFi cache
+      locationWatchId = navigator.geolocation.watchPosition(
+        function(pos) {
+          handlePositionUpdate(pos);
+        },
+        function(err) {
+          // On first error, try a one-shot as fallback
+          if (attemptCount === 0) {
+            navigator.geolocation.getCurrentPosition(function(pos2) {
+              handlePositionUpdate(pos2);
+            }, function(err2) {
+              handlePositionError(err2);
+            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+          } else {
+            handlePositionError(err);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+
+      // Safety timeout — if GPS doesn't lock in 30 seconds, accept best we have
+      locationTimeoutId = setTimeout(function() {
+        if (!locationResolved) {
+          if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
+          document.getElementById('delivery-fee-text').textContent = 'Location timed out';
+          document.getElementById('delivery-fee').value = 0;
+        }
+      }, 30000);
+
+      // Show a message while waiting for GPS
+      document.getElementById('delivery-fee-text').textContent = 'Getting precise location...';
     } else {
       document.getElementById('delivery-fee-text').textContent = 'Location not supported';
     }

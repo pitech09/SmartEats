@@ -29,7 +29,7 @@ from ..models import (User, Product, Sales, DeliveryGuy,
 from ..utils.notification import create_notification
 from application import cache
 from datetime import datetime
-from application.notification import notify_customer
+from application.notification import notify_customer, notify_delivery
 from application.auth.views import send_sound
 from application.models import Ingredient
 from application.forms import IngredientForm, StoreLocationForm
@@ -328,6 +328,12 @@ def adminpage():
 
     daily_data = {"dates": daily_dates, "totals": daily_totals}
 
+    # ------------------ New Orders (for dashboard list) ------------------
+    new_orders = Order.query.filter(
+        Order.store_id == store_id,
+        Order.status.in_(["Pending", "Processing", "Accepted"])
+    ).order_by(Order.create_at.desc()).limit(10).all()
+
     # ------------------ Render ------------------
     return render_template(
         'store/updated_dashboard.html',
@@ -339,7 +345,7 @@ def adminpage():
         unread_notifications=unread_notifications,
         count=count,
         daily_data=daily_data,
-        
+        new_orders=new_orders,
     )
 
 
@@ -639,16 +645,21 @@ def updatestatus(order_id):
             db.session.commit()
             # 🔔 Notifications
             message = f"Order #{order.order_id} status changed from {old_status} to {new_status}"
+            
             # Notify customer
             create_notification(user_type='customer', user_id=order.user_id, message=message)
             try:
                 notify_customer(order.user_id)
+                send_sound(order.user_id, "order_update")
             except Exception:
-                current_app.logger.debug("notify_customer failed during login (admin).")
-            send_sound(order.user_id, "update_order")
-            print("Notification sent to customer.")
-            # Also notify store dashboard if needed
+                current_app.logger.debug("notify_customer failed.")
+            
+            # Notify store dashboard
             create_notification(user_type='store', user_id=order.store_id, message=message)
+            try:
+                send_sound(order.store_id, "order_update")
+            except Exception:
+                pass
 
             if new_status.strip().lower() == "ready" and old_status.strip().lower() != "ready":
                 sms_body = (
@@ -656,6 +667,26 @@ def updatestatus(order_id):
                     "is ready. Please collect it or wait for delivery pickup."
                 )
                 send_sms(order.customer_phone, sms_body)
+                
+                # Notify ALL delivery guys assigned to this store
+                delivery_guys = DeliveryGuy.query.filter_by(store_id=order.store_id).all()
+                for d_guy in delivery_guys:
+                    try:
+                        notify_delivery(d_guy.id)
+                        send_sound(d_guy.id, "order_ready")
+                        create_notification(
+                            user_type='delivery_guy',
+                            user_id=d_guy.id,
+                            message=f"New ready order #{order.order_id} from {order.store.name}"
+                        )
+                    except Exception:
+                        current_app.logger.debug(f"notify_delivery failed for {d_guy.id}")
+            
+            if new_status.strip().lower() == "approved" and old_status.strip().lower() != "approved":
+                try:
+                    send_sound(order.store_id, "new_order")
+                except Exception:
+                    pass
 
             flash('Order status updated successfully')
             return redirect(url_for('store.ActiveOrders'))
@@ -849,20 +880,27 @@ def addstaff():
 @login_required
 def register_delivery():
     form = deliveryregistrationform()  
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+    
     if request.method == "POST":
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        new_delivery = DeliveryGuy(names=form.names.data, email=form.email.data,
-                                    password=hashed_password)
+        new_delivery = DeliveryGuy(
+            names=form.names.data,
+            email=form.email.data,
+            password=hashed_password,
+            store_id=store.id  # Link delivery guy to this store
+        )
         db.session.add(new_delivery)
         try:
             db.session.commit()
-            flash('Delivery agent registered successfully.')
+            flash(f'Delivery agent {form.names.data} registered for {store.name}.')
             return redirect(url_for('store.adminpage'))
         except IntegrityError:
             db.session.rollback()
-            flash('An integrity error occurred.')
+            flash('An integrity error occurred (email may already exist).')
             return redirect(url_for('store.register_delivery'))   
-    return render_template('store/add_delivery.html', form=form)
+    return render_template('store/add_delivery.html', form=form, store=store)
 
 @store.route('/dashboard/analytics')
 @login_required
@@ -964,7 +1002,6 @@ def vendor_analytics():
     # ------------------ Category Sales ------------------
     category_sales = (
     db.session.query(
-        Category.id,
         Category.name,
         func.sum(
             Sales.price * Sales.quantity * 0.9
@@ -1097,6 +1134,17 @@ def vendor_analytics():
         hourly_graph=pio.to_html(go.Figure([go.Bar(x=hours, y=hourly_revenue)]), full_html=False),
         weekday_graph=pio.to_html(go.Figure([go.Bar(x=weekdays, y=weekday_revenue)]), full_html=False),
         monthly_graph=pio.to_html(go.Figure([go.Scatter(x=months, y=monthly_revenue)]), full_html=False),
+        dates=dates,
+        revenues=revenues,
+        hours=hours,
+        hourly_revenue=hourly_revenue,
+        weekdays=weekdays,
+        weekday_revenue=weekday_revenue,
+        prod_names=prod_names,
+        prod_revenues=prod_revenues,
+        categories=categories,
+        cat_revenue=cat_revenue,
+        product_contribution=product_contribution,
         total_sales=round(total_sales, 2),
         avg_order_value=round(avg_order_value, 2),
         sales_change=sales_change,
@@ -1126,7 +1174,7 @@ def manage_ingredients():
         )
         db.session.add(ingredient)
         db.session.commit()
-        flash("Ingredient added successfully ✅", "success")
+        flash("Ingredient added successfully ", "success")
         return redirect(url_for("store.manage_ingredients"))
 
     ingredients = Ingredient.query.filter_by(

@@ -89,6 +89,7 @@
               <li class="nav-item"><a href="{{ url_for('delivery.mydeliveries') }}" class="btn bg-light rounded-pill">Deliveries</a></li>
               <li class="nav-item"><a href="{{ url_for('delivery.ready_orders') }}" class="btn bg-light rounded-pill">Orders <sup>{{ total_count }}</sup></a></li>
               <li class="nav-item"><a href="{{ url_for('main.logout') }}" class="btn bg-light rounded-pill">Logout</a></li>
+              {% if formpharm is defined %}
               <li class="nav-item">
                 <form action="{{ url_for('delivery.set_store') }}" method="POST" class="d-flex">
                   {{ formpharm.hidden_tag() }}
@@ -96,6 +97,7 @@
                   <button class="btn btn-success ms-1" type="submit">Select</button>
                 </form>
               </li>
+              {% endif %}
             {% else %}
               <li class="nav-item"><a href="{{ url_for('auth.newlogin') }}" class="btn btn-outline-success rounded-pill">Login</a></li>
               <li class="nav-item"><a href="{{ url_for('auth.register') }}" class="btn btn-outline-success rounded-pill">Register</a></li>

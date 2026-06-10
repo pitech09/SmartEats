@@ -94,7 +94,7 @@
       <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:4px 0 0 0;">Track and manage your active orders</p>
     </div>
     <div style="display:flex;gap:var(--space-sm);">
-      <a href="{{ url_for('main.completed_order') }}" class="apple-btn apple-btn-secondary">
+      <a href="{{ url_for('main.order_history') }}" class="apple-btn apple-btn-secondary">
         <i class="fas fa-history"></i> History
       </a>
       <a href="{{ url_for('main.restuarants') }}" class="apple-btn apple-btn-primary">
@@ -214,15 +214,20 @@
     </div>
 
     <!-- Order Footer Actions -->
-    {% if o.status in ['Pending', 'Processing', 'Accepted'] %}
     <div style="padding:var(--space-md) var(--space-lg);border-top:1px solid var(--color-border-light);display:flex;gap:var(--space-sm);flex-wrap:wrap;">
+      {% if o.status in ['Pending', 'Processing', 'Accepted'] %}
       {% if current_user.is_authenticated %}
       <a href="#" class="apple-btn apple-btn-secondary apple-btn-sm">
         <i class="fas fa-headset"></i> Contact Support
       </a>
       {% endif %}
+      {% endif %}
+      {% if o.status in ['Approved', 'Ready', 'Out for Delivery'] %}
+      <a href="{{ url_for('main.track_order', order_id=o.id) }}" class="apple-btn apple-btn-primary apple-btn-sm">
+        <i class="fas fa-map-marked-alt"></i> Track Order
+      </a>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
   {% endfor %}
 
