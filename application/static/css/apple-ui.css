@@ -292,7 +292,9 @@ a:hover {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  object-fit: cover;
+  object-fit: contain;
+  background: #F5F5F7;
+  padding: 2px;
 }
 
 /* ---- Buttons ---- */
@@ -401,7 +403,9 @@ a:hover {
 .apple-card-image {
   width: 100%;
   aspect-ratio: 16/9;
-  object-fit: cover;
+  object-fit: contain;
+  background: #F5F5F7;
+  padding: var(--space-sm);
   display: block;
 }
 
@@ -460,7 +464,9 @@ a:hover {
 .restaurant-card-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #F5F5F7;
+  padding: var(--space-sm);
   transition: transform var(--transition-slow);
 }
 
@@ -564,7 +570,9 @@ a:hover {
 .meal-card-image {
   width: 100%;
   height: 200px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #F5F5F7;
+  padding: var(--space-sm);
   transition: transform var(--transition-slow);
 }
 
@@ -778,7 +786,9 @@ a:hover {
   width: 72px;
   height: 72px;
   border-radius: var(--radius-md);
-  object-fit: cover;
+  object-fit: contain;
+  background: #F5F5F7;
+  padding: 4px;
 }
 
 .cart-item-details {
