@@ -615,7 +615,8 @@ def addorder():
                 product_id=item.product.id,
                 product_name=item.product.productname,
                 product_price=item.product.price,
-                quantity=item.quantity
+                quantity=item.quantity,
+                notes=item.notes or ''
             )
             db.session.add(order_item)
             total_amount += item.product.price * item.quantity
@@ -914,6 +915,31 @@ def account():
     )
 
 # ---------------- LOGOUT ----------------
+@main.route('/update_cart_item_notes', methods=['POST'])
+@login_required
+def update_cart_item_notes():
+    """Save per-item notes/special instructions."""
+    data = request.get_json() or {}
+    item_id = data.get('item_id')
+    notes = data.get('notes', '')
+
+    if not item_id:
+        return jsonify(success=False), 400
+
+    item = CartItem.query.get(item_id)
+    if not item:
+        return jsonify(success=False, error='Item not found'), 404
+
+    # Ensure item belongs to current user's cart
+    cart = Cart.query.get(item.cart_id)
+    if not cart or cart.user_id != current_user.id:
+        return jsonify(success=False, error='Not authorized'), 403
+
+    item.notes = notes
+    db.session.commit()
+    return jsonify(success=True)
+
+
 @main.route('/logout')
 @login_required
 def logout():

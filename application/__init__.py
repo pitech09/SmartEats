@@ -60,8 +60,12 @@ def create_app(config_name):
 
     @socketio.on("connect")
     def handle_connect(auth):
-        if current_user.is_authenticated:
-            join_room(str(current_user.id))
-            print("User joined room:", current_user.id)
+        try:
+            if current_user.is_authenticated:
+                join_room(str(current_user.id))
+                print("User joined room:", current_user.id)
+        except RuntimeError:
+            # Outside request context (e.g. during testing) - skip room join
+            pass
 
     return app

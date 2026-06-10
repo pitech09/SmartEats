@@ -25,8 +25,42 @@
     const receiptDate = document.getElementById('receiptDate');
     const receiptId = document.getElementById('receiptId');
     const receiptStoreName = document.getElementById('receiptStoreName');
+    const receiptAmountPaid = document.getElementById('receiptAmountPaid');
+    const receiptChange = document.getElementById('receiptChange');
+    const amountPaidInput = document.getElementById('pos-amount-paid');
+    const changeDueEl = document.getElementById('pos-change-due');
+    const changeDueSection = document.getElementById('change-due-section');
 
     let cart = [];
+
+    // --- Helper: get cart total ---
+    function getCartTotal() {
+      var total = 0;
+      cart.forEach(function(item) {
+        total += item.price * item.quantity;
+      });
+      return total;
+    }
+
+    // --- Helper: update change display ---
+    function updateChangeDisplay() {
+      if (!amountPaidInput || !changeDueEl || !changeDueSection) return;
+      var total = getCartTotal();
+      var paid = parseFloat(amountPaidInput.value) || 0;
+      if (paid > 0) {
+        changeDueSection.classList.remove('d-none');
+        var change = paid - total;
+        changeDueEl.textContent = change >= 0 ? change.toFixed(2) : '0.00';
+      } else {
+        changeDueSection.classList.add('d-none');
+        changeDueEl.textContent = '0.00';
+      }
+    }
+
+    // Listen for amount paid input
+    if (amountPaidInput) {
+      amountPaidInput.addEventListener('input', updateChangeDisplay);
+    }
 
     // --- Add Item via event delegation ---
     if (productsContainer) {
@@ -119,6 +153,7 @@
         if (cartCountEl) cartCountEl.textContent = '0';
         if (cartCountHeaderEl) cartCountHeaderEl.textContent = '0 items';
         if (payBtn) payBtn.disabled = true;
+        changeDueSection.classList.add('d-none');
         return;
       }
 
@@ -153,11 +188,33 @@
       if (totalEl) totalEl.textContent = total.toFixed(2);
       if (cartCountEl) cartCountEl.textContent = count;
       if (cartCountHeaderEl) cartCountHeaderEl.textContent = count + ' items';
+
+      // Recalculate change display after cart changes
+      updateChangeDisplay();
     }
 
     // --- Submit Order ---
     function submitOrder() {
       if (cart.length === 0) return;
+
+      // Validate amount paid
+      var total = getCartTotal();
+      var amountPaid = parseFloat(amountPaidInput ? amountPaidInput.value : 0) || 0;
+      var paymentMethod = paymentSelect ? paymentSelect.value : 'Cash';
+
+      // For cash payments, validate amount paid is sufficient
+      if (paymentMethod === 'Cash' && amountPaid < total) {
+        alert('Amount paid (M' + amountPaid.toFixed(2) + ') is less than the total (M' + total.toFixed(2) + '). Please enter a valid amount.');
+        if (amountPaidInput) amountPaidInput.focus();
+        return;
+      }
+
+      // For non-cash, auto-set amount paid to total
+      if (paymentMethod !== 'Cash') {
+        amountPaid = total;
+      }
+
+      var change = amountPaid - total;
 
       // Show spinner on button
       if (payBtn) {
@@ -178,7 +235,9 @@
         headers: headers,
         body: JSON.stringify({
           items: cart,
-          payment: paymentSelect ? paymentSelect.value : 'Cash'
+          payment: paymentMethod,
+          amount_paid: amountPaid,
+          change: change
         })
       })
       .then(function(r) {
@@ -194,9 +253,11 @@
       })
       .then(function(res) {
         if (res.success) {
-          showReceipt(res);
+          showReceipt(res, amountPaid, change);
           cart = [];
           renderCart();
+          // Reset amount paid
+          if (amountPaidInput) amountPaidInput.value = '';
         } else {
           alert('Error: ' + (res.error || 'Could not complete order'));
         }
@@ -219,7 +280,7 @@
     }
 
     // --- Show Receipt Modal ---
-    function showReceipt(data) {
+    function showReceipt(data, amountPaid, change) {
       if (!receiptModalEl) return;
 
       var modal = new bootstrap.Modal(receiptModalEl);
@@ -232,6 +293,8 @@
       if (receiptDate) receiptDate.textContent = dateStr;
       if (receiptPayment) receiptPayment.textContent = paymentSelect ? paymentSelect.value : 'Cash';
       if (receiptTotal) receiptTotal.textContent = data.total ? data.total.toFixed(2) : '0.00';
+      if (receiptAmountPaid) receiptAmountPaid.textContent = (amountPaid || 0).toFixed(2);
+      if (receiptChange) receiptChange.textContent = (change >= 0 ? change : 0).toFixed(2);
 
       if (receiptBody && data.items) {
         receiptBody.innerHTML = '';

@@ -74,6 +74,22 @@
         color: #555;
         margin-left: 15px;
     }
+    
+    /* Notes style */
+    .item-note {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.8125rem;
+        color: #E65100;
+        font-style: italic;
+        background: #FFF8E1;
+        padding: 2px 8px;
+        border-radius: 4px;
+        border-left: 3px solid #FFC107;
+    }
+    .item-note i {
+        margin-right: 4px;
+    }
 </style>
 
 <div class="container my-4">
@@ -106,7 +122,12 @@
                 <!-- Regular products -->
                 {% for item in user_order.order_items %}
                 <tr>
-                    <td data-label="Item">{{ item.product_name }}</td>
+                    <td data-label="Item">
+                        {{ item.product_name }}
+                        {% if item.notes %}
+                        <span class="item-note"><i class="fas fa-comment"></i> {{ item.notes }}</span>
+                        {% endif %}
+                    </td>
                     <td data-label="Quantity">{{ item.quantity }}</td>
                     <td data-label="Unit Price">M{{ '%.2f'|format(item.product_price) }}</td>
                 </tr>

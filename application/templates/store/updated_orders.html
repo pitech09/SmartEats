@@ -36,8 +36,13 @@
                 <td style="max-width: 300px;">
                     <ul class="list-unstyled mb-0 small">
                         {% for item in order.order_items %}
-                            <li>
-                                <i class="fas fa-hamburger"></i> {{ item.product_name }} × {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})
+                            <li style="margin-bottom:6px;">
+                                <strong><i class="fas fa-hamburger"></i> {{ item.product_name }}</strong> × {{ item.quantity }} (M{{ '%.2f'|format(item.product_price) }})
+                                {% if item.notes %}
+                                <br><span style="color:#E65100;font-style:italic;font-size:0.8125rem;background:#FFF8E1;padding:1px 6px;border-radius:3px;display:inline-block;margin-top:2px;">
+                                    <i class="fas fa-comment"></i> {{ item.notes }}
+                                </span>
+                                {% endif %}
                             </li>
                         {% endfor %}
 

@@ -1205,6 +1205,8 @@ def vendor_pos():
 
             items = data.get('items', [])
             payment = data.get('payment', 'Cash')
+            amount_paid = float(data.get('amount_paid', 0))
+            change = float(data.get('change', 0))
 
             if not items:
                 return jsonify({'error': 'No items in order'}), 400
@@ -1286,6 +1288,8 @@ def vendor_pos():
                 'order_id': order.order_id,
                 'store_name': store.name,
                 'total': round(total_amount, 2),
+                'amount_paid': round(amount_paid, 2),
+                'change': round(change, 2),
                 'items': receipt_items
             })
 

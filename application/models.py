@@ -159,6 +159,7 @@ class CartItem(db.Model):
     custom_meal_id = db.Column(db.Integer, db.ForeignKey("custom_meal.id"), nullable=True)
 
     quantity = db.Column(db.Integer, nullable=False, default=1)
+    notes = db.Column(db.Text, default="")
 
     # Relationships
     custom_meal = db.relationship("CustomMeal", backref="cart_items_custom", lazy="select")
@@ -226,6 +227,7 @@ class OrderItem(db.Model):
     product_name = db.Column(db.String(50), nullable=False)
     product_price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    notes = db.Column(db.Text, default="")
 
     order = db.relationship("Order", back_populates="order_items")
 

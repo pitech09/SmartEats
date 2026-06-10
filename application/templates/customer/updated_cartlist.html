@@ -109,6 +109,33 @@
   }
   .location-status.good { color: var(--color-success); }
   .location-status.warn { color: var(--color-warning); }
+
+  /* ===== Item Notes ===== */
+  .cart-item-notes {
+    width: 100%;
+    margin-top: var(--space-sm);
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-text);
+    font-size: 0.8125rem;
+    color: var(--color-text-primary);
+    outline: none;
+    resize: vertical;
+    min-height: 36px;
+    transition: border-color var(--transition-fast);
+    box-sizing: border-box;
+  }
+  
+  .cart-item-notes:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.15);
+  }
+  
+  .cart-item-notes::placeholder {
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
 </style>
 
 <div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
@@ -136,21 +163,29 @@
       <div class="cart-item" data-item-id="{{ item.id }}" data-item-price="{{ item.get_price() }}">
         <img src="{{ item.product.pictures if item.product else url_for('static', filename='css/images/default.png') }}" 
              alt="{{ item.get_name() }}" class="cart-item-image" loading="lazy">
-        <div class="cart-item-details">
-          <div class="cart-item-name">{{ item.get_name() }}</div>
-          <div class="cart-item-price" id="item-line-total-{{ item.id }}">M{{ '%.2f'|format(item.get_total()) }}</div>
-        </div>
-        <div class="cart-item-actions">
-          <button class="cart-qty-btn remove-from-cart" data-item-id="{{ item.id }}" aria-label="Remove item">
-            <i class="fas fa-trash-alt" style="font-size:0.75rem;"></i>
-          </button>
-          <button class="cart-qty-btn" data-action="decrease" data-item-id="{{ item.id }}" aria-label="Decrease quantity">
-            <i class="fas fa-minus"></i>
-          </button>
-          <span class="cart-qty-value" id="item-qty-{{ item.id }}">{{ item.quantity }}</span>
-          <button class="cart-qty-btn" data-action="increase" data-item-id="{{ item.id }}" aria-label="Increase quantity">
-            <i class="fas fa-plus"></i>
-          </button>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-sm);flex-wrap:wrap;">
+            <div class="cart-item-details" style="flex:1;">
+              <div class="cart-item-name">{{ item.get_name() }}</div>
+              <div class="cart-item-price" id="item-line-total-{{ item.id }}">M{{ '%.2f'|format(item.get_total()) }}</div>
+            </div>
+            <div class="cart-item-actions">
+              <button class="cart-qty-btn remove-from-cart" data-item-id="{{ item.id }}" aria-label="Remove item">
+                <i class="fas fa-trash-alt" style="font-size:0.75rem;"></i>
+              </button>
+              <button class="cart-qty-btn" data-action="decrease" data-item-id="{{ item.id }}" aria-label="Decrease quantity">
+                <i class="fas fa-minus"></i>
+              </button>
+              <span class="cart-qty-value" id="item-qty-{{ item.id }}">{{ item.quantity }}</span>
+              <button class="cart-qty-btn" data-action="increase" data-item-id="{{ item.id }}" aria-label="Increase quantity">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          <!-- Per-item notes / special instructions -->
+          <textarea class="cart-item-notes" 
+                    data-item-id="{{ item.id }}" 
+                    placeholder="Special instructions for this item (e.g. no onions, extra sauce, etc.)">{{ item.notes or '' }}</textarea>
         </div>
       </div>
       {% endfor %}
@@ -308,6 +343,29 @@
     var customerLng = null;
     var currentDeliveryMethod = 'agent'; // 'agent' = delivery, 'pickup' = pickup
 
+    // ===== Auto-save notes on typing (debounced) =====
+    var notesTimers = {};
+    document.querySelectorAll('.cart-item-notes').forEach(function(textarea) {
+      textarea.addEventListener('input', function() {
+        var itemId = this.dataset.itemId;
+        var notes = this.value;
+        // Debounce save
+        if (notesTimers[itemId]) clearTimeout(notesTimers[itemId]);
+        notesTimers[itemId] = setTimeout(function() {
+          fetch('/update_cart_item_notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ item_id: itemId, notes: notes })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data.success) console.debug('Notes save failed');
+          })
+          .catch(function(err) { console.debug('Notes save error', err); });
+        }, 600);
+      });
+    });
+
     // ---- Leaflet Map Setup ----
     var map = null;
     var marker = null;
@@ -329,7 +387,6 @@
         maxZoom: 19
       }).addTo(map);
 
-      // Custom marker icon
       var icon = L.divIcon({
         html: '<div style="width:28px;height:28px;background:var(--color-danger,#FF3B30);border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
         iconSize: [28, 28],
@@ -339,19 +396,16 @@
 
       marker = L.marker([lat, lng], { draggable: true, icon: icon }).addTo(map);
 
-      // Update coordinates when marker is dragged
       marker.on('dragend', function() {
         var pos = marker.getLatLng();
         updateMapPosition(pos.lat, pos.lng);
       });
 
-      // Update coordinates when user clicks on map
       map.on('click', function(e) {
         marker.setLatLng(e.latlng);
         updateMapPosition(e.latlng.lat, e.latlng.lng);
       });
 
-      // Fix map rendering issues in hidden/sticky containers
       setTimeout(function() { map.invalidateSize(); }, 200);
     }
 
@@ -365,7 +419,6 @@
       statusEl.textContent = '📍 Pin dropped at ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
       statusEl.className = 'location-status good';
 
-      // Re-fetch delivery fee for new position
       if (currentDeliveryMethod === 'agent') {
         fetchDeliveryFee(lat, lng);
       }
@@ -377,17 +430,14 @@
       var warningText = document.getElementById('location-accuracy-text');
       
       if (!accuracy && accuracy !== 0) {
-        // No accuracy info available
         warningEl.className = 'location-warning';
         warningText.innerHTML = 'Please make sure the pin on the map shows your <strong>exact</strong> delivery location. An inaccurate location may cause delays.';
         return;
       }
 
-      // Update hidden field
       document.getElementById('location_accuracy').value = Math.round(accuracy);
 
       if (accuracy > 1000) {
-        // IP-based location — most inaccurate
         warningEl.className = 'location-warning warning-severe';
         warningText.innerHTML = 
           '<i class="fas fa-exclamation-circle"></i> ' +
@@ -398,7 +448,6 @@
         document.getElementById('location-status').textContent = '⚠ IP-based location — drag pin to correct';
         document.getElementById('location-status').className = 'location-status warn';
       } else if (accuracy > 100) {
-        // WiFi/network location — somewhat inaccurate
         warningEl.className = 'location-warning';
         warningText.innerHTML = 
           'Your location is from <strong>WiFi/network</strong> (accuracy: ' + Math.round(accuracy) + 'm). ' +
@@ -407,7 +456,6 @@
         document.getElementById('location-status').textContent = '📍 Network location — accuracy ' + Math.round(accuracy) + 'm';
         document.getElementById('location-status').className = 'location-status warn';
       } else if (accuracy <= 100) {
-        // Good GPS lock
         warningEl.className = 'location-warning warning-good';
         warningText.innerHTML = 
           '<i class="fas fa-check-circle"></i> ' +
@@ -418,13 +466,11 @@
       }
     }
 
-    // Re-center button
     document.getElementById('recenterBtn').addEventListener('click', function() {
       if (customerLat && customerLng && map) {
         map.setView([customerLat, customerLng], 16);
         marker.setLatLng([customerLat, customerLng]);
       } else {
-        // Try to get fresh GPS position
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(function(pos) {
             customerLat = pos.coords.latitude;
@@ -441,13 +487,12 @@
       }
     });
 
-    // ---- Location: use stored position from layout.js persistent watcher ----
+    // ---- Location: use stored position from layout.js ----
     function useStoredLocation() {
       var lat = window._userLat || null;
       var lng = window._userLng || null;
 
       if (!lat || !lng) {
-        // Try localStorage directly
         try {
           lat = parseFloat(localStorage.getItem('smarteats_lat'));
           lng = parseFloat(localStorage.getItem('smarteats_lng'));
@@ -471,7 +516,6 @@
         statusEl.textContent = '📍 Location loaded — drag the pin to adjust';
         statusEl.className = 'location-status good';
 
-        // Check accuracy from stored value
         try {
           var storedAccuracy = parseFloat(localStorage.getItem('smarteats_accuracy'));
           if (storedAccuracy) updateAccuracyWarning(storedAccuracy);
@@ -484,20 +528,16 @@
       return false;
     }
 
-    // Try immediately (localStorage may already have location from layout.js)
     if (!useStoredLocation()) {
-      // Location not yet available — show loading and try again shortly
       document.getElementById('delivery-fee-text').textContent = 'Getting location...';
       document.getElementById('location-status').textContent = 'Waiting for location…';
 
-      // Poll for location (layout.js is continuously acquiring it)
       var pollCount = 0;
       var pollInterval = setInterval(function() {
         pollCount++;
         if (useStoredLocation() || pollCount >= 60) {
           clearInterval(pollInterval);
           if (pollCount >= 60) {
-            // Fallback: init map at Lesotho center, let user drag pin
             document.getElementById('delivery-fee-text').textContent = 'Location unavailable — set pin manually';
             document.getElementById('location-status').textContent = 'Drag the pin to your delivery location';
             document.getElementById('location-status').className = 'location-status warn';
@@ -506,14 +546,12 @@
         }
       }, 500);
 
-      // Also ask browser for location directly as backup (network, no GPS requirement)
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(pos) {
           customerLat = pos.coords.latitude;
           customerLng = pos.coords.longitude;
           document.getElementById('latitude').value = customerLat;
           document.getElementById('longitude').value = customerLng;
-          // Save to localStorage for layout.js
           try {
             localStorage.setItem('smarteats_lat', customerLat);
             localStorage.setItem('smarteats_lng', customerLng);
@@ -522,7 +560,6 @@
           window._userLat = customerLat;
           window._userLng = customerLng;
 
-          // Show accuracy warning
           updateAccuracyWarning(pos.coords.accuracy);
 
           if (!mapInitialized) {
@@ -540,7 +577,6 @@
           if (currentDeliveryMethod === 'agent') fetchDeliveryFee(customerLat, customerLng);
           clearInterval(pollInterval);
         }, function(err) {
-          // Network location also failed — let user place pin manually
           if (pollCount >= 10) {
             clearInterval(pollInterval);
             document.getElementById('delivery-fee-text').textContent = 'Location unavailable — set pin manually';
@@ -651,33 +687,27 @@
       currentDeliveryMethod = method;
       
       if (method === 'pickup') {
-        // HIDE delivery-only sections
         deliveryOnlySections.style.display = 'none';
         deliveryFeeRow.style.display = 'none';
         dropAddressGroup.style.display = 'none';
         
-        // Zero out delivery fee
         deliveryFee = 0;
         document.getElementById('delivery-fee').value = 0;
         document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';
         
-        // Clear required location fields
         document.getElementById('latitude').value = '';
         document.getElementById('longitude').value = '';
         document.getElementById('location_accuracy').value = '';
       } else {
-        // SHOW delivery-only sections
         deliveryOnlySections.style.display = '';
         deliveryFeeRow.style.display = '';
         dropAddressGroup.style.display = '';
         
-        // Re-calculate fee if we have coordinates
         if (customerLat && customerLng) {
           document.getElementById('delivery-fee-text').textContent = 'Calculating...';
           fetchDeliveryFee(customerLat, customerLng);
         } else {
           document.getElementById('delivery-fee-text').textContent = 'Calculating...';
-          // Trigger location fetch
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function(pos) {
               customerLat = pos.coords.latitude;
@@ -712,7 +742,6 @@
       });
     });
 
-    // Set initial state based on default radio
     var initialMethod = document.querySelector('input[name="deliverymethod"]:checked');
     if (initialMethod) {
       if (initialMethod.value === 'pickup') {

@@ -99,6 +99,24 @@
                             <h4 class="mb-0">M<span id="pos-total">0.00</span></h4>
                         </div>
 
+                        <!-- Amount Paid (for Cash) -->
+                        <div id="amount-paid-section" class="mb-3">
+                            <label class="form-label fw-semibold"><i class="fas fa-money-bill me-1"></i> Amount Paid</label>
+                            <div class="input-group">
+                                <span class="input-group-text">M</span>
+                                <input type="number" id="pos-amount-paid" class="form-control" 
+                                       placeholder="Enter amount paid" min="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <!-- Change Due -->
+                        <div id="change-due-section" class="mb-3 d-none">
+                            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                                <span class="fw-bold"><i class="fas fa-exchange-alt me-1"></i> Change Due:</span>
+                                <h4 class="mb-0 text-success">M<span id="pos-change-due">0.00</span></h4>
+                            </div>
+                        </div>
+
                         <!-- Payment Method -->
                         <label class="form-label fw-semibold"><i class="fas fa-credit-card me-1"></i> Payment</label>
                         <select id="pos-payment" class="form-select mb-3">
@@ -108,7 +126,7 @@
                         </select>
 
                         <!-- Complete Sale Button -->
-                        <button id="pos-pay-btn" class="btn btn-success w-100 btn-lg" disabled onclick="posSubmitOrder()">
+                        <button id="pos-pay-btn" class="btn btn-success w-100 btn-lg" disabled>
                             <i class="fas fa-check-circle me-2"></i> Complete Sale
                         </button>
                     </div>
@@ -150,6 +168,8 @@
                     </table>
                     <hr>
                     <h4 class="fw-bold">Total: M<span id="receiptTotal">0.00</span></h4>
+                    <p><strong>Amount Paid:</strong> M<span id="receiptAmountPaid">0.00</span></p>
+                    <p><strong>Change:</strong> M<span id="receiptChange">0.00</span></p>
                     <hr>
                     <p class="small text-muted">Thank you for your purchase!</p>
                 </div>
