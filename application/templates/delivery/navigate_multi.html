@@ -101,6 +101,102 @@
     font-weight: 600;
   }
 
+  /* ===== IP Location Warning Banner ===== */
+  #location-warning {
+    display: none;
+    background: linear-gradient(135deg, #FFF3CD, #FFEAA7);
+    border: 2px solid #FFC107;
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-md);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+  }
+  
+  #location-warning.active {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+  
+  #location-warning .warning-icon {
+    font-size: 2rem;
+    color: #D4A017;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  
+  #location-warning .warning-content {
+    flex: 1;
+  }
+  
+  #location-warning .warning-content h5 {
+    font-weight: 700;
+    color: #856404;
+    margin-bottom: 4px;
+  }
+  
+  #location-warning .warning-content p {
+    font-size: 0.875rem;
+    color: #6d5204;
+    margin-bottom: 6px;
+  }
+  
+  #location-warning .warning-content .location-detail {
+    font-size: 0.8125rem;
+    color: #856404;
+    background: rgba(255,255,255,0.5);
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    display: inline-block;
+    margin-top: 4px;
+  }
+  
+  #location-warning .warning-dismiss {
+    background: rgba(133, 100, 4, 0.15);
+    border: none;
+    color: #856404;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  
+  #location-warning .warning-dismiss:hover {
+    background: rgba(133, 100, 4, 0.25);
+  }
+
+  /* ===== GPS Quality Badge ===== */
+  .gps-quality {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .gps-quality.good {
+    background: rgba(52, 199, 89, 0.15);
+    color: #1a8a3a;
+  }
+  
+  .gps-quality.poor {
+    background: rgba(255, 149, 0, 0.15);
+    color: #b26000;
+  }
+  
+  .gps-quality.ip {
+    background: rgba(255, 59, 48, 0.15);
+    color: #b0201a;
+  }
+
   .nav-order-list {
     background: var(--color-card);
     border-radius: var(--radius-lg);
@@ -153,6 +249,26 @@
 </style>
 
 <div class="container mt-3 mb-3">
+  <!-- ===== IP Location Warning Banner ===== -->
+  <div id="location-warning">
+    <div class="warning-icon">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div class="warning-content">
+      <h5><i class="fas fa-map-marker-alt"></i> Location May Be Inaccurate</h5>
+      <p id="warning-text">
+        Your browser is using <strong>IP-based location</strong> instead of <strong>GPS</strong>.
+        This can show the wrong city or town. Enable GPS/high accuracy location on your device.
+      </p>
+      <div class="location-detail" id="location-detail">
+        <i class="fas fa-satellite-dish"></i> Current accuracy: <span id="warning-accuracy">--</span>
+      </div>
+    </div>
+    <button class="warning-dismiss" onclick="this.parentElement.classList.remove('active')" title="Dismiss">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
   <!-- Info Panel -->
   <div class="nav-info-panel">
     <div class="nav-info-item">
@@ -165,6 +281,9 @@
     </div>
     <div class="nav-info-item">
       <span class="live-dot"></span> <span id="live-status">Tracking</span>
+    </div>
+    <div class="nav-info-item">
+      <span id="gps-quality-badge" class="gps-quality">--</span>
     </div>
     <div>
       <span class="distance-badge" id="total-distance">
@@ -326,7 +445,7 @@
     
     ordersData.forEach(function(order, i) {
       var url = 'https://router.project-osrm.org/route/v1/driving/' +
-                lat + ',' + lng + ';' + order.lat + ',' + order.lng +
+                lng + ',' + lat + ';' + order.lng + ',' + order.lat +
                 '?overview=false';
       fetch(url)
         .then(function(r) { return r.json(); })
@@ -347,27 +466,111 @@
     });
   }
 
+  // ---- Detect and warn about IP-based (non-GPS) location ----
+  var warningEl = document.getElementById('location-warning');
+  var warningText = document.getElementById('warning-text');
+  var warningAccuracy = document.getElementById('warning-accuracy');
+  var gpsQualityBadge = document.getElementById('gps-quality-badge');
+  var hasEverHadGoodGps = false;
+
+  function updateLocationWarning(accuracy, lat, lng) {
+    var accuracyMeters = Math.round(accuracy);
+    warningAccuracy.textContent = accuracyMeters + 'm';
+
+    // Update GPS quality badge
+    if (accuracy <= 50) {
+      gpsQualityBadge.className = 'gps-quality good';
+      gpsQualityBadge.innerHTML = '<i class="fas fa-check-circle"></i> GPS';
+    } else if (accuracy <= 500) {
+      gpsQualityBadge.className = 'gps-quality poor';
+      gpsQualityBadge.innerHTML = '<i class="fas fa-exclamation-circle"></i> WiFi';
+    } else {
+      gpsQualityBadge.className = 'gps-quality ip';
+      gpsQualityBadge.innerHTML = '<i class="fas fa-globe"></i> IP';
+    }
+
+    // Show warning if not good GPS quality
+    if (accuracy > 100) {
+      if (accuracy > 1000) {
+        warningText.innerHTML = 
+          'Your browser is using <strong>IP-based location</strong> instead of <strong>GPS</strong>. ' +
+          'IP geolocation is very inaccurate and may show the wrong city entirely. ' +
+          'Please enable <strong>device GPS</strong> in your location/settings for accurate tracking.';
+        warningEl.classList.add('active');
+      } else if (accuracy > 100) {
+        warningText.innerHTML = 
+          'Your location is from <strong>WiFi/cellular network</strong> instead of <strong>GPS</strong>. ' +
+          'This may not be accurate enough for delivery navigation. ' +
+          'For best results, enable <strong>GPS/high accuracy</strong> mode on your device.';
+        warningEl.classList.add('active');
+      }
+    } else if (accuracy <= 100 && accuracy > 0) {
+      if (!hasEverHadGoodGps) {
+        hasEverHadGoodGps = true;
+        if (warningEl.classList.contains('active')) {
+          warningText.innerHTML = 
+            '<i class="fas fa-check-circle" style="color:#28a745;"></i> ' +
+            '<strong>GPS acquired!</strong> Your location is now accurate.';
+          setTimeout(function() {
+            warningEl.classList.remove('active');
+          }, 3000);
+        }
+      } else {
+        warningEl.classList.remove('active');
+      }
+    }
+  }
+
   // ---- GPS Tracking ----
   var watchId = null;
   function startTracking() {
     if (!navigator.geolocation) {
       document.getElementById('live-status').textContent = 'GPS unavailable';
+      warningText.innerHTML = 
+        'Your browser does not support geolocation. The map cannot show your live position.';
+      warningEl.classList.add('active');
+      gpsQualityBadge.className = 'gps-quality ip';
+      gpsQualityBadge.innerHTML = '<i class="fas fa-times-circle"></i> Unavailable';
       return;
     }
     watchId = navigator.geolocation.watchPosition(
       function(pos) {
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
-        if (pos.coords.accuracy > 100) {
-          document.getElementById('live-status').textContent = 'Acquiring (' + Math.round(pos.coords.accuracy) + 'm)';
+        var accuracy = pos.coords.accuracy;
+        var statusEl = document.getElementById('live-status');
+
+        // Update location warning based on accuracy
+        updateLocationWarning(accuracy, lat, lng);
+
+        if (accuracy > 100) {
+          statusEl.textContent = 'Acquiring (' + Math.round(accuracy) + 'm)';
           return;
         }
-        document.getElementById('live-status').textContent = 'Live (' + Math.round(pos.coords.accuracy) + 'm)';
+        statusEl.textContent = 'Live (' + Math.round(accuracy) + 'm)';
         driverMarker.setLatLng([lat, lng]);
         bearingLine.setLatLngs([[lat, lng], [ordersData[activeIdx].lat, ordersData[activeIdx].lng]]);
         updateDistances(lat, lng);
       },
-      function() {},
+      function(err) {
+        var statusEl = document.getElementById('live-status');
+        if (err.code === 1) {
+          statusEl.innerHTML = '<span style="color:#FF3B30;font-weight:700;">⚠ Location access denied.</span>';
+          warningText.innerHTML = 
+            'Location access was <strong>denied</strong>. The app cannot track your position.';
+          warningEl.classList.add('active');
+          gpsQualityBadge.className = 'gps-quality ip';
+          gpsQualityBadge.innerHTML = '<i class="fas fa-ban"></i> Denied';
+        } else if (err.code === 2) {
+          statusEl.innerHTML = '<span style="color:#FF3B30;font-weight:700;">⚠ GPS unavailable — position may be from IP address.</span>';
+          warningText.innerHTML = 
+            'GPS hardware is <strong>unavailable</strong>. Your position may come from ' +
+            '<strong>IP address</strong>, which is very inaccurate. Check if GPS is enabled on your device.';
+          warningEl.classList.add('active');
+          gpsQualityBadge.className = 'gps-quality ip';
+          gpsQualityBadge.innerHTML = '<i class="fas fa-satellite"></i> No GPS';
+        }
+      },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }

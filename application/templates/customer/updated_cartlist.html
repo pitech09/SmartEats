@@ -62,6 +62,8 @@
     border: 1px solid var(--color-border-light);
     z-index: 0;
   }
+
+  /* ===== IP Location Warning (cart version) ===== */
   .location-warning {
     display: flex;
     align-items: flex-start;
@@ -79,6 +81,27 @@
     margin-top: 2px;
     flex-shrink: 0;
   }
+  
+  .location-warning.warning-severe {
+    background: #FFEBEE;
+    border-color: #FFCDD2;
+    color: #B71C1C;
+  }
+  
+  .location-warning.warning-severe i {
+    color: #D32F2F;
+  }
+  
+  .location-warning.warning-good {
+    background: #E8F5E9;
+    border-color: #C8E6C9;
+    color: #1B5E20;
+  }
+  
+  .location-warning.warning-good i {
+    color: #388E3C;
+  }
+
   .location-status {
     font-size: 0.6875rem;
     color: var(--color-text-secondary);
@@ -144,7 +167,7 @@
           <span class="price-row-label">Subtotal (<span id="item-count">{{ cart.total_items() }}</span> items)</span>
           <span class="price-row-value" id="subtotal-amount">M{{ '%.2f'|format(cart.total_amount()) }}</span>
         </div>
-        <div class="price-row">
+        <div class="price-row" id="delivery-fee-row">
           <span class="price-row-label">Delivery Fee</span>
           <span class="price-row-value" id="delivery-fee-display">
             <span id="delivery-fee-text">Calculating...</span>
@@ -179,7 +202,7 @@
           {{ form3.payment_number(class='apple-input', placeholder='Enter payment number') }}
         </div>
         
-        <div style="margin-bottom:var(--space-md);">
+        <div style="margin-bottom:var(--space-md);" id="drop-address-group">
           {{ form3.drop_address.label(class='apple-label') }}
           {{ form3.drop_address(class='apple-input', placeholder='Enter delivery address') }}
         </div>
@@ -207,26 +230,31 @@
           </div>
         </div>
 
-        <!-- Map Section -->
-        <div class="map-section">
-          <div class="map-section-header">
-            <span class="map-section-label"><i class="fas fa-map-marker-alt" style="color:var(--color-danger);margin-right:4px;"></i> Delivery Location</span>
-            <button type="button" class="map-recenter-btn" id="recenterBtn" title="Re-center to my GPS">
-              <i class="fas fa-crosshairs"></i> Use my location
-            </button>
+        <!-- Delivery-Only Sections (hidden on pickup) -->
+        <div id="delivery-only-sections">
+          <!-- Map Section -->
+          <div class="map-section">
+            <div class="map-section-header">
+              <span class="map-section-label"><i class="fas fa-map-marker-alt" style="color:var(--color-danger);margin-right:4px;"></i> Delivery Location</span>
+              <button type="button" class="map-recenter-btn" id="recenterBtn" title="Re-center to my GPS">
+                <i class="fas fa-crosshairs"></i> Use my location
+              </button>
+            </div>
+            <div id="location-map"></div>
+            <div class="location-status" id="location-status">Detecting your location…</div>
+            
+            <!-- IP/GPS Accuracy Warning -->
+            <div class="location-warning" id="location-accuracy-warning">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span id="location-accuracy-text">Please make sure the pin on the map shows your <strong>exact</strong> delivery location. An inaccurate location may cause delays.</span>
+            </div>
           </div>
-          <div id="location-map"></div>
-          <div class="location-status" id="location-status">Detecting your location…</div>
-          <div class="location-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>Please make sure the pin on the map shows your <strong>exact</strong> delivery location. An inaccurate location may cause delays in your delivery or your order being sent to the wrong address.</span>
-          </div>
-        </div>
 
-        <input type="hidden" name="latitude" id="latitude" value="">
-        <input type="hidden" name="longitude" id="longitude" value="">
-        <input type="hidden" name="delivery_fee" id="delivery-fee" value="0">
-        <input type="hidden" name="location_accuracy" id="location_accuracy" value="">
+          <input type="hidden" name="latitude" id="latitude" value="">
+          <input type="hidden" name="longitude" id="longitude" value="">
+          <input type="hidden" name="delivery_fee" id="delivery-fee" value="0">
+          <input type="hidden" name="location_accuracy" id="location_accuracy" value="">
+        </div>
 
         <div style="margin-bottom:var(--space-md);">
           {{ form3.payment_screenshot.label(class='apple-label') }}
@@ -278,6 +306,7 @@
     var deliveryFee = 0;
     var customerLat = null;
     var customerLng = null;
+    var currentDeliveryMethod = 'agent'; // 'agent' = delivery, 'pickup' = pickup
 
     // ---- Leaflet Map Setup ----
     var map = null;
@@ -337,7 +366,56 @@
       statusEl.className = 'location-status good';
 
       // Re-fetch delivery fee for new position
-      fetchDeliveryFee(lat, lng);
+      if (currentDeliveryMethod === 'agent') {
+        fetchDeliveryFee(lat, lng);
+      }
+    }
+
+    // ---- Detect location accuracy and show IP vs GPS warning ----
+    function updateAccuracyWarning(accuracy) {
+      var warningEl = document.getElementById('location-accuracy-warning');
+      var warningText = document.getElementById('location-accuracy-text');
+      
+      if (!accuracy && accuracy !== 0) {
+        // No accuracy info available
+        warningEl.className = 'location-warning';
+        warningText.innerHTML = 'Please make sure the pin on the map shows your <strong>exact</strong> delivery location. An inaccurate location may cause delays.';
+        return;
+      }
+
+      // Update hidden field
+      document.getElementById('location_accuracy').value = Math.round(accuracy);
+
+      if (accuracy > 1000) {
+        // IP-based location — most inaccurate
+        warningEl.className = 'location-warning warning-severe';
+        warningText.innerHTML = 
+          '<i class="fas fa-exclamation-circle"></i> ' +
+          'Your location is from <strong>IP address</strong> (accuracy: ' + Math.round(accuracy) + 'm), ' +
+          'which may show the wrong city/town. ' +
+          'Please enable <strong>GPS/high accuracy</strong> on your device for accurate delivery. ' +
+          'Drag the pin to your exact location.';
+        document.getElementById('location-status').textContent = '⚠ IP-based location — drag pin to correct';
+        document.getElementById('location-status').className = 'location-status warn';
+      } else if (accuracy > 100) {
+        // WiFi/network location — somewhat inaccurate
+        warningEl.className = 'location-warning';
+        warningText.innerHTML = 
+          'Your location is from <strong>WiFi/network</strong> (accuracy: ' + Math.round(accuracy) + 'm). ' +
+          'This may not pinpoint your exact address. ' +
+          'Drag the pin to your correct delivery location.';
+        document.getElementById('location-status').textContent = '📍 Network location — accuracy ' + Math.round(accuracy) + 'm';
+        document.getElementById('location-status').className = 'location-status warn';
+      } else if (accuracy <= 100) {
+        // Good GPS lock
+        warningEl.className = 'location-warning warning-good';
+        warningText.innerHTML = 
+          '<i class="fas fa-check-circle"></i> ' +
+          '<strong>GPS location acquired</strong> (accuracy: ' + Math.round(accuracy) + 'm). ' +
+          'Drag the pin if you need to adjust.';
+        document.getElementById('location-status').textContent = '📍 GPS locked — accuracy ' + Math.round(accuracy) + 'm';
+        document.getElementById('location-status').className = 'location-status good';
+      }
     }
 
     // Re-center button
@@ -351,6 +429,8 @@
           navigator.geolocation.getCurrentPosition(function(pos) {
             customerLat = pos.coords.latitude;
             customerLng = pos.coords.longitude;
+            var accuracy = pos.coords.accuracy;
+            updateAccuracyWarning(accuracy);
             if (map) {
               map.setView([customerLat, customerLng], 16);
               marker.setLatLng([customerLat, customerLng]);
@@ -362,9 +442,6 @@
     });
 
     // ---- Location: use stored position from layout.js persistent watcher ----
-    // The layout.html script continuously acquires location and stores in localStorage
-    // We just read it here and initialize the map
-
     function useStoredLocation() {
       var lat = window._userLat || null;
       var lng = window._userLng || null;
@@ -394,8 +471,14 @@
         statusEl.textContent = '📍 Location loaded — drag the pin to adjust';
         statusEl.className = 'location-status good';
 
+        // Check accuracy from stored value
+        try {
+          var storedAccuracy = parseFloat(localStorage.getItem('smarteats_accuracy'));
+          if (storedAccuracy) updateAccuracyWarning(storedAccuracy);
+        } catch(e) {}
+
         document.getElementById('delivery-fee-text').textContent = 'Calculating...';
-        fetchDeliveryFee(lat, lng);
+        if (currentDeliveryMethod === 'agent') fetchDeliveryFee(lat, lng);
         return true;
       }
       return false;
@@ -434,9 +517,13 @@
           try {
             localStorage.setItem('smarteats_lat', customerLat);
             localStorage.setItem('smarteats_lng', customerLng);
+            localStorage.setItem('smarteats_accuracy', pos.coords.accuracy);
           } catch(e) {}
           window._userLat = customerLat;
           window._userLng = customerLng;
+
+          // Show accuracy warning
+          updateAccuracyWarning(pos.coords.accuracy);
 
           if (!mapInitialized) {
             initMap(customerLat, customerLng);
@@ -450,7 +537,7 @@
           statusEl.className = 'location-status good';
 
           document.getElementById('delivery-fee-text').textContent = 'Calculating...';
-          fetchDeliveryFee(customerLat, customerLng);
+          if (currentDeliveryMethod === 'agent') fetchDeliveryFee(customerLat, customerLng);
           clearInterval(pollInterval);
         }, function(err) {
           // Network location also failed — let user place pin manually
@@ -555,7 +642,64 @@
       });
     });
 
-    // Delivery method toggle
+    // ---- Delivery Method Toggle ----
+    var deliveryOnlySections = document.getElementById('delivery-only-sections');
+    var deliveryFeeRow = document.getElementById('delivery-fee-row');
+    var dropAddressGroup = document.getElementById('drop-address-group');
+
+    function toggleDeliveryMethod(method) {
+      currentDeliveryMethod = method;
+      
+      if (method === 'pickup') {
+        // HIDE delivery-only sections
+        deliveryOnlySections.style.display = 'none';
+        deliveryFeeRow.style.display = 'none';
+        dropAddressGroup.style.display = 'none';
+        
+        // Zero out delivery fee
+        deliveryFee = 0;
+        document.getElementById('delivery-fee').value = 0;
+        document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';
+        
+        // Clear required location fields
+        document.getElementById('latitude').value = '';
+        document.getElementById('longitude').value = '';
+        document.getElementById('location_accuracy').value = '';
+      } else {
+        // SHOW delivery-only sections
+        deliveryOnlySections.style.display = '';
+        deliveryFeeRow.style.display = '';
+        dropAddressGroup.style.display = '';
+        
+        // Re-calculate fee if we have coordinates
+        if (customerLat && customerLng) {
+          document.getElementById('delivery-fee-text').textContent = 'Calculating...';
+          fetchDeliveryFee(customerLat, customerLng);
+        } else {
+          document.getElementById('delivery-fee-text').textContent = 'Calculating...';
+          // Trigger location fetch
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+              customerLat = pos.coords.latitude;
+              customerLng = pos.coords.longitude;
+              updateAccuracyWarning(pos.coords.accuracy);
+              if (!mapInitialized) {
+                initMap(customerLat, customerLng);
+              } else {
+                map.setView([customerLat, customerLng], 16);
+                marker.setLatLng([customerLat, customerLng]);
+              }
+              updateMapPosition(customerLat, customerLng);
+              fetchDeliveryFee(customerLat, customerLng);
+            }, function() {
+              document.getElementById('delivery-fee-text').textContent = 'Location unavailable';
+            }, { enableHighAccuracy: false, timeout: 10000 });
+          }
+        }
+        updateTotal();
+      }
+    }
+
     var radioLabels = document.querySelectorAll('.apple-radio');
     radioLabels.forEach(function(radio) {
       radio.addEventListener('click', function() {
@@ -564,26 +708,18 @@
         var radioInput = this.querySelector('input[type="radio"]');
         if (radioInput) radioInput.checked = true;
         var method = radioInput ? radioInput.value : 'agent';
-        if (method === 'pickup') {
-          deliveryFee = 0;
-          document.getElementById('delivery-fee').value = 0;
-          document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';
-        } else {
-          if (customerLat && customerLng) {
-            fetchDeliveryFee(customerLat, customerLng);
-          } else {
-            document.getElementById('delivery-fee-text').textContent = 'Calculating...';
-          }
-        }
-        updateTotal();
+        toggleDeliveryMethod(method);
       });
     });
 
+    // Set initial state based on default radio
     var initialMethod = document.querySelector('input[name="deliverymethod"]:checked');
-    if (initialMethod && initialMethod.value === 'pickup') {
-      document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';
-      document.getElementById('delivery-fee').value = 0;
-      updateTotal();
+    if (initialMethod) {
+      if (initialMethod.value === 'pickup') {
+        toggleDeliveryMethod('pickup');
+      } else {
+        toggleDeliveryMethod('agent');
+      }
     }
   });
 </script>
