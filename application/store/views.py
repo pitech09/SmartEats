@@ -1151,7 +1151,6 @@ def vendor_analytics():
         aov_change=aov_change,
         repeat_rate=repeat_rate,
         repeat_customers=repeat_customers,
-        product_contribution=product_contribution,
         stock_turnover_rate=stock_turnover_rate,
         days_left=days_left,
         start_date=start_date,
