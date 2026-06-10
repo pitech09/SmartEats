@@ -279,6 +279,41 @@
       payBtn.addEventListener('click', submitOrder);
     }
 
+    // --- Save receipt as PNG ---
+    function saveReceiptAsPNG(orderId) {
+      var receiptPaper = document.querySelector('.receipt-paper');
+      if (!receiptPaper) return;
+
+      // Temporarily increase width for a clean capture
+      var origWidth = receiptPaper.style.width;
+      receiptPaper.style.width = '350px';
+      receiptPaper.style.backgroundColor = '#fff';
+      receiptPaper.style.padding = '20px';
+
+      html2canvas(receiptPaper, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: false,
+        useCORS: true
+      }).then(function(canvas) {
+        // Restore original styling
+        receiptPaper.style.width = origWidth || '';
+        receiptPaper.style.backgroundColor = '';
+        receiptPaper.style.padding = '';
+
+        // Create download link
+        var link = document.createElement('a');
+        link.download = 'receipt-' + orderId + '.png';
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }).catch(function(err) {
+        console.warn('Receipt PNG save failed:', err);
+      });
+    }
+
     // --- Show Receipt Modal ---
     function showReceipt(data, amountPaid, change) {
       if (!receiptModalEl) return;
@@ -310,6 +345,16 @@
       }
 
       modal.show();
+
+      // Auto-save receipt as PNG after modal is fully rendered
+      var modalEl = receiptModalEl;
+      modalEl.addEventListener('shown.bs.modal', function onShown() {
+        modalEl.removeEventListener('shown.bs.modal', onShown);
+        // Small delay to ensure rendering is complete
+        setTimeout(function() {
+          saveReceiptAsPNG(orderId);
+        }, 300);
+      });
     }
 
     // --- Init rendering ---

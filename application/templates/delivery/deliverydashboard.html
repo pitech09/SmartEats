@@ -1,625 +1,215 @@
 {% extends "deliverylayout.html" %}
-{% block title %}{{ store.name }} Ready Orders - SmartEats{% endblock %}
+{% block title %}{{ store.name }} — Rider Dashboard{% endblock %}
 
 {% block content %}
-<style>
-  .dd-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--space-xl) var(--space-lg);
-  }
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rider-dashboard.css') }}">
 
-  /* ===== HEADER ===== */
-  .dd-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--space-xl);
-    flex-wrap: wrap;
-    gap: var(--space-md);
-  }
+<div class="rd-wrap">
 
-  .dd-header-left h1 {
-    font-family: var(--font-display);
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-text-primary);
-    letter-spacing: -0.03em;
-  }
-
-  .dd-header-sub {
-    font-size: 0.9375rem;
-    color: var(--color-text-secondary);
-    margin: 4px 0 0 0;
-  }
-
-  /* ===== STATS BAR ===== */
-  .dd-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: var(--space-sm);
-    margin-bottom: var(--space-lg);
-  }
-
-  .dd-stat-card {
-    background: var(--color-card);
-    border-radius: var(--radius-lg);
-    padding: var(--space-md);
-    border: 1px solid var(--color-border-light);
-    text-align: center;
-    transition: transform var(--transition-fast);
-  }
-
-  .dd-stat-card:hover {
-    transform: translateY(-1px);
-  }
-
-  .dd-stat-number {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .dd-stat-number.ready { color: var(--color-success); }
-  .dd-stat-number.pending { color: var(--color-warning); }
-  .dd-stat-number.delivery { color: var(--color-accent); }
-  .dd-stat-number.total { color: var(--color-text-primary); }
-
-  .dd-stat-label {
-    font-size: 0.6875rem;
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-  }
-
-  /* ===== EMPTY STATE ===== */
-  .dd-empty {
-    text-align: center;
-    padding: var(--space-4xl) var(--space-lg);
-    animation: fadeIn 0.3s ease;
-  }
-
-  .dd-empty-icon {
-    font-size: 3.5rem;
-    color: var(--color-border);
-    margin-bottom: var(--space-lg);
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-
-  .dd-empty-icon i {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .dd-empty h3 {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin: 0 0 var(--space-sm) 0;
-  }
-
-  .dd-empty p {
-    font-size: 0.9375rem;
-    color: var(--color-text-secondary);
-    margin: 0 0 var(--space-lg) 0;
-  }
-
-  .dd-empty .dd-sound-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    padding: 10px 20px;
-    background: var(--color-card);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-full);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-
-  .dd-empty .dd-sound-toggle:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-
-  .dd-empty .dd-sound-toggle.muted {
-    background: #FFF0F0;
-    border-color: #FFCDD2;
-    color: #C62828;
-  }
-
-  /* ===== ORDERS GRID ===== */
-  .dd-orders-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: var(--space-md);
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .dd-order-card {
-    background: var(--color-card);
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--color-border-light);
-    box-shadow: var(--shadow-sm);
-    padding: var(--space-lg);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-    transition: all var(--transition-base);
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn 0.3s ease;
-    animation-fill-mode: backwards;
-  }
-
-  .dd-order-card:nth-child(1) { animation-delay: 0.02s; }
-  .dd-order-card:nth-child(2) { animation-delay: 0.06s; }
-  .dd-order-card:nth-child(3) { animation-delay: 0.10s; }
-  .dd-order-card:nth-child(4) { animation-delay: 0.14s; }
-  .dd-order-card:nth-child(5) { animation-delay: 0.18s; }
-
-  .dd-order-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--color-accent);
-  }
-
-  /* Status accent line at top */
-  .dd-order-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--color-success);
-  }
-
-  /* ===== ORDER HEADER ===== */
-  .dd-order-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .dd-order-id {
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-  }
-
-  .dd-order-id .dd-order-hash {
-    color: var(--color-text-secondary);
-    font-weight: 400;
-    font-size: 0.875rem;
-  }
-
-  .dd-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 14px;
-    border-radius: var(--radius-full);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    background: #E8F5E9;
-    color: #2E7D32;
-    border: 1px solid #A5D6A7;
-  }
-
-  .dd-badge i {
-    font-size: 0.55rem;
-  }
-
-  /* ===== ORDER DETAILS ===== */
-  .dd-order-details {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-    padding: var(--space-sm) 0;
-  }
-
-  .dd-detail-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-  }
-
-  .dd-detail-row i {
-    width: 18px;
-    text-align: center;
-    color: var(--color-accent);
-    font-size: 0.8125rem;
-    flex-shrink: 0;
-  }
-
-  .dd-detail-row strong {
-    color: var(--color-text-primary);
-    font-weight: 600;
-  }
-
-  .dd-detail-row .dd-customer-name {
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-
-  .dd-detail-row .dd-address {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* ===== ORDER FOOTER ===== */
-  .dd-order-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: var(--space-md);
-    border-top: 1px solid var(--color-border-light);
-    font-size: 0.8125rem;
-    color: var(--color-text-secondary);
-  }
-
-  .dd-order-footer i {
-    margin-right: 4px;
-  }
-
-  .dd-time-elapsed {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 10px;
-    background: rgba(255, 152, 0, 0.1);
-    color: #E65100;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    font-size: 0.75rem;
-  }
-
-  .dd-time-elapsed i {
-    font-size: 0.65rem;
-  }
-
-  .dd-fee {
-    font-weight: 700;
-    color: var(--color-success);
-    font-size: 0.875rem;
-  }
-
-  /* ===== TAKE ORDER BUTTON ===== */
-  .dd-take-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
-    width: 100%;
-    padding: 12px 20px;
-    border: none;
-    border-radius: var(--radius-full);
-    background: linear-gradient(135deg, var(--color-success), #2DB84E);
-    color: white;
-    font-family: var(--font-text);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    text-decoration: none;
-    margin-top: auto;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .dd-take-btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
-    background-size: 200% 100%;
-    background-position: 100% 0;
-    transition: background-position 0.5s;
-  }
-
-  .dd-take-btn:hover::after {
-    background-position: -100% 0;
-  }
-
-  .dd-take-btn:hover {
-    background: linear-gradient(135deg, #2DB84E, #1E8A3A);
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.35);
-  }
-
-  .dd-take-btn:active {
-    transform: scale(0.97);
-  }
-
-  .dd-take-btn i {
-    position: relative;
-    z-index: 1;
-  }
-  .dd-take-btn span {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* ===== ITEMS SUMMARY ===== */
-  .dd-items-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 8px;
-    padding: var(--space-xs) 0;
-  }
-
-  .dd-item-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 10px;
-    background: rgba(0,113,227,0.06);
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    color: var(--color-accent);
-    font-weight: 500;
-  }
-
-  .dd-item-chip .dd-item-qty {
-    background: var(--color-accent);
-    color: white;
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6rem;
-    font-weight: 700;
-  }
-
-  /* ===== DELIVERY LOCATION NOTE ===== */
-  .dd-location-note {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    background: rgba(0,113,227,0.04);
-    border: 1px solid rgba(0,113,227,0.12);
-    border-radius: var(--radius-md);
-    padding: var(--space-sm) var(--space-md);
-    font-size: 0.75rem;
-    color: var(--color-accent);
-    margin-top: var(--space-xs);
-  }
-
-  .dd-location-note i {
-    font-size: 0.75rem;
-  }
-
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 768px) {
-    .dd-orders-grid {
-      grid-template-columns: 1fr;
-    }
-    .dd-header h1 {
-      font-size: 1.5rem;
-    }
-    .dd-stats {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .dd-header {
-      flex-direction: column;
-    }
-  }
-</style>
-
-<div class="dd-container">
-  <!-- Header -->
-  <div class="dd-header">
-    <div class="dd-header-left">
-      <h1>
-        <i class="fas fa-store" style="color:var(--color-accent);margin-right:8px;"></i>
-        {{ store.name }}
-      </h1>
-      <p class="dd-header-sub">
-        <i class="fas fa-box-open" style="margin-right:4px;"></i>
-        Ready Orders · {{ total_count }} available
-      </p>
+  <!-- ════════════ HEADER ════════════ -->
+  <div class="rd-header">
+    <div class="rd-avatar">
+      <i class="fas fa-motorcycle"></i>
+    </div>
+    <div class="rd-header-info">
+      <h1 class="rd-header-name">{{ current_user.names }}</h1>
+      <div class="rd-header-status">
+        <span class="rd-status-dot" id="rd-status-dot"></span>
+        <span class="rd-status-text" id="rd-status-text">Available for deliveries</span>
+      </div>
+    </div>
+    <div class="rd-header-actions">
+      <button class="rd-icon-btn" id="rd-sound-toggle" title="Toggle notifications">
+        <i class="fas fa-bell"></i>
+      </button>
+      <div class="rd-toggle-wrap">
+        <button class="rd-toggle active" id="rd-online-toggle" title="Online / Offline"></button>
+        <span class="rd-toggle-label active-label" id="rd-toggle-label">Online</span>
+      </div>
     </div>
   </div>
 
+  <!-- ════════════ REFRESH INDICATOR ════════════ -->
+  <div class="rd-refresh-bar" id="rd-refresh-bar">
+    <i class="fas fa-sync-alt"></i> Refreshing orders…
+  </div>
+
+  <!-- ════════════ TOP STATS ════════════ -->
+  <div class="rd-section-title">
+    <i class="fas fa-chart-line"></i> Today's Overview
+  </div>
+  <div class="rd-stats">
+    <div class="rd-stat">
+      <div class="rd-stat-icon orange"><i class="fas fa-motorcycle"></i></div>
+      <div class="rd-stat-value">{{ total_count }}</div>
+      <div class="rd-stat-label">Ready Orders</div>
+    </div>
+    <div class="rd-stat">
+      <div class="rd-stat-icon green"><i class="fas fa-check-double"></i></div>
+      <div class="rd-stat-value">{{ ready_orders|length }}</div>
+      <div class="rd-stat-label">Available</div>
+    </div>
+    <div class="rd-stat">
+      <div class="rd-stat-icon blue"><i class="fas fa-store"></i></div>
+      <div class="rd-stat-value" style="font-size:0.75rem;">{{ store.name }}</div>
+      <div class="rd-stat-label">Store</div>
+    </div>
+  </div>
+
+  <!-- ════════════ QUICK NAV ════════════ -->
+  <div class="rd-quick-nav">
+    <a href="{{ url_for('delivery.mydeliveries') }}" class="rd-nav-card">
+      <i class="fas fa-route"></i>
+      <span>My Deliveries</span>
+    </a>
+    <a href="{{ url_for('delivery.ready_orders') }}" class="rd-nav-card">
+      <i class="fas fa-clipboard-list"></i>
+      <span>All Orders</span>
+    </a>
+    <a href="{{ url_for('delivery.dashboard') }}" class="rd-nav-card">
+      <i class="fas fa-chart-pie"></i>
+      <span>Stats</span>
+    </a>
+  </div>
+
+  <!-- ════════════ AVAILABLE ORDERS ════════════ -->
+  <div class="rd-section-title">
+    <i class="fas fa-box-open"></i> New Delivery Requests
+    {% if ready_orders %}
+    <span style="margin-left:auto;font-size:0.75rem;font-weight:600;color:var(--rd-orange);background:rgba(255,107,0,0.08);padding:2px 10px;border-radius:9999px;">{{ ready_orders|length }} pending</span>
+    {% endif %}
+  </div>
+
   {% if not ready_orders %}
-  <!-- Empty State -->
-  <div class="dd-empty">
-    <div class="dd-empty-icon">
+  <!-- ── Empty State ── -->
+  <div class="rd-empty">
+    <div class="rd-empty-icon">
       <i class="fas fa-truck"></i>
     </div>
     <h3>No orders ready yet</h3>
     <p>All caught up! New orders will appear here once the store marks them as ready.</p>
-    <button class="dd-sound-toggle" id="soundToggle" onclick="toggleSound()">
+    <button class="rd-sound-btn" id="rd-sound-toggle-empty">
       <i class="fas fa-bell"></i>
       <span>Notifications On</span>
     </button>
   </div>
-  {% else %}
-  <!-- Stats Bar -->
-  <div class="dd-stats">
-    <div class="dd-stat-card">
-      <div class="dd-stat-number ready">{{ ready_orders|length }}</div>
-      <div class="dd-stat-label">Ready Now</div>
-    </div>
-    <div class="dd-stat-card">
-      <div class="dd-stat-number total">{{ ready_orders|length }}</div>
-      <div class="dd-stat-label">Available</div>
-    </div>
-    <div class="dd-stat-card">
-      <div class="dd-stat-number delivery" style="font-size:0.875rem;">
-        <i class="fas fa-map-marker-alt"></i> Map
-      </div>
-      <div class="dd-stat-label">Navigate</div>
-    </div>
-  </div>
 
-  <!-- Orders Grid -->
-  <div class="dd-orders-grid">
-    {% for order in ready_orders %}
-    <div class="dd-order-card">
-      <!-- Header -->
-      <div class="dd-order-header">
-        <h5 class="dd-order-id">
-          <span class="dd-order-hash">#</span>{{ order.order_id }}
+  {% else %}
+
+  <!-- ── Order Cards ── -->
+  {% for order in ready_orders %}
+  <div class="rd-order-card">
+    <!-- Accent bar (via CSS ::before) -->
+
+    <div class="rd-card-body">
+      <!-- Card top -->
+      <div class="rd-card-top">
+        <h5 class="rd-order-num">
+          <span class="hash">#</span>{{ order.order_id }}
         </h5>
-        <span class="dd-badge">
+        <span class="rd-badge-ready">
           <i class="fas fa-check-circle"></i> Ready
         </span>
       </div>
 
-      <!-- Details -->
-      <div class="dd-order-details">
-        <div class="dd-detail-row">
-          <i class="fas fa-user-circle"></i>
-          <span class="dd-customer-name">{{ order.user.lastname }} {{ order.user.username }}</span>
-        </div>
-        <div class="dd-detail-row">
-          <i class="fas fa-map-marker-alt"></i>
-          <span class="dd-address" title="{{ order.location }}">{{ order.location }}</span>
-        </div>
-        
-        <!-- Items Summary -->
-        <div class="dd-items-summary">
-          {% for item in order.order_items[:3] %}
-          <span class="dd-item-chip">
-            <span class="dd-item-qty">{{ item.quantity }}</span>
-            {{ item.product_name }}
-          </span>
-          {% endfor %}
-          {% if order.order_items|length > 3 %}
-          <span class="dd-item-chip" style="background:rgba(0,0,0,0.04);color:var(--color-text-secondary);">
-            +{{ order.order_items|length - 3 }} more
-          </span>
-          {% endif %}
-        </div>
+      <!-- Customer -->
+      <div class="rd-info-row">
+        <i class="fas fa-user-circle"></i>
+        <strong>{{ order.user.lastname }} {{ order.user.username }}</strong>
+      </div>
 
-        {% if order.total_amount %}
-        <div class="dd-detail-row">
-          <i class="fas fa-coins"></i>
-          <span>Order Total: <strong>M{{ '%.2f'|format(order.total_amount) }}</strong></span>
-        </div>
-        {% endif %}
-        
-        {% if order.deliveryfee and order.deliveryfee > 0 %}
-        <div class="dd-detail-row">
-          <i class="fas fa-truck-fast"></i>
-          <span>Delivery: <strong>M{{ '%.2f'|format(order.deliveryfee) }}</strong></span>
-        </div>
-        {% endif %}
+      <!-- Delivery Address -->
+      <div class="rd-info-row">
+        <i class="fas fa-map-marker-alt"></i>
+        <span class="rd-address" title="{{ order.location }}">{{ order.location }}</span>
+      </div>
 
-        {% if order.payment %}
-        <div class="dd-detail-row">
-          <i class="fas fa-credit-card"></i>
-          <span>Paid via <strong>{{ order.payment }}</strong></span>
-        </div>
+      <!-- Items -->
+      <div class="rd-items">
+        {% for item in order.order_items[:4] %}
+        <span class="rd-chip">
+          <span class="rd-chip-qty">{{ item.quantity }}</span>
+          {{ item.product_name }}
+        </span>
+        {% endfor %}
+        {% if order.order_items|length > 4 %}
+        <span class="rd-chip more">+{{ order.order_items|length - 4 }} more</span>
         {% endif %}
       </div>
 
-      <!-- Footer -->
-      <div class="dd-order-footer">
-        {% if order.created_at %}
-        <span class="dd-time-elapsed" data-created="{{ order.created_at.isoformat() if order.created_at else '' }}">
-          <i class="fas fa-hourglass-half"></i>
-          <span class="dd-time-text">Just now</span>
-        </span>
-        {% endif %}
-        <span class="dd-fee">
-          <i class="fas fa-tag"></i>
-          M{{ '%.2f'|format(order.deliveryfee or 0) }}
-        </span>
+      <!-- Order total -->
+      {% if order.total_amount %}
+      <div class="rd-info-row">
+        <i class="fas fa-coins"></i>
+        <span>Order Total: <strong>M{{ '%.2f'|format(order.total_amount) }}</strong></span>
       </div>
+      {% endif %}
 
-      <!-- Take Order Button -->
-      <a href="{{ url_for('delivery.takeorder', order_id=order.id) }}" class="dd-take-btn">
-        <i class="fas fa-hand-pointer"></i>
-        <span>Take Order</span>
-      </a>
+      <!-- Delivery fee -->
+      {% if order.deliveryfee and order.deliveryfee > 0 %}
+      <div class="rd-info-row">
+        <i class="fas fa-truck-fast"></i>
+        <span>Delivery Fee: <strong>M{{ '%.2f'|format(order.deliveryfee) }}</strong></span>
+      </div>
+      {% endif %}
+
+      <!-- Payment method -->
+      {% if order.payment %}
+      <div class="rd-info-row">
+        <i class="fas fa-credit-card"></i>
+        <span>Paid via <strong>{{ order.payment }}</strong></span>
+      </div>
+      {% endif %}
     </div>
-    {% endfor %}
+
+    <!-- Footer -->
+    <div class="rd-card-footer">
+      {% if order.created_at %}
+      <span class="rd-time-badge rd-time-elapsed" data-created="{{ order.created_at.isoformat() if order.created_at else '' }}">
+        <i class="fas fa-hourglass-half"></i>
+        <span class="rd-time-text">Just now</span>
+      </span>
+      {% endif %}
+      <span class="rd-fee">
+        <i class="fas fa-tag"></i>
+        M{{ '%.2f'|format(order.deliveryfee or 0) }}
+      </span>
+    </div>
+
+    <!-- Take Order -->
+    <a href="{{ url_for('delivery.takeorder', order_id=order.id) }}" class="rd-take-btn">
+      <i class="fas fa-hand-pointer"></i>
+      <span>Accept Order</span>
+    </a>
   </div>
+  {% endfor %}
+
   {% endif %}
+
 </div>
 
-<script>
-// ---- Live elapsed time counter ----
-function updateElapsedTimes() {
-  document.querySelectorAll('.dd-time-elapsed').forEach(function(el) {
-    var iso = el.dataset.created;
-    if (!iso) return;
-    var created = new Date(iso);
-    var now = new Date();
-    var diffMs = now - created;
-    var diffMin = Math.floor(diffMs / 60000);
+<!-- ════════════ TOAST ════════════ -->
+<div class="rd-toast" id="rd-toast"></div>
 
-    var text;
-    if (diffMin < 1) text = 'Just now';
-    else if (diffMin < 60) text = diffMin + 'm ago';
-    else if (diffMin < 1440) text = Math.floor(diffMin / 60) + 'h ' + (diffMin % 60) + 'm ago';
-    else text = Math.floor(diffMin / 1440) + 'd ago';
+<!-- ════════════ STICKY MOBILE BAR ════════════ -->
+<div class="rd-sticky-bar">
+  <a href="{{ url_for('delivery.dashboard') }}" class="rd-sticky-btn active">
+    <i class="fas fa-home"></i>
+    <span>Home</span>
+  </a>
+  <a href="{{ url_for('delivery.mydeliveries') }}" class="rd-sticky-btn">
+    <i class="fas fa-route"></i>
+    <span>Deliveries</span>
+  </a>
+  <a href="{{ url_for('delivery.ready_orders') }}" class="rd-sticky-btn">
+    <i class="fas fa-box-open"></i>
+    <span>Orders</span>
+  </a>
+  <a href="{{ url_for('main.logout') }}" class="rd-sticky-btn">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Logout</span>
+  </a>
+</div>
 
-    var textEl = el.querySelector('.dd-time-text');
-    if (textEl) textEl.textContent = text;
-  });
-}
-
-updateElapsedTimes();
-setInterval(updateElapsedTimes, 30000);
-
-// ---- Sound Toggle (mute/unmute notification sound) ----
-function toggleSound() {
-  var btn = document.getElementById('soundToggle');
-  if (btn.classList.contains('muted')) {
-    btn.classList.remove('muted');
-    btn.innerHTML = '<i class="fas fa-bell"></i> <span>Notifications On</span>';
-    try { localStorage.setItem('smarteats_delivery_sound', 'on'); } catch(e) {}
-  } else {
-    btn.classList.add('muted');
-    btn.innerHTML = '<i class="fas fa-bell-slash"></i> <span>Notifications Off</span>';
-    try { localStorage.setItem('smarteats_delivery_sound', 'off'); } catch(e) {}
-  }
-}
-
-// Restore sound preference
-try {
-  var soundPref = localStorage.getItem('smarteats_delivery_sound');
-  if (soundPref === 'off') {
-    var btn = document.getElementById('soundToggle');
-    if (btn) {
-      btn.classList.add('muted');
-      btn.innerHTML = '<i class="fas fa-bell-slash"></i> <span>Notifications Off</span>';
-    }
-  }
-} catch(e) {}
-</script>
+<script src="{{ url_for('static', filename='js/rider-dashboard.js') }}"></script>
 {% endblock %}

@@ -1,105 +1,577 @@
 {% extends "deliverylayout.html" %}
-{% block title %}My Delivery Dashboard - MediCart{% endblock %}
+{% block title %}Delivery Dashboard — SmartEats{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-4">My Delivery Stats</h2>
+<style>
+  /* ── Delivery Stats — Apple-Inspired Dashboard ── */
+  .ds-page {
+    padding: 16px 0 40px;
+  }
 
-  <div class="row g-3">
+  .ds-greeting {
+    margin-bottom: 6px;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--color-text-primary, #1D1D1F);
+  }
 
+  .ds-subtitle {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary, #6E6E73);
+    margin-bottom: 28px;
+  }
+
+  /* ── Date Filter Bar ── */
+  .ds-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .ds-filter-bar input[type="date"] {
+    padding: 8px 14px;
+    border: 1px solid var(--color-border, #D2D2D7);
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-family: var(--font-text, 'SF Pro Text', system-ui, sans-serif);
+    color: var(--color-text-primary, #1D1D1F);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .ds-filter-bar input[type="date"]:focus {
+    border-color: var(--color-accent, #0071E3);
+    box-shadow: 0 0 0 2px rgba(0,113,227,0.15);
+  }
+
+  .ds-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 9999px;
+    background: var(--color-accent, #0071E3);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: var(--font-text, 'SF Pro Text', system-ui, sans-serif);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .ds-filter-btn:hover {
+    background: var(--color-accent-hover, #0077ED);
+    box-shadow: 0 4px 12px rgba(0,113,227,0.3);
+  }
+
+  /* ── Primary Stats Grid ── */
+  .ds-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .ds-stat-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ds-stat-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+
+  .ds-stat-card .ds-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: #fff;
+    margin-bottom: 14px;
+  }
+
+  .ds-stat-card .ds-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary, #6E6E73);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .ds-stat-card .ds-value {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--color-text-primary, #1D1D1F);
+    line-height: 1.1;
+  }
+
+  .ds-stat-card .ds-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #6E6E73);
+    margin-top: 6px;
+  }
+
+  /* Icon backgrounds */
+  .ds-icon-blue    { background: linear-gradient(135deg, #0071E3, #40A9FF); }
+  .ds-icon-green   { background: linear-gradient(135deg, #34C759, #6BDB8A); }
+  .ds-icon-orange  { background: linear-gradient(135deg, #FF9F0A, #FFB340); }
+  .ds-icon-red     { background: linear-gradient(135deg, #FF3B30, #FF6B63); }
+  .ds-icon-purple  { background: linear-gradient(135deg, #AF52DE, #C77DEB); }
+  .ds-icon-teal    { background: linear-gradient(135deg, #30B0C7, #5CC5D6); }
+  .ds-icon-indigo  { background: linear-gradient(135deg, #5856D6, #8583E9); }
+  .ds-icon-pink    { background: linear-gradient(135deg, #FF2D55, #FF6080); }
+
+  /* ── Revenue Cards (larger, featured) ── */
+  .ds-revenue-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .ds-revenue-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ds-revenue-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+
+  .ds-revenue-card .ds-revenue-label {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary, #6E6E73);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .ds-revenue-card .ds-revenue-amount {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .ds-revenue-card .ds-revenue-sub {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary, #6E6E73);
+    margin-top: 8px;
+  }
+
+  .ds-revenue-card.ds-rev-total .ds-revenue-amount   { color: #0071E3; }
+  .ds-revenue-card.ds-rev-weekly .ds-revenue-amount  { color: #34C759; }
+  .ds-revenue-card.ds-rev-daily .ds-revenue-amount   { color: #AF52DE; }
+
+  /* ── Success Rate Ring ── */
+  .ds-rate-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom: 28px;
+  }
+
+  .ds-rate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .ds-rate-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary, #1D1D1F);
+  }
+
+  .ds-rate-body {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+
+  .ds-ring-wrap {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+  }
+
+  .ds-ring-wrap svg {
+    transform: rotate(-90deg);
+    width: 140px;
+    height: 140px;
+  }
+
+  .ds-ring-wrap .ds-ring-bg {
+    fill: none;
+    stroke: #F0F0F5;
+    stroke-width: 10;
+  }
+
+  .ds-ring-wrap .ds-ring-fill {
+    fill: none;
+    stroke: url(#ringGradient);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ds-ring-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .ds-ring-pct {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1D1D1F);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .ds-ring-pct-sign {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-secondary, #6E6E73);
+  }
+
+  .ds-rate-details {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .ds-rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border-light, #E8E8ED);
+  }
+
+  .ds-rate-row:last-child {
+    border-bottom: none;
+  }
+
+  .ds-rate-row-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary, #6E6E73);
+  }
+
+  .ds-rate-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .ds-rate-row-value {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #1D1D1F);
+  }
+
+  /* ── Performance Bar ── */
+  .ds-perf-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom: 28px;
+  }
+
+  .ds-perf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .ds-perf-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary, #1D1D1F);
+  }
+
+  .ds-bar-track {
+    width: 100%;
+    height: 10px;
+    background: #F0F0F5;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .ds-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ds-bar-fill-success {
+    background: linear-gradient(90deg, #34C759, #6BDB8A);
+  }
+
+  .ds-bar-fill-progress {
+    background: linear-gradient(90deg, #FF9F0A, #FFB340);
+  }
+
+  .ds-bar-fill-cancelled {
+    background: linear-gradient(90deg, #FF3B30, #FF6B63);
+  }
+
+  .ds-bar-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .ds-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary, #6E6E73);
+  }
+
+  .ds-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .ds-greeting { font-size: 1.5rem; }
+    .ds-stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ds-revenue-section { grid-template-columns: 1fr; }
+    .ds-rate-body { flex-direction: column; gap: 24px; }
+    .ds-stat-card .ds-value { font-size: 1.5rem; }
+    .ds-revenue-card .ds-revenue-amount { font-size: 1.75rem; }
+  }
+
+  @media (max-width: 480px) {
+    .ds-stats-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Entrance Animations ── */
+  @keyframes dsFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .ds-animate {
+    animation: dsFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .ds-delay-1 { animation-delay: 0.05s; }
+  .ds-delay-2 { animation-delay: 0.10s; }
+  .ds-delay-3 { animation-delay: 0.15s; }
+  .ds-delay-4 { animation-delay: 0.20s; }
+  .ds-delay-5 { animation-delay: 0.25s; }
+  .ds-delay-6 { animation-delay: 0.30s; }
+  .ds-delay-7 { animation-delay: 0.35s; }
+</style>
+
+<div class="ds-page">
+
+  <!-- ── Greeting ── -->
+  <h1 class="ds-greeting ds-animate">My Delivery Dashboard</h1>
+  <p class="ds-subtitle ds-animate ds-delay-1">Track your deliveries, revenue, and performance at a glance.</p>
+
+  <!-- ── Date Filter ── -->
+  <form method="GET" class="ds-filter-bar ds-animate ds-delay-2">
+    <input type="date" name="start_date" value="{{ start_date }}">
+    <input type="date" name="end_date" value="{{ end_date }}">
+    <button type="submit" class="ds-filter-btn">
+      <i class="fas fa-filter"></i> Filter
+    </button>
+  </form>
+
+  <!-- ── Primary Stats Grid ── -->
+  <div class="ds-stats-grid">
     <!-- Total Deliveries -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-primary h-100 shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">Total Deliveries</h5>
-          <p class="card-text fs-4">{{ total }}</p>
-        </div>
-      </div>
+    <div class="ds-stat-card ds-animate ds-delay-1">
+      <div class="ds-icon ds-icon-blue"><i class="fas fa-truck"></i></div>
+      <div class="ds-label">Total Deliveries</div>
+      <div class="ds-value">{{ total }}</div>
+      <div class="ds-meta">All-time deliveries</div>
     </div>
 
     <!-- Delivered -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-success h-100 shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">Delivered</h5>
-          <p class="card-text fs-4">{{ delivered }}</p>
-        </div>
-      </div>
+    <div class="ds-stat-card ds-animate ds-delay-2">
+      <div class="ds-icon ds-icon-green"><i class="fas fa-check-circle"></i></div>
+      <div class="ds-label">Delivered</div>
+      <div class="ds-value">{{ delivered }}</div>
+      <div class="ds-meta">Successfully completed</div>
     </div>
 
     <!-- In Progress -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-warning h-100 shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">In Progress</h5>
-          <p class="card-text fs-4">{{ in_progress }}</p>
-        </div>
-      </div>
+    <div class="ds-stat-card ds-animate ds-delay-3">
+      <div class="ds-icon ds-icon-orange"><i class="fas fa-spinner"></i></div>
+      <div class="ds-label">In Progress</div>
+      <div class="ds-value">{{ in_progress }}</div>
+      <div class="ds-meta">Currently on route</div>
     </div>
 
     <!-- Cancelled -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-white bg-danger h-100 shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">Cancelled</h5>
-          <p class="card-text fs-4">{{ cancelled }}</p>
-        </div>
-      </div>
+    <div class="ds-stat-card ds-animate ds-delay-4">
+      <div class="ds-icon ds-icon-red"><i class="fas fa-times-circle"></i></div>
+      <div class="ds-label">Cancelled</div>
+      <div class="ds-value">{{ cancelled }}</div>
+      <div class="ds-meta">Unsuccessful deliveries</div>
     </div>
-
-    <!-- Total Revenue -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card bg-success text-white h-100 shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">Total Revenue</h5>
-          <p class="card-text fs-4">M {{ '%.2f'|format(revenue) }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Weekly Revenue -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card bg-info text-white h-100 shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">Weekly Revenue</h5>
-          <p class="card-text fs-4">M {{ '%.2f'|format(weekly_revenue) }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Daily Revenue -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card bg-secondary text-white h-100 shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">Daily Revenue</h5>
-          <p class="card-text fs-4">M {{ '%.2f'|format(daily_revenue) }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Success Rate -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card h-100 shadow-sm">
-        <div class="card-header text-center bg-light">Success Rate</div>
-        <div class="card-body text-center">
-          <h4 class="text-success">{{ success_rate }}%</h4>
-        </div>
-      </div>
-    </div>
-
   </div>
-</div>
 
-<style>
-  .card:hover {
-    transform: translateY(-4px);
-    transition: 0.2s;
-  }
-  .card-header {
-    font-weight: 600;
-  }
-  .card-title {
-    font-weight: 600;
-  }
-</style>
+  <!-- ── Revenue Cards ── -->
+  <div class="ds-revenue-section">
+    <div class="ds-revenue-card ds-rev-total ds-animate ds-delay-3">
+      <div class="ds-revenue-label"><i class="fas fa-wallet me-1"></i> Total Revenue</div>
+      <div class="ds-revenue-amount">M {{ '%.2f'|format(revenue) }}</div>
+      <div class="ds-revenue-sub">Earned from all delivered orders</div>
+    </div>
+
+    <div class="ds-revenue-card ds-rev-weekly ds-animate ds-delay-4">
+      <div class="ds-revenue-label"><i class="fas fa-calendar-week me-1"></i> Weekly Revenue</div>
+      <div class="ds-revenue-amount">M {{ '%.2f'|format(weekly_revenue) }}</div>
+      <div class="ds-revenue-sub">This week's earnings</div>
+    </div>
+
+    <div class="ds-revenue-card ds-rev-daily ds-animate ds-delay-5">
+      <div class="ds-revenue-label"><i class="fas fa-sun me-1"></i> Daily Revenue</div>
+      <div class="ds-revenue-amount">M {{ '%.2f'|format(daily_revenue) }}</div>
+      <div class="ds-revenue-sub">Today's earnings</div>
+    </div>
+  </div>
+
+  <!-- ── Success Rate + Breakdown ── -->
+  <div class="ds-rate-section ds-animate ds-delay-5">
+    <div class="ds-rate-header">
+      <div class="ds-rate-title"><i class="fas fa-chart-pie me-2"></i>Delivery Performance</div>
+    </div>
+    <div class="ds-rate-body">
+      <!-- Ring -->
+      <div class="ds-ring-wrap">
+        <svg viewBox="0 0 140 140">
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#34C759"/>
+              <stop offset="100%" stop-color="#0071E3"/>
+            </linearGradient>
+          </defs>
+          <circle class="ds-ring-bg" cx="70" cy="70" r="56"/>
+          <circle class="ds-ring-fill" cx="70" cy="70" r="56"
+                  stroke-dasharray="351.86"
+                  stroke-dashoffset="{{ (351.86 * (1 - success_rate / 100))|round(2) }}"/>
+        </svg>
+        <div class="ds-ring-center">
+          <div class="ds-ring-pct">{{ success_rate }}<span class="ds-ring-pct-sign">%</span></div>
+        </div>
+      </div>
+
+      <!-- Breakdown Rows -->
+      <div class="ds-rate-details">
+        <div class="ds-rate-row">
+          <div class="ds-rate-row-label">
+            <span class="ds-rate-dot" style="background:#34C759;"></span>
+            Delivered
+          </div>
+          <div class="ds-rate-row-value">{{ delivered }}</div>
+        </div>
+        <div class="ds-rate-row">
+          <div class="ds-rate-row-label">
+            <span class="ds-rate-dot" style="background:#FF9F0A;"></span>
+            In Progress
+          </div>
+          <div class="ds-rate-row-value">{{ in_progress }}</div>
+        </div>
+        <div class="ds-rate-row">
+          <div class="ds-rate-row-label">
+            <span class="ds-rate-dot" style="background:#FF3B30;"></span>
+            Cancelled
+          </div>
+          <div class="ds-rate-row-value">{{ cancelled }}</div>
+        </div>
+        <div class="ds-rate-row">
+          <div class="ds-rate-row-label">
+            <span class="ds-rate-dot" style="background:#0071E3;"></span>
+            Total
+          </div>
+          <div class="ds-rate-row-value">{{ total }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Performance Bar ── -->
+  {% set del_pct = (delivered / total * 100) if total else 0 %}
+  {% set prog_pct = (in_progress / total * 100) if total else 0 %}
+  {% set canc_pct = (cancelled / total * 100) if total else 0 %}
+
+  <div class="ds-perf-card ds-animate ds-delay-6">
+    <div class="ds-perf-header">
+      <div class="ds-perf-title"><i class="fas fa-chart-bar me-2"></i>Status Breakdown</div>
+    </div>
+
+    <div class="ds-bar-track">
+      <div class="ds-bar-fill ds-bar-fill-success" style="width: {{ del_pct|round(1) }}%;"></div>
+    </div>
+
+    <div class="ds-bar-track">
+      <div class="ds-bar-fill ds-bar-fill-progress" style="width: {{ prog_pct|round(1) }}%;"></div>
+    </div>
+
+    <div class="ds-bar-track">
+      <div class="ds-bar-fill ds-bar-fill-cancelled" style="width: {{ canc_pct|round(1) }}%;"></div>
+    </div>
+
+    <div class="ds-bar-legend">
+      <div class="ds-legend-item">
+        <span class="ds-legend-dot" style="background:#34C759;"></span>
+        Delivered {{ del_pct|round(1) }}%
+      </div>
+      <div class="ds-legend-item">
+        <span class="ds-legend-dot" style="background:#FF9F0A;"></span>
+        In Progress {{ prog_pct|round(1) }}%
+      </div>
+      <div class="ds-legend-item">
+        <span class="ds-legend-dot" style="background:#FF3B30;"></span>
+        Cancelled {{ canc_pct|round(1) }}%
+      </div>
+    </div>
+  </div>
+
+</div>
 {% endblock %}
