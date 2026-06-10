@@ -273,6 +273,38 @@ def navigate(order_id):
     )
 
 
+# ---------------- MULTI-ORDER NAVIGATION ----------------
+@delivery.route('/navigate_multi', methods=["GET"])
+@login_required
+def navigate_multi():
+    """Show all active deliveries on one map for multi-drop routing."""
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+
+    deliveries = Delivery.query.filter(
+        Delivery.delivery_guy_id == current_user.id,
+        Delivery.status == "Out for Delivery"
+    ).all()
+
+    orders = []
+    for d in deliveries:
+        order = Order.query.get(d.order_id)
+        if order and order.customer_lat and order.customer_lng:
+            orders.append(order)
+
+    if len(orders) < 2:
+        if orders:
+            return redirect(url_for('delivery.navigate', order_id=orders[0].id))
+        flash("No active deliveries to navigate.")
+        return redirect(url_for('delivery.mydeliveries'))
+
+    return render_template(
+        'delivery/navigate_multi.html',
+        store=store,
+        orders=orders
+    )
+
+
 # ---------------- UPDATE DELIVERY ----------------
 @delivery.route('/update_delivery/<int:delivery_id>', methods=["POST"])
 @login_required

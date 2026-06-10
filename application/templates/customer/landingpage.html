@@ -245,11 +245,11 @@
   <div class="container">
     <div class="row text-center g-4">
       <div class="col-4">
-        <div class="stat-number">50+</div>
+        <div class="stat-number">10+</div>
         <div class="stat-label">Restaurants</div>
       </div>
       <div class="col-4">
-        <div class="stat-number">1,000+</div>
+        <div class="stat-number">100+</div>
         <div class="stat-label">Meals Delivered</div>
       </div>
       <div class="col-4">
@@ -260,53 +260,6 @@
   </div>
 </section>
 
-<!-- ===== CATEGORIES SECTION ===== -->
-<section class="apple-section">
-  <div class="container">
-    <div class="apple-section-header">
-      <h2 class="apple-section-title">Browse by Category</h2>
-    </div>
-    
-    <div class="row g-3">
-      <div class="col-4 col-md-3">
-        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
-          <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80" alt="Pizza" loading="lazy">
-          <div class="category-card-label"><i class="fas fa-pizza-slice"></i> Pizza</div>
-        </div>
-      </div>
-      <div class="col-4 col-md-3">
-        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
-          <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=400&q=80" alt="Burgers" loading="lazy">
-          <div class="category-card-label"><i class="fas fa-hamburger"></i> Burgers</div>
-        </div>
-      </div>
-      <div class="col-4 col-md-3">
-        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
-          <img src="https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&w=400&q=80" alt="African" loading="lazy">
-          <div class="category-card-label"><i class="fas fa-globe-africa"></i> African</div>
-        </div>
-      </div>
-      <div class="col-4 col-md-3">
-        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
-          <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=400&q=80" alt="Desserts" loading="lazy">
-          <div class="category-card-label"><i class="fas fa-cookie-bite"></i> Desserts</div>
-        </div>
-      </div>
-      <div class="col-4 col-md-3">
-        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
-          <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80" alt="Salads" loading="lazy">
-          <div class="category-card-label"><i class="fas fa-leaf"></i> Salads</div>
-        </div>
-      </div>
-      <div class="col-4 col-md-3">
-        <div class="category-card" onclick="window.location.href='{{ url_for('auth.register') }}'">
-          <img src="https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=400&q=80" alt="Drinks" loading="lazy">
-          <div class="category-card-label"><i class="fas fa-glass-water"></i> Drinks</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ===== POPULAR RESTAURANTS ===== -->
 {% if restaurants %}

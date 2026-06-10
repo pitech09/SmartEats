@@ -334,6 +334,61 @@
 
   {% block extra_js %}{% endblock %}
 
+  <!-- Persistent Location Acquisition (runs on every authenticated page) -->
+  {% if current_user.is_authenticated %}
+  <script>
+    (function() {
+      // Continuously acquire and refine user location using network + GPS
+      // Stores in localStorage so other pages (cart, etc.) can use it instantly
+      var watchId = null;
+
+      function saveLocation(lat, lng, accuracy) {
+        try {
+          localStorage.setItem('smarteats_lat', lat);
+          localStorage.setItem('smarteats_lng', lng);
+          localStorage.setItem('smarteats_accuracy', accuracy);
+          localStorage.setItem('smarteats_ts', Date.now());
+        } catch(e) {}
+        // Also expose globally for this page
+        window._userLat = lat;
+        window._userLng = lng;
+        window._userAccuracy = accuracy;
+      }
+
+      function onPosition(pos) {
+        saveLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+      }
+
+      function onPositionError(err) {
+        // Permission denied or other error — do nothing, keep trying
+        // The watch will continue to prompt if permission was just denied temporarily
+      }
+
+      if (navigator.geolocation) {
+        // Use network location by default (enableHighAccuracy not set = false)
+        // This uses WiFi/cell tower triangulation — works indoors, no GPS needed
+        // Never timeout, never stop watching
+        watchId = navigator.geolocation.watchPosition(
+          onPosition,
+          onPositionError,
+          { enableHighAccuracy: false, timeout: Infinity, maximumAge: 0 }
+        );
+      }
+
+      // Restore last known location from localStorage immediately
+      try {
+        var savedLat = localStorage.getItem('smarteats_lat');
+        var savedLng = localStorage.getItem('smarteats_lng');
+        if (savedLat && savedLng) {
+          window._userLat = parseFloat(savedLat);
+          window._userLng = parseFloat(savedLng);
+          window._userAccuracy = parseFloat(localStorage.getItem('smarteats_accuracy') || '999');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  {% endif %}
+
   <!-- Audio for notifications -->
   <audio id="new_order" preload="auto" src="{{ url_for('static', filename='sounds/new_order.wav') }}"></audio>
   <audio id="order_update" preload="auto" src="{{ url_for('static', filename='sounds/order_update.wav') }}"></audio>

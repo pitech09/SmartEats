@@ -2,6 +2,7 @@
 {% block title %}Cart – SmartEats{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}" />
 <style>
   .checkout-layout {
     display: grid;
@@ -27,6 +28,64 @@
       position: static;
     }
   }
+
+  .map-section {
+    margin-bottom: var(--space-md);
+  }
+  .map-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-sm);
+  }
+  .map-section-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  .map-recenter-btn {
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+  }
+  .map-recenter-btn:hover {
+    background: rgba(0,113,227,0.08);
+  }
+  #location-map {
+    width: 100%;
+    height: 220px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    z-index: 0;
+  }
+  .location-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    background: #FFF8E1;
+    border: 1px solid #FFE082;
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    margin-top: var(--space-sm);
+    font-size: 0.75rem;
+    color: #8D6E00;
+    line-height: 1.4;
+  }
+  .location-warning i {
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .location-status {
+    font-size: 0.6875rem;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+  }
+  .location-status.good { color: var(--color-success); }
+  .location-status.warn { color: var(--color-warning); }
 </style>
 
 <div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
@@ -125,6 +184,7 @@
           {{ form3.drop_address(class='apple-input', placeholder='Enter delivery address') }}
         </div>
 
+        <!-- Delivery Method -->
         <div style="margin-bottom:var(--space-md);">
           <label class="apple-label">Delivery Method</label>
           <div class="apple-radio-group">
@@ -147,15 +207,31 @@
           </div>
         </div>
 
-        <div style="margin-bottom:var(--space-md);">
-          {{ form3.payment_screenshot.label(class='apple-label') }}
-          {{ form3.payment_screenshot(class='apple-input', accept='image/*') }}
+        <!-- Map Section -->
+        <div class="map-section">
+          <div class="map-section-header">
+            <span class="map-section-label"><i class="fas fa-map-marker-alt" style="color:var(--color-danger);margin-right:4px;"></i> Delivery Location</span>
+            <button type="button" class="map-recenter-btn" id="recenterBtn" title="Re-center to my GPS">
+              <i class="fas fa-crosshairs"></i> Use my location
+            </button>
+          </div>
+          <div id="location-map"></div>
+          <div class="location-status" id="location-status">Detecting your location…</div>
+          <div class="location-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Please make sure the pin on the map shows your <strong>exact</strong> delivery location. An inaccurate location may cause delays in your delivery or your order being sent to the wrong address.</span>
+          </div>
         </div>
 
         <input type="hidden" name="latitude" id="latitude" value="">
         <input type="hidden" name="longitude" id="longitude" value="">
         <input type="hidden" name="delivery_fee" id="delivery-fee" value="0">
         <input type="hidden" name="location_accuracy" id="location_accuracy" value="">
+
+        <div style="margin-bottom:var(--space-md);">
+          {{ form3.payment_screenshot.label(class='apple-label') }}
+          {{ form3.payment_screenshot(class='apple-input', accept='image/*') }}
+        </div>
 
         <button type="submit" class="apple-btn apple-btn-primary apple-btn-lg apple-btn-block">
           <i class="fas fa-check"></i> Place Order
@@ -195,6 +271,7 @@
   {% endif %}
 </div>
 
+<script src="{{ url_for('static', filename='lib/leaflet.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     var subtotal = {{ cart.total_amount() if cart else 0 }};
@@ -202,89 +279,190 @@
     var customerLat = null;
     var customerLng = null;
 
-    // GPS-first location acquisition
-    // WiFi often returns wrong coordinates; we force true GPS via watchPosition
-    // which continuously feeds better readings as the GPS chip locks on.
-    var locationWatchId = null;
-    var locationTimeoutId = null;
-    var maxAccuracy = 100;           // metres — reject anything worse than GPS-grade
-    var maxAttempts = 8;             // give up after this many attempts
-    var attemptCount = 0;
-    var locationResolved = false;
+    // ---- Leaflet Map Setup ----
+    var map = null;
+    var marker = null;
+    var mapInitialized = false;
 
-    function acceptPosition(pos) {
-      if (locationResolved) return;  // already got a good fix
-      locationResolved = true;
+    function initMap(lat, lng) {
+      if (mapInitialized) return;
+      mapInitialized = true;
 
-      // Stop watching & timeout
-      if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
-      if (locationTimeoutId !== null) clearTimeout(locationTimeoutId);
+      map = L.map('location-map', {
+        center: [lat, lng],
+        zoom: 16,
+        zoomControl: true,
+        attributionControl: true
+      });
 
-      customerLat = pos.coords.latitude;
-      customerLng = pos.coords.longitude;
-      document.getElementById('latitude').value = customerLat;
-      document.getElementById('longitude').value = customerLng;
-      document.getElementById('location_accuracy').value = pos.coords.accuracy;
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+      }).addTo(map);
 
-      document.getElementById('delivery-fee-text').textContent = 'Calculating...';
-      fetchDeliveryFee(customerLat, customerLng);
+      // Custom marker icon
+      var icon = L.divIcon({
+        html: '<div style="width:28px;height:28px;background:var(--color-danger,#FF3B30);border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        className: ''
+      });
+
+      marker = L.marker([lat, lng], { draggable: true, icon: icon }).addTo(map);
+
+      // Update coordinates when marker is dragged
+      marker.on('dragend', function() {
+        var pos = marker.getLatLng();
+        updateMapPosition(pos.lat, pos.lng);
+      });
+
+      // Update coordinates when user clicks on map
+      map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateMapPosition(e.latlng.lat, e.latlng.lng);
+      });
+
+      // Fix map rendering issues in hidden/sticky containers
+      setTimeout(function() { map.invalidateSize(); }, 200);
     }
 
-    function handlePositionError(err) {
-      if (locationResolved) return;
-      attemptCount++;
-      if (attemptCount >= maxAttempts) {
-        if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
-        // Use whatever we have (last good fallback) or show error
-        document.getElementById('delivery-fee-text').textContent = 'GPS unavailable — enable location';
-        document.getElementById('delivery-fee').value = 0;
-      }
+    function updateMapPosition(lat, lng) {
+      customerLat = lat;
+      customerLng = lng;
+      document.getElementById('latitude').value = lat;
+      document.getElementById('longitude').value = lng;
+
+      var statusEl = document.getElementById('location-status');
+      statusEl.textContent = '📍 Pin dropped at ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+      statusEl.className = 'location-status good';
+
+      // Re-fetch delivery fee for new position
+      fetchDeliveryFee(lat, lng);
     }
 
-    function handlePositionUpdate(pos) {
-      var acc = pos.coords.accuracy;
-      // GPS typically gives < 50m; WiFi triangulation can be 500m+
-      if (acc <= maxAccuracy) {
-        acceptPosition(pos);
-        return;
-      }
-      // Still too inaccurate — keep waiting for GPS to lock
-    }
-
-    if (navigator.geolocation) {
-      // Start watching — this forces the browser to use GPS chip, not WiFi cache
-      locationWatchId = navigator.geolocation.watchPosition(
-        function(pos) {
-          handlePositionUpdate(pos);
-        },
-        function(err) {
-          // On first error, try a one-shot as fallback
-          if (attemptCount === 0) {
-            navigator.geolocation.getCurrentPosition(function(pos2) {
-              handlePositionUpdate(pos2);
-            }, function(err2) {
-              handlePositionError(err2);
-            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-          } else {
-            handlePositionError(err);
-          }
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-      );
-
-      // Safety timeout — if GPS doesn't lock in 30 seconds, accept best we have
-      locationTimeoutId = setTimeout(function() {
-        if (!locationResolved) {
-          if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
-          document.getElementById('delivery-fee-text').textContent = 'Location timed out';
-          document.getElementById('delivery-fee').value = 0;
+    // Re-center button
+    document.getElementById('recenterBtn').addEventListener('click', function() {
+      if (customerLat && customerLng && map) {
+        map.setView([customerLat, customerLng], 16);
+        marker.setLatLng([customerLat, customerLng]);
+      } else {
+        // Try to get fresh GPS position
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(pos) {
+            customerLat = pos.coords.latitude;
+            customerLng = pos.coords.longitude;
+            if (map) {
+              map.setView([customerLat, customerLng], 16);
+              marker.setLatLng([customerLat, customerLng]);
+            }
+            updateMapPosition(customerLat, customerLng);
+          }, function() {});
         }
-      }, 30000);
+      }
+    });
 
-      // Show a message while waiting for GPS
-      document.getElementById('delivery-fee-text').textContent = 'Getting precise location...';
-    } else {
-      document.getElementById('delivery-fee-text').textContent = 'Location not supported';
+    // ---- Location: use stored position from layout.js persistent watcher ----
+    // The layout.html script continuously acquires location and stores in localStorage
+    // We just read it here and initialize the map
+
+    function useStoredLocation() {
+      var lat = window._userLat || null;
+      var lng = window._userLng || null;
+
+      if (!lat || !lng) {
+        // Try localStorage directly
+        try {
+          lat = parseFloat(localStorage.getItem('smarteats_lat'));
+          lng = parseFloat(localStorage.getItem('smarteats_lng'));
+        } catch(e) {}
+      }
+
+      if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+        customerLat = lat;
+        customerLng = lng;
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+
+        if (!mapInitialized) {
+          initMap(lat, lng);
+        } else {
+          map.setView([lat, lng], 16);
+          marker.setLatLng([lat, lng]);
+        }
+
+        var statusEl = document.getElementById('location-status');
+        statusEl.textContent = '📍 Location loaded — drag the pin to adjust';
+        statusEl.className = 'location-status good';
+
+        document.getElementById('delivery-fee-text').textContent = 'Calculating...';
+        fetchDeliveryFee(lat, lng);
+        return true;
+      }
+      return false;
+    }
+
+    // Try immediately (localStorage may already have location from layout.js)
+    if (!useStoredLocation()) {
+      // Location not yet available — show loading and try again shortly
+      document.getElementById('delivery-fee-text').textContent = 'Getting location...';
+      document.getElementById('location-status').textContent = 'Waiting for location…';
+
+      // Poll for location (layout.js is continuously acquiring it)
+      var pollCount = 0;
+      var pollInterval = setInterval(function() {
+        pollCount++;
+        if (useStoredLocation() || pollCount >= 60) {
+          clearInterval(pollInterval);
+          if (pollCount >= 60) {
+            // Fallback: init map at Lesotho center, let user drag pin
+            document.getElementById('delivery-fee-text').textContent = 'Location unavailable — set pin manually';
+            document.getElementById('location-status').textContent = 'Drag the pin to your delivery location';
+            document.getElementById('location-status').className = 'location-status warn';
+            if (!mapInitialized) initMap(-29.3150, 27.4860);
+          }
+        }
+      }, 500);
+
+      // Also ask browser for location directly as backup (network, no GPS requirement)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          customerLat = pos.coords.latitude;
+          customerLng = pos.coords.longitude;
+          document.getElementById('latitude').value = customerLat;
+          document.getElementById('longitude').value = customerLng;
+          // Save to localStorage for layout.js
+          try {
+            localStorage.setItem('smarteats_lat', customerLat);
+            localStorage.setItem('smarteats_lng', customerLng);
+          } catch(e) {}
+          window._userLat = customerLat;
+          window._userLng = customerLng;
+
+          if (!mapInitialized) {
+            initMap(customerLat, customerLng);
+          } else {
+            map.setView([customerLat, customerLng], 16);
+            marker.setLatLng([customerLat, customerLng]);
+          }
+
+          var statusEl = document.getElementById('location-status');
+          statusEl.textContent = '📍 Location found — drag the pin to adjust';
+          statusEl.className = 'location-status good';
+
+          document.getElementById('delivery-fee-text').textContent = 'Calculating...';
+          fetchDeliveryFee(customerLat, customerLng);
+          clearInterval(pollInterval);
+        }, function(err) {
+          // Network location also failed — let user place pin manually
+          if (pollCount >= 10) {
+            clearInterval(pollInterval);
+            document.getElementById('delivery-fee-text').textContent = 'Location unavailable — set pin manually';
+            document.getElementById('location-status').textContent = 'Drag the pin to your delivery location';
+            document.getElementById('location-status').className = 'location-status warn';
+            if (!mapInitialized) initMap(-29.3150, 27.4860);
+          }
+        }, { enableHighAccuracy: false, timeout: 60000, maximumAge: 0 });
+      }
     }
 
     function fetchDeliveryFee(lat, lng) {
@@ -317,26 +495,13 @@
     document.querySelectorAll('[data-action="increase"]').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var itemId = this.dataset.itemId;
-        var cartItem = this.closest('.cart-item');
-        var qtySpan = document.getElementById('item-qty-' + itemId);
-        var lineTotalEl = document.getElementById('item-line-total-' + itemId);
-        var itemPrice = parseFloat(cartItem.dataset.itemPrice);
-
         fetch('/add_to_cart_ajax', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
           body: JSON.stringify({ product_id: {{ cart.cart_items[0].product_id if cart and cart.cart_items and cart.cart_items[0].product else 'null' }}, custom_meal_id: {{ cart.cart_items[0].custom_meal_id if cart and cart.cart_items and cart.cart_items[0].custom_meal else 'null' }} })
         })
         .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.success) {
-            // Reload the page to get fresh quantities/prices from server
-            location.reload();
-          }
-        })
+        .then(function(data) { if (data.success) location.reload(); })
         .catch(function(err) { console.debug('increase error', err); });
       });
     });
@@ -346,36 +511,24 @@
         var itemId = this.dataset.itemId;
         fetch('/decrement_cart_item/' + itemId, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.success) {
             if (data.new_quantity === 0) {
-              // Item removed — reload the page
               location.reload();
             } else {
-              // Update quantity display
               var qtySpan = document.getElementById('item-qty-' + itemId);
               if (qtySpan) qtySpan.textContent = data.new_quantity;
-
-              // Update line total
               var cartItem = document.querySelector('[data-item-id="' + itemId + '"]');
               var itemPrice = parseFloat(cartItem.dataset.itemPrice);
               var lineTotalEl = document.getElementById('item-line-total-' + itemId);
               if (lineTotalEl) {
-                var newLineTotal = data.new_quantity * itemPrice;
-                lineTotalEl.textContent = 'M' + newLineTotal.toFixed(2);
+                lineTotalEl.textContent = 'M' + (data.new_quantity * itemPrice).toFixed(2);
               }
-
-              // Update subtotal from server
               subtotal = data.cart_total;
               updateTotal();
-
-              // Update item count
               var allQtys = document.querySelectorAll('.cart-qty-value');
               var totalCount = 0;
               allQtys.forEach(function(q) { totalCount += parseInt(q.textContent || 0); });
@@ -394,17 +547,10 @@
         var itemId = this.dataset.itemId;
         fetch('/remove_from_cart_ajax/' + itemId, {
           method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
-          }
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
         })
         .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.success) {
-            location.reload();
-          }
-        })
+        .then(function(data) { if (data.success) location.reload(); })
         .catch(function(err) { console.debug('remove error', err); });
       });
     });
@@ -417,15 +563,12 @@
         this.classList.add('selected');
         var radioInput = this.querySelector('input[type="radio"]');
         if (radioInput) radioInput.checked = true;
-        
-        // Update delivery fee based on method
         var method = radioInput ? radioInput.value : 'agent';
         if (method === 'pickup') {
           deliveryFee = 0;
           document.getElementById('delivery-fee').value = 0;
           document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';
         } else {
-          // Re-fetch delivery fee for delivery method
           if (customerLat && customerLng) {
             fetchDeliveryFee(customerLat, customerLng);
           } else {
@@ -436,7 +579,6 @@
       });
     });
 
-    // Set initial delivery method state
     var initialMethod = document.querySelector('input[name="deliverymethod"]:checked');
     if (initialMethod && initialMethod.value === 'pickup') {
       document.getElementById('delivery-fee-text').textContent = 'Free (Pickup)';

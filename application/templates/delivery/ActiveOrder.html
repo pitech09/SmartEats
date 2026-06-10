@@ -3,7 +3,14 @@
 
 {% block content %}
 <div class="container my-4">
-  <h1 class="mb-4">{{ current_user.names }}'s Deliveries</h1>
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h1 class="mb-0">{{ current_user.names }}'s Deliveries</h1>
+    {% if deliveries|length > 2 %}
+    <a href="{{ url_for('delivery.navigate_multi') }}" class="btn btn-primary rounded-pill" target="_blank">
+      <i class="fas fa-layer-group"></i> Navigate All ({{ deliveries|length }} stops)
+    </a>
+    {% endif %}
+  </div>
 
   {% if not deliveries %}
     <div class="alert alert-info text-center">

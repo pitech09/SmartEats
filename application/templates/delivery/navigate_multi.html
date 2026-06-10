@@ -1,0 +1,390 @@
+{% extends "deliverylayout.html" %}
+{% block title %}Multi-Order Navigation - SmartEats{% endblock %}
+
+{% block content %}
+<style>
+  #nav-map {
+    height: calc(100vh - 200px);
+    min-height: 400px;
+    width: 100%;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-light);
+    z-index: 1;
+  }
+  
+  .nav-orders-bar {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-light);
+    margin-bottom: var(--space-md);
+    display: flex;
+    gap: var(--space-sm);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .nav-order-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    background: rgba(0,0,0,0.04);
+    color: var(--color-text-primary);
+  }
+  
+  .nav-order-chip:hover { background: rgba(0,0,0,0.08); }
+  
+  .nav-order-chip.active {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+  }
+  
+  .nav-order-chip .chip-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  
+  .nav-info-panel {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
+    border: 1px solid var(--color-border-light);
+    margin-bottom: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  
+  .nav-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9375rem;
+  }
+  
+  .nav-info-item i { color: var(--color-accent); width: 20px; text-align: center; }
+  .nav-info-value { font-weight: 600; }
+  
+  .live-dot {
+    width: 10px;
+    height: 10px;
+    background: #34C759;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  
+  .distance-badge {
+    background: rgba(0,113,227,0.1);
+    color: var(--color-accent);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .nav-order-list {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .nav-order-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border-light);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  
+  .nav-order-row:last-child { border-bottom: none; }
+  .nav-order-row:hover { background: rgba(0,113,227,0.03); }
+  .nav-order-row.highlighted { background: rgba(0,113,227,0.06); }
+  
+  .nav-order-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  
+  .nav-order-info { flex: 1; min-width: 0; }
+  .nav-order-info strong { font-size: 0.8125rem; }
+  .nav-order-info p { font-size: 0.6875rem; color: var(--color-text-secondary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  .nav-order-dist {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 768px) {
+    #nav-map { height: calc(100vh - 280px); }
+  }
+</style>
+
+<div class="container mt-3 mb-3">
+  <!-- Info Panel -->
+  <div class="nav-info-panel">
+    <div class="nav-info-item">
+      <i class="fas fa-layer-group"></i>
+      <span class="nav-info-value">{{ orders|length }} stops</span>
+    </div>
+    <div class="nav-info-item">
+      <i class="fas fa-store"></i>
+      From: <span class="nav-info-value">{{ store.name }}</span>
+    </div>
+    <div class="nav-info-item">
+      <span class="live-dot"></span> <span id="live-status">Tracking</span>
+    </div>
+    <div>
+      <span class="distance-badge" id="total-distance">
+        <i class="fas fa-route"></i> -- km
+      </span>
+    </div>
+  </div>
+
+  <!-- Order Chips -->
+  <div class="nav-orders-bar" id="order-chips"></div>
+
+  <!-- Map -->
+  <div id="nav-map"></div>
+
+  <!-- Order List -->
+  <div class="nav-order-list" id="order-list" style="margin-top:var(--space-md);"></div>
+</div>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}"/>
+<script src="{{ url_for('static', filename='lib/leaflet.js') }}"></script>
+
+<script>
+(function() {
+  var storeLat = {{ store.latitude }};
+  var storeLng = {{ store.longitude }};
+  
+  var ORDER_COLORS = ['#FF3B30', '#FF9F0A', '#34C759', '#0071E3', '#AF52DE', '#5AC8FA', '#FF2D55', '#FFCC00'];
+  
+  // Build orders data
+  var ordersData = [
+    {% for order in orders %}
+    {
+      id: {{ order.id }},
+      orderId: "{{ order.order_id }}",
+      lat: {{ order.customer_lat }},
+      lng: {{ order.customer_lng }},
+      address: "{{ order.location }}",
+      color: ORDER_COLORS[{{ loop.index0 }} % ORDER_COLORS.length]
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  // ---- Init map ----
+  var map = L.map('nav-map', { zoomControl: true, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+  // ---- Custom Icons ----
+  function makeIcon(bgColor, iconHtml) {
+    return L.divIcon({
+      html: '<div style="background:' + bgColor + ';color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' + iconHtml + '</div>',
+      className: '',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+  }
+
+  var storeIcon = makeIcon('#0071E3', '<i class="fas fa-store"></i>');
+  var driverIcon = makeIcon('#34C759', '<i class="fas fa-motorcycle"></i>');
+
+  // Store marker
+  L.marker([storeLat, storeLng], { icon: storeIcon })
+    .addTo(map)
+    .bindPopup('<strong>{{ store.name }}</strong><br>Pickup');
+
+  // Driver marker
+  var driverMarker = L.marker([storeLat, storeLng], { icon: driverIcon })
+    .addTo(map)
+    .bindPopup('<strong>You</strong>');
+
+  // Destination markers + route lines
+  var destMarkers = [];
+  var routeLines = [];
+  var destIcons = [];
+
+  ordersData.forEach(function(order, i) {
+    var icon = makeIcon(order.color, '<i class="fas fa-map-pin"></i>');
+    destIcons.push(icon);
+    var m = L.marker([order.lat, order.lng], { icon: icon })
+      .addTo(map)
+      .bindPopup('<strong>#' + order.orderId + '</strong><br>' + order.address);
+    destMarkers.push(m);
+
+    // Dashed route line from store to each destination
+    var line = L.polyline([[storeLat, storeLng], [order.lat, order.lng]], {
+      color: order.color,
+      weight: 2,
+      opacity: 0.5,
+      dashArray: '6, 8'
+    }).addTo(map);
+    routeLines.push(line);
+  });
+
+  // Bearing line (driver → nearest)
+  var bearingLine = L.polyline([], { color: '#34C759', weight: 2, opacity: 0.8 }).addTo(map);
+
+  // ---- Build order list UI ----
+  var listHtml = '';
+  var chipsHtml = '';
+  ordersData.forEach(function(order, i) {
+    chipsHtml += '<div class="nav-order-chip" data-idx="' + i + '" onclick="focusOrder(' + i + ')">' +
+      '<span class="chip-dot" style="background:' + order.color + '"></span>#' + order.orderId + '</div>';
+    
+    listHtml += '<div class="nav-order-row" data-idx="' + i + '" onclick="focusOrder(' + i + ')">' +
+      '<div class="nav-order-num" style="background:' + order.color + '">' + (i + 1) + '</div>' +
+      '<div class="nav-order-info"><strong>#' + order.orderId + '</strong><p>' + order.address + '</p></div>' +
+      '<span class="nav-order-dist" id="dist-' + i + '">--</span></div>';
+  });
+  document.getElementById('order-chips').innerHTML = chipsHtml;
+  document.getElementById('order-list').innerHTML = listHtml;
+
+  // ---- Focus on an order ----
+  var activeIdx = 0;
+  window.focusOrder = function(idx) {
+    activeIdx = idx;
+    var order = ordersData[idx];
+    map.setView([order.lat, order.lng], 16);
+    
+    // Update chip active state
+    document.querySelectorAll('.nav-order-chip').forEach(function(c, i) {
+      c.classList.toggle('active', i === idx);
+    });
+    // Update list highlight
+    document.querySelectorAll('.nav-order-row').forEach(function(r, i) {
+      r.classList.toggle('highlighted', i === idx);
+    });
+    // Update bearing line
+    var pos = driverMarker.getLatLng();
+    bearingLine.setLatLngs([[pos.lat, pos.lng], [order.lat, order.lng]]);
+  };
+
+  // ---- OSRM route for a pair ----
+  function fetchRoute(fromLat, fromLng, toLat, toLng, line, color) {
+    var url = 'https://router.project-osrm.org/route/v1/driving/' +
+              fromLng + ',' + fromLat + ';' + toLng + ',' + toLat +
+              '?overview=full&geometries=geojson';
+    return fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.code === 'Ok' && data.routes.length > 0) {
+          var coords = data.routes[0].geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+          line.setLatLngs(coords);
+          line.setStyle({ color: color, weight: 3, opacity: 0.7, dashArray: '' });
+          return data.routes[0];
+        }
+      })
+      .catch(function() {});
+  }
+
+  // ---- Fetch all routes ----
+  ordersData.forEach(function(order, i) {
+    fetchRoute(storeLat, storeLng, order.lat, order.lng, routeLines[i], order.color);
+  });
+
+  // ---- Update total distance from driver ----
+  function updateDistances(lat, lng) {
+    var totalMeters = 0;
+    var remaining = ordersData.length;
+    
+    ordersData.forEach(function(order, i) {
+      var url = 'https://router.project-osrm.org/route/v1/driving/' +
+                lat + ',' + lng + ';' + order.lat + ',' + order.lng +
+                '?overview=false';
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.code === 'Ok' && data.routes.length > 0) {
+            var dist = data.routes[0].distance;
+            var distKm = (dist / 1000).toFixed(1);
+            document.getElementById('dist-' + i).textContent = distKm + ' km';
+            totalMeters += dist;
+          }
+          remaining--;
+          if (remaining <= 0) {
+            document.getElementById('total-distance').innerHTML =
+              '<i class="fas fa-route"></i> ' + (totalMeters / 1000).toFixed(1) + ' km total';
+          }
+        })
+        .catch(function() { remaining--; });
+    });
+  }
+
+  // ---- GPS Tracking ----
+  var watchId = null;
+  function startTracking() {
+    if (!navigator.geolocation) {
+      document.getElementById('live-status').textContent = 'GPS unavailable';
+      return;
+    }
+    watchId = navigator.geolocation.watchPosition(
+      function(pos) {
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
+        if (pos.coords.accuracy > 100) {
+          document.getElementById('live-status').textContent = 'Acquiring (' + Math.round(pos.coords.accuracy) + 'm)';
+          return;
+        }
+        document.getElementById('live-status').textContent = 'Live (' + Math.round(pos.coords.accuracy) + 'm)';
+        driverMarker.setLatLng([lat, lng]);
+        bearingLine.setLatLngs([[lat, lng], [ordersData[activeIdx].lat, ordersData[activeIdx].lng]]);
+        updateDistances(lat, lng);
+      },
+      function() {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+  startTracking();
+
+  // ---- Fit map to show all markers ----
+  setTimeout(function() {
+    var allPts = [[storeLat, storeLng]];
+    ordersData.forEach(function(o) { allPts.push([o.lat, o.lng]); });
+    map.fitBounds(L.featureGroup(allPts.map(function(p) { return L.marker(p); })).getBounds().pad(0.15));
+    focusOrder(0);
+  }, 500);
+
+  // ---- Cleanup ----
+  window.addEventListener('beforeunload', function() {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  });
+})();
+</script>
+{% endblock %}
