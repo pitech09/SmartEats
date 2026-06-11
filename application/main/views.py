@@ -300,6 +300,98 @@ def api_search():
         } for m in meals]
     })
 
+@main.route("/robots.txt")
+def robots_txt():
+    """Serve robots.txt from the templates folder via direct rendering."""
+    return current_app.response_class(
+        render_template('robots.txt'),
+        mimetype='text/plain'
+    )
+
+@main.route("/sitemap.xml")
+def sitemap_xml():
+    """Generate dynamic XML sitemap."""
+    from xml.sax.saxutils import escape as xml_escape
+    
+    pages = []
+    
+    # Static pages
+    base_url = url_for('main.landing', _external=True)
+    pages.append({
+        'loc': base_url,
+        'changefreq': 'weekly',
+        'priority': '1.0'
+    })
+    pages.append({
+        'loc': url_for('main.restuarants', _external=True),
+        'changefreq': 'daily',
+        'priority': '0.9'
+    })
+    pages.append({
+        'loc': url_for('main.about', _external=True),
+        'changefreq': 'monthly',
+        'priority': '0.5'
+    })
+    pages.append({
+        'loc': url_for('main.privacy_policy', _external=True),
+        'changefreq': 'monthly',
+        'priority': '0.3'
+    })
+    pages.append({
+        'loc': url_for('main.terms_conditions', _external=True),
+        'changefreq': 'monthly',
+        'priority': '0.3'
+    })
+    
+    # Auth pages
+    pages.append({
+        'loc': url_for('auth.register', _external=True),
+        'changefreq': 'monthly',
+        'priority': '0.6'
+    })
+    pages.append({
+        'loc': url_for('auth.newlogin', _external=True),
+        'changefreq': 'monthly',
+        'priority': '0.6'
+    })
+    pages.append({
+        'loc': url_for('auth.registerstore', _external=True),
+        'changefreq': 'monthly',
+        'priority': '0.6'
+    })
+    
+    # Active stores
+    stores = Store.query.filter_by(is_active=True).all()
+    for store in stores:
+        pages.append({
+            'loc': url_for('main.store_details', store_id=store.id, _external=True),
+            'changefreq': 'daily',
+            'priority': '0.8'
+        })
+    
+    # Active meals
+    meals = Product.query.filter_by(is_active=True).all()
+    for meal in meals:
+        pages.append({
+            'loc': url_for('main.viewproduct', product_id=meal.id, _external=True),
+            'changefreq': 'weekly',
+            'priority': '0.7'
+        })
+    
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for page in pages:
+        xml += '  <url>\n'
+        xml += f'    <loc>{xml_escape(page["loc"])}</loc>\n'
+        if page.get('lastmod'):
+            xml += f'    <lastmod>{page["lastmod"]}</lastmod>\n'
+        xml += f'    <changefreq>{page["changefreq"]}</changefreq>\n'
+        xml += f'    <priority>{page["priority"]}</priority>\n'
+        xml += '  </url>\n'
+    xml += '</urlset>'
+    
+    return current_app.response_class(xml, mimetype='application/xml')
+
 @main.route("/", methods=["POST", "GET"])
 def landing():
     ads = Ad.query.all()
@@ -311,7 +403,28 @@ def landing():
         .all()
     )
 
-    return render_template('customer/landingpage.html', ads=ads, meals=meals, restaurants=restaurants)
+    seo_defaults = {
+        'title': 'SmartEats – Food Delivery in Maputsoe, Roma & Leribe | Lesotho',
+        'description': 'SmartEats delivers fresh, hot meals from the best local restaurants in Maputsoe, Roma, and Leribe, Lesotho. Order online for fast food delivery to your door.',
+        'keywords': 'food delivery Lesotho, online food ordering Maputsoe, restaurant delivery Roma, local food Leribe, pizza delivery Maputsoe, SmartEats, Lesotho food platform',
+        'og_type': 'website',
+        'canonical': url_for('main.landing', _external=True),
+    }
+    
+    breadcrumbs = [
+        {'name': 'Home', 'url': url_for('main.landing', _external=True)},
+        {'name': 'SmartEats Lesotho – Food Delivery', 'url': url_for('main.landing', _external=True)},
+    ]
+
+    return render_template(
+        'customer/landingpage.html',
+        ads=ads,
+        meals=meals,
+        restaurants=restaurants,
+        seo_defaults=seo_defaults,
+        breadcrumbs=breadcrumbs,
+        seo_organization=True
+    )
 
 # ---------------- CART ----------------
 @main.route('/cartlist', methods=['GET', 'POST'])
@@ -1057,8 +1170,23 @@ def restuarants():
     if open_now == '1':
         stores = [s for s in stores if is_store_open(s.openinghours)]
 
+    seo_defaults = {
+        'title': f'Restaurants in {selected_location} – SmartEats Food Delivery Lesotho' if selected_location else 'Browse Restaurants – SmartEats Food Delivery Lesotho',
+        'description': f'Discover the best local restaurants in {selected_location}, Lesotho. Order fresh meals online for fast delivery.' if selected_location else 'Browse all restaurants on SmartEats. Order from the best local food spots in Maputsoe, Roma, and Leribe, Lesotho.',
+        'keywords': f'restaurants {selected_location}, food delivery {selected_location}, SmartEats' if selected_location else 'restaurants Lesotho, food delivery, local restaurants, SmartEats',
+        'canonical': url_for('main.restuarants', location=selected_location if selected_location else None, open_now=open_now if open_now else None, _external=True),
+    }
+    
+    breadcrumbs = [
+        {'name': 'Home', 'url': url_for('main.landing', _external=True)},
+        {'name': 'Restaurants', 'url': url_for('main.restuarants', _external=True)},
+    ]
+    if selected_location:
+        breadcrumbs.append({'name': selected_location, 'url': url_for('main.restuarants', location=selected_location, _external=True)})
+
     return render_template('customer/restuarants.html', stores=stores, form2=form2,
-                           is_store_open=is_store_open, selected_location=selected_location, open_now=open_now)
+                           is_store_open=is_store_open, selected_location=selected_location, open_now=open_now,
+                           seo_defaults=seo_defaults, breadcrumbs=breadcrumbs)
 
 @main.route("/store/<int:store_id>")
 @login_required
@@ -1080,13 +1208,28 @@ def store_details(store_id):
     total_count = cart.total_items() if cart else 0
     total_amount = cart.total_amount() if cart else 0.0
 
+    seo_defaults = {
+        'title': f'{restuarant.name} – Restaurant in {restuarant.town or restuarant.district} | SmartEats Lesotho',
+        'description': f'Order from {restuarant.name} in {restuarant.town or restuarant.district}, Lesotho. Browse their menu and get fresh food delivered fast.',
+        'keywords': f'{restuarant.name}, restaurant {restuarant.town or restuarant.district}, food delivery, {restuarant.name} menu, SmartEats',
+        'canonical': url_for('main.store_details', store_id=restuarant.id, _external=True),
+    }
+    
+    breadcrumbs = [
+        {'name': 'Home', 'url': url_for('main.landing', _external=True)},
+        {'name': 'Restaurants', 'url': url_for('main.restuarants', _external=True)},
+        {'name': restuarant.name, 'url': url_for('main.store_details', store_id=restuarant.id, _external=True)},
+    ]
+
     return render_template(
         "customer/restuarantdetails.html",
         restuarant=restuarant,
         total_count=total_count,
         total_amount=total_amount,
         formpharm=formpharm,
-        registered_for=registered_for
+        registered_for=registered_for,
+        seo_defaults=seo_defaults,
+        breadcrumbs=breadcrumbs
     )
 
 # ---------------- VIEW PRODUCT ----------------
@@ -1100,7 +1243,25 @@ def viewproduct(product_id):
         return redirect(url_for('main.restuarants'))
     
     product = Product.query.get_or_404(product_id)
-    return render_template('customer/updated_productview.html', product=product, store=store)
+    
+    seo_defaults = {
+        'title': f'{product.productname} – {store.name} | SmartEats Lesotho',
+        'description': f'Order {product.productname} from {store.name} in {store.town or store.district}, Lesotho. M{product.price:.2f}. Fresh, delicious food delivered fast.',
+        'keywords': f'{product.productname}, {store.name}, food delivery, {product.productname} price, SmartEats',
+        'og_type': 'product',
+        'product_price': f'{product.price:.2f}',
+        'image': product.pictures or url_for('static', filename='css/images/default.png', _external=True),
+        'canonical': url_for('main.viewproduct', product_id=product.id, _external=True),
+    }
+    
+    breadcrumbs = [
+        {'name': 'Home', 'url': url_for('main.landing', _external=True)},
+        {'name': 'Restaurants', 'url': url_for('main.restuarants', _external=True)},
+        {'name': store.name, 'url': url_for('main.store_details', store_id=store.id, _external=True)},
+        {'name': product.productname, 'url': url_for('main.viewproduct', product_id=product.id, _external=True)},
+    ]
+
+    return render_template('customer/updated_productview.html', product=product, store=store, seo_defaults=seo_defaults, breadcrumbs=breadcrumbs)
 
 # ---------------- SEARCH ----------------
 @main.route("/search/<int:page_num>", methods=["POST", "GET"])

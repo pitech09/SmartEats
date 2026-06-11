@@ -1,0 +1,75 @@
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "SmartEats",
+  "url": "{{ url_for('main.landing', _external=True) }}",
+  "description": "SmartEats is a Lesotho-based food delivery platform connecting you with the best local restaurants in Maputsoe, Roma & Leribe.",
+  "inLanguage": "en-LS",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Pi Technologies",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ url_for('static', filename='worka.png', _external=True) }}"
+    }
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "{{ url_for('main.landing', _external=True) }}?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+
+{% if seo_organization %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "SmartEats",
+  "url": "{{ url_for('main.landing', _external=True) }}",
+  "logo": "{{ url_for('static', filename='worka.png', _external=True) }}",
+  "description": "Premium food delivery platform connecting Lesotho with the best local restaurants.",
+  "foundingDate": "2024",
+  "founder": {
+    "@type": "Person",
+    "name": "Khauhelo Makara"
+  },
+  "areaServed": [
+    {"@type": "City", "name": "Maputsoe"},
+    {"@type": "City", "name": "Roma"},
+    {"@type": "City", "name": "Leribe"},
+    {"@type": "City", "name": "Maseru"}
+  ],
+  "sameAs": [
+    "https://facebook.com/SmartEatsLS",
+    "https://twitter.com/SmartEatsLS",
+    "https://instagram.com/SmartEatsLS"
+  ]
+}
+</script>
+{% endif %}
+
+{% if breadcrumbs %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {% for crumb in breadcrumbs %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "name": "{{ crumb.name }}",
+      "item": "{{ crumb.url }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}

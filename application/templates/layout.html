@@ -1,26 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="current-user-id" content="{{ current_user.id if current_user.is_authenticated else '' }}">
   <meta name="theme-color" content="#F5F5F7">
+  <meta http-equiv="content-language" content="en-LS">
+
+  {% set seo = seo_defaults or {} %}
+  {% set page_title = self.title()|trim or seo.title or 'SmartEats – Premium Food Delivery in Lesotho' %}
+  {% set page_desc = seo.description or 'SmartEats is a Lesotho-based food delivery platform connecting you with the best local restaurants in Maputsoe, Roma & Leribe. Order fresh, hot meals online with fast delivery.' %}
+  {% set page_keywords = seo.keywords or 'SmartEats, food delivery Lesotho, online food ordering Maputsoe, restaurant delivery Roma, local food Leribe, pizza delivery, meal delivery, Pi Technologies' %}
+  {% set page_image = seo.image or url_for('static', filename='worka.png', _external=True) %}
+  {% set canonical = seo.canonical or request.url %}
 
   <!-- Open Graph -->
-  <meta property="og:title" content="SmartEats – Premium Food Delivery">
-  <meta property="og:description" content="Discover and order from the best local restaurants. Fast, elegant, reliable food delivery.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='worka.png', _external=True) }}">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ page_desc }}">
+  <meta property="og:type" content="{{ seo.og_type or 'website' }}">
+  <meta property="og:url" content="{{ canonical }}">
+  <meta property="og:image" content="{{ page_image }}">
+  <meta property="og:site_name" content="SmartEats">
+  <meta property="og:locale" content="en_LS">
+  {% if seo.og_type == 'product' and seo.product_price %}
+  <meta property="product:price:amount" content="{{ seo.product_price }}">
+  <meta property="product:price:currency" content="LSL">
+  {% endif %}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="{{ seo.twitter_card or 'summary_large_image' }}">
+  <meta name="twitter:site" content="@SmartEatsLS">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ page_desc }}">
+  <meta name="twitter:image" content="{{ page_image }}">
 
   <!-- SEO -->
-  <meta name="description" content="SmartEats is a premium food ordering platform connecting you with the best local restaurants. Order online with ease.">
-  <meta name="keywords" content="SmartEats, food delivery, online ordering, restaurants, local food">
+  <meta name="description" content="{{ page_desc }}">
+  <meta name="keywords" content="{{ page_keywords }}">
   <meta name="author" content="Pi Technologies">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="{{ request.url }}">
+  <meta name="robots" content="{{ seo.robots or 'index, follow' }}">
+  <link rel="canonical" href="{{ canonical }}">
+  {% if seo.prev %}
+  <link rel="prev" href="{{ seo.prev }}">
+  {% endif %}
+  {% if seo.next %}
+  <link rel="next" href="{{ seo.next }}">
+  {% endif %}
 
-  <title>{% block title %}SmartEats – Premium Food Delivery{% endblock %}</title>
+  <title>{{ page_title }}</title>
+
+  <!-- JSON-LD Structured Data -->
+  {% include 'partials/seo_ldjson.html' %}
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='worka.png') }}">

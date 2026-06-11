@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /store/
+Disallow: /admin/
+Disallow: /delivery/
+
+Sitemap: {{ url_for('main.sitemap_xml', _external=True) }}
