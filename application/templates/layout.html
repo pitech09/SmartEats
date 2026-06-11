@@ -8,14 +8,13 @@
   <meta http-equiv="content-language" content="en-LS">
 
   {% set seo = seo_defaults or {} %}
-  {% set page_title = self.title()|trim or seo.title or 'SmartEats – Premium Food Delivery in Lesotho' %}
   {% set page_desc = seo.description or 'SmartEats is a Lesotho-based food delivery platform connecting you with the best local restaurants in Maputsoe, Roma & Leribe. Order fresh, hot meals online with fast delivery.' %}
   {% set page_keywords = seo.keywords or 'SmartEats, food delivery Lesotho, online food ordering Maputsoe, restaurant delivery Roma, local food Leribe, pizza delivery, meal delivery, Pi Technologies' %}
   {% set page_image = seo.image or url_for('static', filename='worka.png', _external=True) %}
   {% set canonical = seo.canonical or request.url %}
 
   <!-- Open Graph -->
-  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:title" content="{{ seo.title or self.title() }}">
   <meta property="og:description" content="{{ page_desc }}">
   <meta property="og:type" content="{{ seo.og_type or 'website' }}">
   <meta property="og:url" content="{{ canonical }}">
@@ -30,7 +29,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="{{ seo.twitter_card or 'summary_large_image' }}">
   <meta name="twitter:site" content="@SmartEatsLS">
-  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:title" content="{{ seo.title or self.title() }}">
   <meta name="twitter:description" content="{{ page_desc }}">
   <meta name="twitter:image" content="{{ page_image }}">
 
@@ -47,7 +46,7 @@
   <link rel="next" href="{{ seo.next }}">
   {% endif %}
 
-  <title>{{ page_title }}</title>
+  <title>{% block title %}SmartEats – Premium Food Delivery in Lesotho{% endblock %}</title>
 
   <!-- JSON-LD Structured Data -->
   {% include 'partials/seo_ldjson.html' %}

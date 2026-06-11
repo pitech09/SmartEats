@@ -534,6 +534,35 @@ new Chart(ctx, {
 </script>
 
 <!-- SocketIO Real-time New Order Notifications -->
+<!-- Mobile Bottom Navigation -->
+<nav class="dash-bottom-nav">
+  <a href="{{ url_for('store.adminpage') }}" class="dash-bottom-nav-item active">
+    <i class="fas fa-tachometer-alt"></i>
+    <span>Dashboard</span>
+  </a>
+  <a href="{{ url_for('store.ready_orders') }}" class="dash-bottom-nav-item">
+    <div class="dash-bottom-nav-item-wrap">
+      <i class="fas fa-receipt"></i>
+      {% if pending_orders > 0 %}
+      <span class="nav-badge">{{ pending_orders }}</span>
+      {% endif %}
+    </div>
+    <span>Orders</span>
+  </a>
+  <a href="{{ url_for('store.products') }}" class="dash-bottom-nav-item">
+    <i class="fas fa-box"></i>
+    <span>Products</span>
+  </a>
+  <a href="{{ url_for('store.vendor_analytics') }}" class="dash-bottom-nav-item">
+    <i class="fas fa-chart-pie"></i>
+    <span>Analytics</span>
+  </a>
+  <a href="{{ url_for('main.logout') }}" class="dash-bottom-nav-item">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Logout</span>
+  </a>
+</nav>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 <script>
 (function() {

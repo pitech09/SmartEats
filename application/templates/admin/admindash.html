@@ -9,7 +9,7 @@
             <div id="content">
                 <!-- Topbar -->
                 <!-- Begin Page Content -->
-                <div class="container-fluid">
+                <div class="container-fluid pb-5">
 
                     <!-- Content Row -->
                     <div class="row">
@@ -129,4 +129,28 @@
 
         </div>
             <!-- End of Main Content -->
-    {%endblock%}
+
+<!-- Mobile Bottom Navigation -->
+<nav class="dash-bottom-nav">
+  <a href="{{ url_for('admin.admindash') }}" class="dash-bottom-nav-item active">
+    <i class="fas fa-tachometer-alt"></i>
+    <span>Dashboard</span>
+  </a>
+  <a href="{{ url_for('admin.pending_verification') }}" class="dash-bottom-nav-item">
+    <i class="fas fa-spinner"></i>
+    <span>Requests</span>
+  </a>
+  <a href="{{ url_for('admin.registered_stores') }}" class="dash-bottom-nav-item">
+    <i class="fa fa-bars"></i>
+    <span>Stores</span>
+  </a>
+  <a href="{{ url_for('admin.reg_users') }}" class="dash-bottom-nav-item">
+    <i class="fas fa-user"></i>
+    <span>Users</span>
+  </a>
+  <a href="{{ url_for('main.logout') }}" class="dash-bottom-nav-item">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Logout</span>
+  </a>
+</nav>
+{%endblock%}

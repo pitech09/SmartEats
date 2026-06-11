@@ -27,7 +27,8 @@
 .sidebar .sidebar-heading{font-size:12px;text-transform:uppercase;color:#d1e7dd;}
 .custom-toggle{background:#2da350;border:none;color:#fff;}
 </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/apple-ui.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-ui.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-dashboards.css') }}">
 </head>
 
 <body id="page-top">
@@ -214,9 +215,10 @@ socket.on("connect", () => {
 
 <nav class="navbar navbar-expand navbar-light bg-white shadow mb-4" style="position:sticky;top:0;z-index:100;">
   <!-- Sidebar Toggle -->
-  <button id="sidebarToggleBtn" class="btn btn-link d-md-none rounded-circle mr-3" style="font-size:1.25rem;color:var(--color-text-secondary);" title="Toggle Sidebar">
+  <button id="sidebarToggleBtn" class="btn btn-link d-md-none rounded-circle mr-3" style="font-size:1.25rem;color:var(--color-text-secondary);z-index:1055;" title="Toggle Sidebar">
     <i class="fas fa-bars"></i>
   </button>
+  <div class="vendor-sidebar-backdrop" id="vendorSidebarBackdrop"></div>
   <button id="sidebarToggleTop" class="btn btn-link d-none d-md-inline-block mr-3" style="font-size:1.125rem;color:var(--color-text-secondary);border:none;" title="Collapse Sidebar">
     <i class="fas fa-chevron-left" id="toggleIcon"></i>
   </button>
@@ -254,17 +256,54 @@ socket.on("connect", () => {
   var toggleTop = document.getElementById('sidebarToggleTop');
   var toggleIcon = document.getElementById('toggleIcon');
   var wrapper = document.getElementById('wrapper');
+  var backdrop = document.getElementById('vendorSidebarBackdrop');
   
   // Mobile toggle
   if (toggleBtn) {
-    toggleBtn.addEventListener('click', function() {
-      sidebar.classList.toggle('show');
+    toggleBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (sidebar.classList.contains('show')) {
+        closeMobileSidebar();
+      } else {
+        openMobileSidebar();
+      }
     });
   }
+
+  function openMobileSidebar() {
+    sidebar.classList.add('show');
+    if (backdrop) backdrop.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMobileSidebar() {
+    sidebar.classList.remove('show');
+    if (backdrop) backdrop.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', closeMobileSidebar);
+  }
+
+  // Close on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+      closeMobileSidebar();
+    }
+  });
+
+  // Close on window resize to desktop
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 992 && sidebar.classList.contains('show')) {
+      closeMobileSidebar();
+    }
+  });
   
   // Desktop collapse
   if (toggleTop) {
     toggleTop.addEventListener('click', function() {
+      if (window.innerWidth <= 992) return;
       sidebar.classList.toggle('collapsed');
       wrapper.classList.toggle('sidebar-collapsed');
       
@@ -280,9 +319,9 @@ socket.on("connect", () => {
     });
   }
   
-  // Restore state
+  // Restore state for desktop only
   try {
-    if (localStorage.getItem('sidebar-collapsed') === 'true') {
+    if (window.innerWidth > 992 && localStorage.getItem('sidebar-collapsed') === 'true') {
       sidebar.classList.add('collapsed');
       wrapper.classList.add('sidebar-collapsed');
       if (toggleIcon) toggleIcon.classList.replace('fa-chevron-left', 'fa-chevron-right');

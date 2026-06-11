@@ -1,82 +1,107 @@
 {% extends "layout.html" %}
-{% block title %}Register your Store - SmartEats{% endblock %}
+{% block title %}List Your Restaurant – SmartEats{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="text-center mb-4">
-    <h4>Store Registration</h4>
+<div class="container" style="padding-top:var(--space-2xl);padding-bottom:var(--space-2xl);">
+  <div style="max-width:520px;margin:0 auto;">
+    
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:var(--space-xl);">
+      <img src="{{ url_for('static', filename='worka.png') }}" alt="SmartEats" style="width:64px;height:64px;margin-bottom:var(--space-md);">
+      <h1 style="font-size:1.5rem;margin:0 0 4px 0;">List Your Restaurant</h1>
+      <p style="font-size:0.9375rem;color:var(--color-text-secondary);margin:0;">
+        Reach more customers and grow your sales with SmartEats.
+      </p>
+    </div>
 
-    <p class="text-muted">Fill in the details below to register your store.</p>
+    <!-- Registration Card -->
+    <div class="apple-card" style="padding:var(--space-xl);">
+      <form action="{{ url_for('auth.registerstore') }}" method="POST" style="display:flex;flex-direction:column;gap:var(--space-lg);">
+        {{ form.hidden_tag() }}
 
-</div>
-            <div class="card-body">
-              <!-- Logo -->
-              
-              <!-- /Logo -->
-              <h4 class="mb-2">This is a good start.</h4>
-              <p class="mb-4">Reach more customers today. Increase sales hussle free.</p>
-              <form id="formAuthentication" class="mb-3" action="{{url_for('auth.registerstore')}}" method="POST">
-                <div class="mb-3">
-                {{ form.hidden_tag() }}
-                <div class="mb-3">
-                {{ form.storename.label(class="form-label") }}
-                {{ form.storename(class="form-control", placeholder="My Store Name") }}
+        <!-- Store Name -->
+        <div>
+          <label for="storename" style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:6px;">Restaurant Name</label>
+          {{ form.storename(class="apple-input", placeholder="e.g. Mama's Kitchen", id="storename") }}
+          {% for error in form.storename.errors %}
+            <small style="color:var(--color-danger);font-size:0.75rem;">{{ error }}</small>
+          {% endfor %}
+        </div>
 
-                 {% for error in form.storename.errors %}
-                <small class="text-danger">{{ error }}</small>
-                {% endfor %}
-                </div>
-
-            <div class="mb-3">
-              {{ form.email.label(class="form-label") }}
-              {{ form.email(class="form-control", placeholder="user@mail.com") }}
-
-              {% for error in form.email.errors %}
-                <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-            <div class="mb-3">
-              {{ form.phone.label(class="form-label") }}
-              {{ form.phone(class="form-control", placeholder="+266 1234 5678") }}
-
-              {% for error in form.phone.errors %}
-                <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-            <div class="mb-3">
-              {{ form.opening_hours_and_days.label(class="form-label") }}
-              {{ form.opening_hours_and_days(class="form-control", placeholder="08:30 to 21:00") }}
-
-              {% for error in form.opening_hours_and_days.errors %}
-                <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-            <div class="mb-3">
-              {{ form.town.label(class="form-label") }}
-              {{ form.town(class="form-control", placeholder="eg. Maputsoe, Ha Maqele") }}
-
-              {% for error in form.town.errors %}
-                <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-            <div class="mb-3">
-              {{ form.district.label(class="form-label") }}
-              {{ form.district(class="form-control") }}
-
-              {% for error in form.district.errors %}
-                <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-            <div class="mb-3">
-              {{ form.password.label(class="form-label") }}
-              {{ form.password(class="form-control", placeholder="************") }}
-
-              {% for error in form.password.errors %}
-                <small class="text-danger">{{ error }}</small>
-              {% endfor %}
-            </div>
-                <button class="btn btn-success d-grid w-100">Submit</button>
-              </form>
-            </div>
+        <!-- Email + Phone Row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+          <div>
+            <label for="email" style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:6px;">Email Address</label>
+            {{ form.email(class="apple-input", placeholder="kitchen@email.com", id="email") }}
+            {% for error in form.email.errors %}
+              <small style="color:var(--color-danger);font-size:0.75rem;">{{ error }}</small>
+            {% endfor %}
           </div>
+          <div>
+            <label for="phone" style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:6px;">Phone Number</label>
+            {{ form.phone(class="apple-input", placeholder="+266 5678 1234", id="phone") }}
+            {% for error in form.phone.errors %}
+              <small style="color:var(--color-danger);font-size:0.75rem;">{{ error }}</small>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Opening Hours -->
+        <div>
+          <label for="opening_hours_and_days" style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:6px;">Opening Hours</label>
+          {{ form.opening_hours_and_days(class="apple-input", placeholder="e.g. Mon-Sat 08:00 - 21:00", id="opening_hours_and_days") }}
+          {% for error in form.opening_hours_and_days.errors %}
+            <small style="color:var(--color-danger);font-size:0.75rem;">{{ error }}</small>
+          {% endfor %}
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:6px;">Password</label>
+          <div style="position:relative;">
+            {{ form.password(class="apple-input", placeholder="Min. 8 characters", id="password") }}
+            <button type="button" id="togglePassword" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-secondary);padding:4px;" aria-label="Toggle password visibility">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          {% for error in form.password.errors %}
+            <small style="color:var(--color-danger);font-size:0.75rem;">{{ error }}</small>
+          {% endfor %}
+        </div>
+
+        <!-- Note about additional info -->
+        <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:0;text-align:center;">
+          <i class="fas fa-info-circle"></i> You can set your location, payment details, and menu after logging in to your dashboard.
+        </p>
+
+        <!-- Submit -->
+        <button type="submit" class="apple-btn apple-btn-primary" style="width:100%;padding:14px;font-size:1rem;font-weight:600;">
+           Register Restaurant
+        </button>
+
+        <!-- Login Link -->
+        <p style="text-align:center;font-size:0.875rem;color:var(--color-text-secondary);margin:0;">
+          Already registered? 
+          <a href="{{ url_for('auth.newlogin') }}" style="color:var(--color-accent);font-weight:500;text-decoration:none;">Sign In</a>
+        </p>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Password toggle
+    const toggleBtn = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    if (toggleBtn && passwordInput) {
+      toggleBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+      });
+    }
+  });
+</script>
 {% endblock %}

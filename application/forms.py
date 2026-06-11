@@ -8,12 +8,6 @@ class StoreRegistrationForm(FlaskForm):
     storename = StringField('Store Name', validators=[DataRequired()])
     email = EmailField('Email', validators=[DataRequired()])
     phone = StringField('Phone Number', validators=[DataRequired()])
-    town = StringField("Town, Village", validators=[DataRequired()])
-    district = SelectField("Operating District", validators=[DataRequired()], choices=[('Leribe', 'Leribe'), ('ButhaButhe', 'ButhaButhe'),
-                                                                                       ('Berea', 'Berea'), ('Maseru', 'Maseru'), ('Mafeteng', 'Mafeteng'),
-                                                                                       ("Mohale's Hoek", "Mohale's Hoek"), ('Quthing', 'Quthing'), ("Qacha's Nek","Qacha's Nek"),
-                                                                                       ('Thaba-Tseka', 'Thaba-Tseka'), ('Mokhotlong', 'Mokhotlong') ])
-
     opening_hours_and_days = StringField('Opening Hours', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=16)])
     submit = SubmitField('Register Store')
@@ -55,13 +49,7 @@ class RegistrationForm(FlaskForm):
     Email = EmailField('Email',
                         validators=[DataRequired(),
                                     Length(min=5, max=30)])
-    town = StringField("Town, Village", validators=[DataRequired()])
-    district = SelectField("Operating District", validators=[DataRequired()], choices=[('Leribe', 'Leribe'), ('ButhaButhe', 'ButhaButhe'),
-                                                                                       ('Berea', 'Berea'), ('Maseru', 'Maseru'), ('Mafeteng', 'Mafeteng'),
-                                                                                       ("Mohale's Hoek", "Mohale's Hoek"), ('Quthing', 'Quthing'), ("Qacha's Nek","Qacha's Nek"),
-                                                                                       ('Thaba-Tseka', 'Thaba-Tseka'), ('Mokhotlong', 'Mokhotlong')])
 
-   
     Password = PasswordField('Password',
                              validators=[DataRequired(), Length(min=8, max=16)])
 

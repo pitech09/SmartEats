@@ -133,8 +133,6 @@ def register():
         user = User(
             username=form.username.data,
             lastname=form.lastName.data,
-            district=form.district.data,
-            town=form.town.data,
             email=form.Email.data,
             password=bcrypt.generate_password_hash(form.Password.data).decode("utf-8")
         )
@@ -168,8 +166,6 @@ def registerstore():
             name=form.storename.data,
             email=form.email.data,
             phone=form.phone.data,
-            district = form.district.data,
-            town = form.town.data,
             openinghours=form.opening_hours_and_days.data,
             password=bcrypt.generate_password_hash(form.password.data).decode("utf-8")
         )

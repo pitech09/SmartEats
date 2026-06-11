@@ -107,6 +107,7 @@
         .bg-success { background-color: #2da350 !important; }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-ui.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-dashboards.css') }}">
 </head>
 
 <body id="page-top" role="application">
@@ -189,9 +190,10 @@
     <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
         <div id="content">
-            <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+            <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3" style="font-size:1.25rem;color:var(--color-text-secondary);z-index:1055;" title="Toggle Sidebar">
                 <i class="fa fa-bars"></i>
             </button>
+            <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
             <!-- Topbar -->
             <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
@@ -255,6 +257,56 @@
 <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
-<script>$(document).on('ajaxStart', function() { Pace.restart(); });</script>
+<script>
+$(document).on('ajaxStart', function() { Pace.restart(); });
+
+// Mobile sidebar toggle
+(function() {
+  var sidebar = document.querySelector('.sidebar');
+  var toggleBtn = document.getElementById('sidebarToggleTop');
+  var backdrop = document.getElementById('sidebarBackdrop');
+
+  if (!sidebar || !toggleBtn) return;
+
+  function openSidebar() {
+    sidebar.classList.add('show');
+    if (backdrop) backdrop.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('show');
+    if (backdrop) backdrop.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  toggleBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (sidebar.classList.contains('show')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+
+  if (backdrop) {
+    backdrop.addEventListener('click', closeSidebar);
+  }
+
+  // Close on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+      closeSidebar();
+    }
+  });
+
+  // Close on window resize to desktop
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 992 && sidebar.classList.contains('show')) {
+      closeSidebar();
+    }
+  });
+})();
+</script>
 </body>
 </html>

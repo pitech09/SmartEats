@@ -87,6 +87,24 @@
 
 <div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
 
+  <!-- Update Profile Banner (shown when user hasn't set location/details) -->
+  {% if not current_user.town or not current_user.district or current_user.town == 'None' or current_user.district == 'None' %}
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);flex-wrap:wrap;margin-bottom:var(--space-lg);padding:var(--space-md) var(--space-lg);background:rgba(0,113,227,0.08);border:1px solid rgba(0,113,227,0.2);border-radius:var(--radius-lg);">
+    <div style="display:flex;align-items:center;gap:var(--space-sm);">
+      <i class="fas fa-info-circle" style="font-size:1.25rem;color:var(--color-accent);"></i>
+      <div>
+        <strong style="font-size:0.9375rem;">Complete your profile</strong>
+        <p style="font-size:0.8125rem;margin:2px 0 0 0;color:var(--color-text-secondary);">
+          Add your town and district to help find restaurants near you.
+        </p>
+      </div>
+    </div>
+    <a href="{{ url_for('main.account') }}" class="apple-btn apple-btn-primary apple-btn-sm" style="white-space:nowrap;">
+      <i class="fas fa-arrow-right"></i> Update Profile
+    </a>
+  </div>
+  {% endif %}
+
   <!-- Welcome Header -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
     <div>
