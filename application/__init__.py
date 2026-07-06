@@ -5,6 +5,14 @@ from flask_mail import Mail
 from flask_caching import Cache
 from flask_profiler import Profiler
 from flask_compress import Compress
+
+# Ensure project root is in path (for config import)
+import sys
+from pathlib import Path
+_project_root = str(Path(__file__).resolve().parent.parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 from config import config
 from flask_socketio import SocketIO, join_room
 
@@ -21,7 +29,7 @@ socketio = SocketIO(
     async_mode="eventlet",
     ping_timeout=20,
     ping_interval=25,
-    always_connect=True # 👈 IMPORTANT
+    always_connect=True 
 )
 
 def create_app(config_name):
