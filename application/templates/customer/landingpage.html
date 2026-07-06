@@ -216,7 +216,7 @@
         <div class="apple-search" style="max-width:560px;width:100%;">
           <i class="fas fa-search apple-search-icon"></i>
           <input type="text" class="apple-search-input" placeholder="Search for restaurants or meals..." 
-                 style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.2);padding:16px 20px 16px 48px;font-size:1.0625rem;">
+                 style="background:rgba(240, 217, 217, 0.15);color:rgb(255, 238, 0);border:1px solid rgba(255,255,255,0.2);padding:16px 20px 16px 48px;font-size:1.0625rem;">
           <div class="apple-search-results"></div>
         </div>
         
@@ -235,25 +235,21 @@
   </div>
 </section>
 
-<!-- ===== STATS SECTION ===== -->
-<section class="apple-section" style="padding:var(--space-2xl) 0;background:var(--color-card);border-bottom:1px solid var(--color-border-light);">
+<!-- ===== PROMOTION BANNER ===== -->
+<section class="apple-section">
   <div class="container">
-    <div class="row text-center g-4">
-      <div class="col-4">
-        <div class="stat-number">10+</div>
-        <div class="stat-label">Restaurants</div>
+    <div class="promo-banner">
+      <div>
+        <div class="promo-banner-title">First Order Free Delivery</div>
+        <div class="promo-banner-text" style="margin-top:4px;">Use code <strong>FIRSTMEAL</strong> on your first order. T&Cs apply.</div>
       </div>
-      <div class="col-4">
-        <div class="stat-number">100+</div>
-        <div class="stat-label">Meals Delivered</div>
-      </div>
-      <div class="col-4">
-        <div class="stat-number">98%</div>
-        <div class="stat-label">Satisfaction</div>
-      </div>
+      <a href="{{ url_for('auth.register') }}" class="apple-btn" style="background:white;color:var(--color-text-primary);padding:12px 24px;font-weight:600;">
+        Order Now <i class="fas fa-arrow-right"></i>
+      </a>
     </div>
   </div>
 </section>
+
 
 
 <!-- ===== POPULAR RESTAURANTS ===== -->
@@ -276,9 +272,6 @@
           <div class="restaurant-card-body">
             <h3 class="restaurant-card-name">{{ rest.name }}</h3>
             <div class="restaurant-card-meta">
-              <span class="restaurant-card-rating">
-                <i class="fas fa-star"></i> {{ 4.5 }}
-              </span>
               <span class="restaurant-card-delivery">
                 <i class="fas fa-clock"></i> 25-35 min
               </span>
@@ -343,20 +336,6 @@
 </section>
 {% endif %}
 
-<!-- ===== PROMOTION BANNER ===== -->
-<section class="apple-section">
-  <div class="container">
-    <div class="promo-banner">
-      <div>
-        <div class="promo-banner-title">First Order Free Delivery</div>
-        <div class="promo-banner-text" style="margin-top:4px;">Use code <strong>FIRSTMEAL</strong> on your first order. T&Cs apply.</div>
-      </div>
-      <a href="{{ url_for('auth.register') }}" class="apple-btn" style="background:white;color:var(--color-text-primary);padding:12px 24px;font-weight:600;">
-        Order Now <i class="fas fa-arrow-right"></i>
-      </a>
-    </div>
-  </div>
-</section>
 
 <!-- ===== HOW IT WORKS ===== -->
 <section class="apple-section" style="background:var(--color-card);">
@@ -401,68 +380,6 @@
         </div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- ===== TESTIMONIALS ===== -->
-<section class="apple-section">
-  <div class="container">
-    <h2 class="apple-section-title text-center" style="margin-bottom:var(--space-2xl);">What Our Customers Say</h2>
-    
-    <div class="testimonials-scroll">
-      <div class="testimonials-track">
-        <!-- Testimonial 1 -->
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"The food arrived hot and fresh. SmartEats has completely changed how I eat!"</div>
-          <div class="testimonial-name">Khutlisi</div>
-          <div class="testimonial-location">Maputsoe</div>
-        </div>
-        
-        <!-- Testimonial 2 -->
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"Incredible variety of restaurants. I discover new places every week!"</div>
-          <div class="testimonial-name">Nkhahle</div>
-          <div class="testimonial-location">Roma</div>
-        </div>
-        
-        <!-- Testimonial 3 -->
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"The tracking feature is amazing. I know exactly when my food arrives."</div>
-          <div class="testimonial-name">Sehlabaka</div>
-          <div class="testimonial-location">Leribe</div>
-        </div>
-        
-        <!-- Testimonial 4 (duplicate for scroll) -->
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"Best food delivery service in Lesotho. Fast, reliable, and delicious!"</div>
-          <div class="testimonial-name">Khoromeng</div>
-          <div class="testimonial-location">Maseru</div>
-        </div>
-        
-        <!-- Duplicates for seamless scroll -->
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"The food arrived hot and fresh. SmartEats has completely changed how I eat!"</div>
-          <div class="testimonial-name">Nthona /div>
-          <div class="testimonial-location">Maputsoe</div>
-        </div>
-        
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"Incredible variety of restaurants. I discover new places every week!"</div>
-          <div class="testimonial-name">Xhosazana</div>
-          <div class="testimonial-location">Roma</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== ABOUT SECTION (pre-footer) ===== -->
-<section class="apple-section" style="padding-bottom:0;">
-  <div class="container text-center">
-    <p style="font-size:0.9375rem;color:var(--color-text-secondary);max-width:600px;margin:0 auto;">
-      <strong style="color:var(--color-text-primary);">SmartEats</strong> is a Lesotho-based food delivery platform 
-      founded by Khauhelo Makara. We connect people with delicious local food quickly and reliably.
-    </p>
   </div>
 </section>
 

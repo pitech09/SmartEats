@@ -33,7 +33,7 @@ def create_admin_accounts():
         # Stores
         stores = [
             {
-                "name": "SmartEat",
+                "name": "Smart Eat",
                 "address": "Remote",
                 "email": "smarteats200@gmail.com",
                 "password": "StorePass123",

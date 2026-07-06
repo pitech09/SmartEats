@@ -1,0 +1,52 @@
+{% extends 'store/updated_dashboard.html' %}
+{% block title %}Edit Coupon – {{ store.name }}{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  <div class="card shadow-sm" style="max-width:600px;margin:0 auto;">
+    <div class="card-body p-4">
+      <h4 class="mb-4">Edit Coupon: <strong>{{ coupon.code }}</strong></h4>
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Coupon Code</label>
+          <input type="text" name="code" class="form-control" value="{{ coupon.code }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Discount Type</label>
+          <select name="discount_type" class="form-select">
+            <option value="fixed" {% if coupon.discount_type == 'fixed' %}selected{% endif %}>Fixed Amount (M)</option>
+            <option value="percentage" {% if coupon.discount_type == 'percentage' %}selected{% endif %}>Percentage (%)</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Discount Value</label>
+          <input type="number" name="discount_value" class="form-control" step="0.01" min="1" value="{{ coupon.discount_value }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Minimum Order Amount (M)</label>
+          <input type="number" name="min_order_amount" class="form-control" step="0.01" min="0" value="{{ coupon.min_order_amount }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Maximum Uses</label>
+          <input type="number" name="max_uses" class="form-control" min="0" value="{{ coupon.max_uses }}">
+          <small class="text-muted">Current uses: {{ coupon.current_uses or 0 }}</small>
+        </div>
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label">Valid From</label>
+            <input type="date" name="valid_from" class="form-control" value="{{ coupon.valid_from.strftime('%Y-%m-%d') if coupon.valid_from else '' }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Valid Until</label>
+            <input type="date" name="valid_until" class="form-control" value="{{ coupon.valid_until.strftime('%Y-%m-%d') if coupon.valid_until else '' }}">
+          </div>
+        </div>
+        <div class="mb-3 form-check">
+          <input type="checkbox" name="is_active" class="form-check-input" id="isActive" {% if coupon.is_active %}checked{% endif %}>
+          <label class="form-check-label" for="isActive">Active</label>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

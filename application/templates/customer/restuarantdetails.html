@@ -218,20 +218,12 @@
     <div style="position:sticky;top:80px;">
       <div class="info-card" style="margin-bottom:var(--space-lg);">
         <div style="text-align:center;margin-bottom:var(--space-md);">
-          {% if restuarant.openinghours and '24/7' in restuarant.openinghours.lower() %}
-          <span class="apple-badge apple-badge-success" style="font-size:0.875rem;padding:4px 16px;">
-            <i class="fas fa-clock"></i> Open 24/7
-          </span>
-          {% elif is_store_open(restuarant.openinghours) %}
-          <span class="apple-badge apple-badge-success" style="font-size:0.875rem;padding:4px 16px;">
-            <i class="fas fa-check-circle"></i> Open Now
-          </span>
-          {% else %}
-          <span class="apple-badge apple-badge-danger" style="font-size:0.875rem;padding:4px 16px;">
-            <i class="fas fa-clock"></i> Closed
-          </span>
-          {% endif %}
-        </div>
+        {% if is_store_open is defined and is_store_open(restuarant.openinghours) %}
+        <span class="restaurant-card-status open">Open</span>
+        {% else %}
+        <span class="restaurant-card-status closed">Closed</span>
+        {% endif %}
+      </div>
         
         {% if current_user.is_authenticated %}
         <a href="{{ url_for('main.set_storee', store_id=restuarant.id) }}" class="apple-btn apple-btn-primary apple-btn-lg apple-btn-block" style="margin-bottom:var(--space-sm);">
@@ -252,7 +244,7 @@
       <div class="info-card">
         <h3 class="info-card-title">Delivery Info</h3>
         <div style="font-size:0.875rem;color:var(--color-text-secondary);">
-          <p><i class="fas fa-map-pin" style="margin-right:8px;color:var(--color-accent);"></i> Delivery available in {{ restuarant.district or 'local area' }}</p>
+          <p><i class="fas fa-map-pin" style="margin-right:8px;color:var(--color-accent);"></i> Delivery available in {{ restuarant.town }}</p>
           <p><i class="fas fa-truck" style="margin-right:8px;color:var(--color-accent);"></i> Estimated delivery: 25-35 min</p>
           <p><i class="fas fa-money-bill" style="margin-right:8px;color:var(--color-accent);"></i> Cash, EcoCash, M-Pesa accepted</p>
         </div>

@@ -1,0 +1,105 @@
+{% extends 'store/updated_dashboard.html' %}
+{% block title %}Coupons – {{ store.name }}{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Promotional Coupons</h1>
+    <a href="{{ url_for('store.add_coupon') }}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Create Coupon
+    </a>
+  </div>
+
+  {% if coupons %}
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Min Order</th>
+              <th>Uses</th>
+              <th>Valid</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for coupon in coupons %}
+            <tr>
+              <td>
+                <strong>{{ coupon.code }}</strong>
+              </td>
+              <td>
+                {% if coupon.discount_type == 'percentage' %}
+                  {{ coupon.discount_value }}%
+                {% else %}
+                  M{{ '%.2f'|format(coupon.discount_value) }}
+                {% endif %}
+              </td>
+              <td>
+                {% if coupon.min_order_amount > 0 %}
+                  M{{ '%.2f'|format(coupon.min_order_amount) }}
+                {% else %}
+                  <span class="text-muted">None</span>
+                {% endif %}
+              </td>
+              <td>
+                {{ coupon.current_uses or 0 }}
+                {% if coupon.max_uses > 0 %}
+                  / {{ coupon.max_uses }}
+                {% endif %}
+              </td>
+              <td>
+                {% if coupon.valid_until %}
+                  <small>{{ coupon.valid_until.strftime('%d %b %Y') }}</small>
+                {% else %}
+                  <span class="text-muted">No expiry</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if coupon.is_active %}
+                  <span class="badge bg-success">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <a href="{{ url_for('store.edit_coupon', coupon_id=coupon.id) }}" class="btn btn-outline-primary" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <form action="{{ url_for('store.toggle_coupon', coupon_id=coupon.id) }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-warning" title="{{ 'Deactivate' if coupon.is_active else 'Activate' }}">
+                      <i class="fas {{ 'fa-toggle-on' if coupon.is_active else 'fa-toggle-off' }}"></i>
+                    </button>
+                  </form>
+                  <form action="{{ url_for('store.delete_coupon', coupon_id=coupon.id) }}" method="post" class="d-inline" onsubmit="return confirm('Delete this coupon?')">
+                    <button type="submit" class="btn btn-outline-danger" title="Delete">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <div style="font-size:3rem;color:var(--color-text-secondary);margin-bottom:var(--space-md);">
+      <i class="fas fa-tags"></i>
+    </div>
+    <h5>No coupons yet</h5>
+    <p class="text-muted">Create your first coupon to offer discounts to your customers.</p>
+    <a href="{{ url_for('store.add_coupon') }}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Create Coupon
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

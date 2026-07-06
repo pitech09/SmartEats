@@ -53,6 +53,7 @@ class Store(UserMixin, db.Model):
     sales = db.relationship("Sales", back_populates="store")
     ingredients = db.relationship("Ingredient", backref="store")
     staff_members = db.relationship("Staff", back_populates="store", lazy="select")
+    coupons = db.relationship("Coupon", back_populates="store", lazy="select")
 
 # ----------------- Product -----------------
 class Product(db.Model):
@@ -107,6 +108,7 @@ class User(UserMixin, db.Model):
     store = db.relationship("Store", back_populates="users")
     carts = db.relationship("Cart", backref="user", lazy="select")
     orders = db.relationship("Order", back_populates="user", lazy="select")
+    redemptions = db.relationship("PointsRedemption", back_populates="user", lazy="select")
 
     def generate_confirmation_token(self, expiration=3600):
         s = TimedSerializer(current_app.config["SECRET_KEY"], expiration)
@@ -135,6 +137,10 @@ class Cart(db.Model):
 
     cart_items = db.relationship("CartItem", backref="cart", lazy="select")
 
+    # Applied coupon (nullable, cleared on order completion)
+    coupon_id = db.Column(db.Integer, db.ForeignKey("coupon.id"), nullable=True)
+    coupon = db.relationship("Coupon", backref="carts_using")
+
     def total_items(self):
         return sum(item.quantity for item in self.cart_items)
 
@@ -146,6 +152,12 @@ class Cart(db.Model):
             elif item.custom_meal:
                 total += item.custom_meal.total_price * item.quantity
         return total
+
+    def get_discount(self):
+        """Return discount amount from applied coupon, or 0."""
+        if not self.coupon_id or not self.coupon:
+            return 0
+        return self.coupon.calculate_discount(self.total_amount())
 
 
 class CartItem(db.Model):
@@ -210,6 +222,16 @@ class Order(db.Model):
     deliveryfee = db.Column(db.Float, default=0.0)
     
     is_pos = db.Column(db.Boolean, default=False)
+
+    # Coupon applied to this order
+    coupon_id = db.Column(db.Integer, db.ForeignKey("coupon.id"), nullable=True)
+    coupon = db.relationship("Coupon", backref="orders_using")
+    coupon_discount = db.Column(db.Float, default=0.0)
+
+    # Points redeemed on this order
+    points_redeemed = db.Column(db.Integer, default=0)
+    points_discount = db.Column(db.Float, default=0.0)
+
     user = db.relationship("User", back_populates="orders")
     store = db.relationship("Store", back_populates="orders")
     order_items = db.relationship("OrderItem", back_populates="order", lazy="select", cascade="all, delete-orphan")
@@ -399,3 +421,88 @@ class Category(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     products = db.relationship("Product", back_populates="category", lazy="select")
     store = db.relationship("Store", backref="categories", lazy="select")
+
+
+# ----------------- Coupon -----------------
+class Coupon(db.Model):
+    """Store-specific coupon codes."""
+    __tablename__ = "coupon"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(50), nullable=False, index=True)
+
+    # Discount type: 'percentage' or 'fixed'
+    discount_type = db.Column(db.String(20), nullable=False, default='fixed')
+    discount_value = db.Column(db.Float, nullable=False, default=0)
+
+    # Optional minimum order amount to use this coupon
+    min_order_amount = db.Column(db.Float, default=0)
+
+    # Maximum number of times this coupon can be used (0 = unlimited)
+    max_uses = db.Column(db.Integer, default=0)
+    current_uses = db.Column(db.Integer, default=0)
+
+    # Expiration
+    valid_from = db.Column(db.DateTime, default=datetime.utcnow)
+    valid_until = db.Column(db.DateTime, nullable=True)
+
+    is_active = db.Column(db.Boolean, default=True)
+
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
+    store = db.relationship("Store", back_populates="coupons")
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def is_valid(self, order_amount=0):
+        """Check if the coupon is currently valid."""
+        now = datetime.utcnow()
+        if not self.is_active:
+            return False
+        if self.valid_until and now > self.valid_until:
+            return False
+        if now < self.valid_from:
+            return False
+        if self.max_uses > 0 and self.current_uses >= self.max_uses:
+            return False
+        if order_amount < (self.min_order_amount or 0):
+            return False
+        return True
+
+    def calculate_discount(self, order_amount):
+        """Calculate the discount amount for a given order amount."""
+        if self.discount_type == 'percentage':
+            return round(order_amount * (self.discount_value / 100), 2)
+        else:  # fixed
+            return min(self.discount_value, order_amount)
+
+    def use(self):
+        """Increment usage counter."""
+        self.current_uses = (self.current_uses or 0) + 1
+        db.session.commit()
+
+
+# ----------------- Points Redemption -----------------
+class PointsRedemption(db.Model):
+    """Track loyalty point redemptions."""
+    __tablename__ = "points_redemption"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    points_used = db.Column(db.Integer, nullable=False, default=0)
+    discount_amount = db.Column(db.Float, nullable=False, default=0)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", back_populates="redemptions")
+    order = db.relationship("Order", backref="points_redemption")
+
+    @staticmethod
+    def points_to_discount(points):
+        """Convert points to discount amount. 100 points = M10."""
+        return (points // 100) * 10
+
+    @staticmethod
+    def discount_to_points(discount_amount):
+        """Convert discount amount to points needed. M10 = 100 points."""
+        return int(discount_amount * 10)

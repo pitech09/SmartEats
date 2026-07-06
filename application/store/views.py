@@ -25,9 +25,10 @@ from ..forms import addmore, removefromcart, ProductForm, \
     updatestatusform, update, CartlistForm, Search, addstaffform, Set_StoreForm, UpdateStoreForm, updateorderpickup, deliveryregistrationform
 from ..models import (User, Product, Sales, DeliveryGuy,
                       Order, Cart, OrderItem, db, Store,
-                      Notification, Staff, Administrater, Category)
+                      Notification, Staff, Administrater, Category, Coupon, PointsRedemption)
 from ..utils.notification import create_notification
 from application import cache
+from datetime import datetime as dt_datetime
 from datetime import datetime
 from application.notification import notify_customer, notify_delivery
 from application.auth.views import send_sound
@@ -660,6 +661,25 @@ def updatestatus(order_id):
                 send_sound(order.store_id, "order_update")
             except Exception:
                 pass
+
+            # Award loyalty points when order is completed/delivered/collected
+            if new_status.strip().lower() in ("delivered", "collected", "completed"):
+                if old_status.strip().lower() not in ("delivered", "collected", "completed"):
+                    try:
+                        from application.main.views import award_loyalty_points
+                        user = User.query.get(order.user_id)
+                        if user:
+                            # Calculate total spent on this order
+                            total_spent = sum(
+                                item.product_price * item.quantity 
+                                for item in order.order_items
+                            ) + (order.deliveryfee or 0)
+                            # Subtract any discounts
+                            total_spent -= (order.coupon_discount or 0) + (order.points_discount or 0)
+                            if total_spent > 0:
+                                award_loyalty_points(user, order, total_spent)
+                    except Exception as e:
+                        current_app.logger.error(f"Failed to award loyalty points: {e}")
 
             if new_status.strip().lower() == "ready" and old_status.strip().lower() != "ready":
                 sms_body = (
@@ -1391,3 +1411,178 @@ def view_categories(category_id):
         categories=categories,
         products=products
     )
+
+
+# ==================== COUPON MANAGEMENT ====================
+
+@store.route('/coupons', methods=['GET'])
+@login_required
+def coupon_list():
+    """List all coupons for the current store."""
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+    
+    coupons = Coupon.query.filter_by(store_id=store.id).order_by(Coupon.created_at.desc()).all()
+    
+    unread_notifications = Notification.query.filter_by(
+        user_type='store', user_id=store.id, is_read=False
+    ).order_by(Notification.timestamp.desc()).all()
+    count = len(unread_notifications)
+    
+    return render_template(
+        'store/coupons.html',
+        store=store,
+        coupons=coupons,
+        unread_notifications=unread_notifications,
+        count=count
+    )
+
+
+@store.route('/coupons/add', methods=['GET', 'POST'])
+@login_required
+def add_coupon():
+    """Add a new coupon for the current store."""
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+    
+    unread_notifications = Notification.query.filter_by(
+        user_type='store', user_id=store.id, is_read=False
+    ).order_by(Notification.timestamp.desc()).all()
+    count = len(unread_notifications)
+    
+    if request.method == 'POST':
+        code = request.form.get('code', '').strip().upper()
+        discount_type = request.form.get('discount_type', 'fixed')
+        discount_value = float(request.form.get('discount_value', 0))
+        min_order_amount = float(request.form.get('min_order_amount', 0))
+        max_uses = int(request.form.get('max_uses', 0))
+        valid_from_str = request.form.get('valid_from', '')
+        valid_until_str = request.form.get('valid_until', '')
+        
+        if not code:
+            flash('Coupon code is required.', 'danger')
+            return redirect(url_for('store.add_coupon'))
+        
+        # Check for duplicate code within this store
+        existing = Coupon.query.filter_by(code=code, store_id=store.id).first()
+        if existing:
+            flash(f'Coupon code "{code}" already exists for your store.', 'danger')
+            return redirect(url_for('store.add_coupon'))
+        
+        if discount_value <= 0:
+            flash('Discount value must be greater than 0.', 'danger')
+            return redirect(url_for('store.add_coupon'))
+        
+        if discount_type == 'percentage' and discount_value > 100:
+            flash('Percentage discount cannot exceed 100%.', 'danger')
+            return redirect(url_for('store.add_coupon'))
+        
+        valid_from = None
+        valid_until = None
+        
+        try:
+            if valid_from_str:
+                valid_from = dt_datetime.strptime(valid_from_str, '%Y-%m-%d')
+            if valid_until_str:
+                valid_until = dt_datetime.strptime(valid_until_str, '%Y-%m-%d')
+        except ValueError:
+            flash('Invalid date format.', 'danger')
+            return redirect(url_for('store.add_coupon'))
+        
+        coupon = Coupon(
+            code=code,
+            discount_type=discount_type,
+            discount_value=discount_value,
+            min_order_amount=min_order_amount,
+            max_uses=max_uses,
+            valid_from=valid_from or dt_datetime.utcnow(),
+            valid_until=valid_until,
+            store_id=store.id
+        )
+        db.session.add(coupon)
+        db.session.commit()
+        
+        flash(f'Coupon "{code}" created successfully!', 'success')
+        return redirect(url_for('store.coupon_list'))
+    
+    return render_template(
+        'store/add_coupon.html',
+        store=store,
+        unread_notifications=unread_notifications,
+        count=count
+    )
+
+
+@store.route('/coupons/edit/<int:coupon_id>', methods=['GET', 'POST'])
+@login_required
+def edit_coupon(coupon_id):
+    """Edit an existing coupon."""
+    store_id = session.get('store_id')
+    store = Store.query.get_or_404(store_id)
+    
+    coupon = Coupon.query.filter_by(id=coupon_id, store_id=store.id).first_or_404()
+    
+    unread_notifications = Notification.query.filter_by(
+        user_type='store', user_id=store.id, is_read=False
+    ).order_by(Notification.timestamp.desc()).all()
+    count = len(unread_notifications)
+    
+    if request.method == 'POST':
+        coupon.code = request.form.get('code', coupon.code).strip().upper()
+        coupon.discount_type = request.form.get('discount_type', coupon.discount_type)
+        coupon.discount_value = float(request.form.get('discount_value', coupon.discount_value))
+        coupon.min_order_amount = float(request.form.get('min_order_amount', coupon.min_order_amount))
+        coupon.max_uses = int(request.form.get('max_uses', coupon.max_uses))
+        coupon.is_active = 'is_active' in request.form
+        
+        valid_from_str = request.form.get('valid_from', '')
+        valid_until_str = request.form.get('valid_until', '')
+        
+        try:
+            if valid_from_str:
+                coupon.valid_from = dt_datetime.strptime(valid_from_str, '%Y-%m-%d')
+            if valid_until_str:
+                coupon.valid_until = dt_datetime.strptime(valid_until_str, '%Y-%m-%d')
+            else:
+                coupon.valid_until = None
+        except ValueError:
+            flash('Invalid date format.', 'danger')
+            return redirect(url_for('store.edit_coupon', coupon_id=coupon.id))
+        
+        db.session.commit()
+        flash(f'Coupon "{coupon.code}" updated!', 'success')
+        return redirect(url_for('store.coupon_list'))
+    
+    return render_template(
+        'store/edit_coupon.html',
+        store=store,
+        coupon=coupon,
+        unread_notifications=unread_notifications,
+        count=count
+    )
+
+
+@store.route('/coupons/toggle/<int:coupon_id>', methods=['POST'])
+@login_required
+def toggle_coupon(coupon_id):
+    """Toggle coupon active status."""
+    store_id = session.get('store_id')
+    coupon = Coupon.query.filter_by(id=coupon_id, store_id=store_id).first_or_404()
+    coupon.is_active = not coupon.is_active
+    db.session.commit()
+    status = 'activated' if coupon.is_active else 'deactivated'
+    flash(f'Coupon "{coupon.code}" {status}.', 'success')
+    return redirect(url_for('store.coupon_list'))
+
+
+@store.route('/coupons/delete/<int:coupon_id>', methods=['POST'])
+@login_required
+def delete_coupon(coupon_id):
+    """Delete a coupon."""
+    store_id = session.get('store_id')
+    coupon = Coupon.query.filter_by(id=coupon_id, store_id=store_id).first_or_404()
+    code = coupon.code
+    db.session.delete(coupon)
+    db.session.commit()
+    flash(f'Coupon "{code}" deleted.', 'success')
+    return redirect(url_for('store.coupon_list'))

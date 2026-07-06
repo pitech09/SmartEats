@@ -1,0 +1,50 @@
+{% extends 'store/updated_dashboard.html' %}
+{% block title %}Create Coupon – {{ store.name }}{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  <div class="card shadow-sm" style="max-width:600px;margin:0 auto;">
+    <div class="card-body p-4">
+      <h4 class="mb-4">Create New Coupon</h4>
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Coupon Code</label>
+          <input type="text" name="code" class="form-control" placeholder="e.g. SAVE10" required>
+          <small class="text-muted">Code will be auto-capitalized. Customers enter this at checkout.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Discount Type</label>
+          <select name="discount_type" class="form-select">
+            <option value="fixed">Fixed Amount (M)</option>
+            <option value="percentage">Percentage (%)</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Discount Value</label>
+          <input type="number" name="discount_value" class="form-control" step="0.01" min="1" placeholder="e.g. 10" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Minimum Order Amount (M)</label>
+          <input type="number" name="min_order_amount" class="form-control" step="0.01" min="0" value="0">
+          <small class="text-muted">Set to 0 for no minimum.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Maximum Uses</label>
+          <input type="number" name="max_uses" class="form-control" min="0" value="0">
+          <small class="text-muted">Set to 0 for unlimited uses.</small>
+        </div>
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label">Valid From</label>
+            <input type="date" name="valid_from" class="form-control">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Valid Until</label>
+            <input type="date" name="valid_until" class="form-control">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Create Coupon</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

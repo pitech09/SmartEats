@@ -13,10 +13,11 @@ from cloudinary.uploader import upload
 from dateutil.relativedelta import relativedelta
 from math import radians, cos, sin, asin, sqrt
 
-from . import main  # Blueprint is fine to import at top
+from . import main
 from ..forms import *
 from ..models import *
 from sqlalchemy.orm import joinedload
+from datetime import datetime as dt_datetime
 from application.notification import *
 from application.auth.views import send_sound
 from application.utils.cache import *
@@ -685,6 +686,44 @@ def addorder():
         drop_location = 'pickup'
 
     # -----------------------------
+    # Coupon handling
+    # -----------------------------
+    coupon_id = request.form.get('coupon_id', type=int)
+    coupon_discount = float(request.form.get('coupon_discount', 0))
+    points_redeemed = int(request.form.get('points_redeemed', 0))
+    points_discount = float(request.form.get('points_discount', 0))
+
+    # Validate and process coupon
+    if cart.coupon_id and cart.coupon:
+        coupon = cart.coupon
+        if coupon.is_valid(cart.total_amount()):
+            coupon_discount = coupon.calculate_discount(cart.total_amount())
+            coupon_id = coupon.id
+            # Increment usage counter
+            coupon.use()
+        else:
+            coupon_discount = 0
+            coupon_id = None
+            cart.coupon_id = None
+
+    # Validate and process points redemption
+    if points_redeemed > 0 and current_user.loyalty_points >= points_redeemed:
+        # Deduct points from user
+        current_user.loyalty_points -= points_redeemed
+
+        # Record the redemption
+        redemption = PointsRedemption(
+            user_id=current_user.id,
+            points_used=points_redeemed,
+            discount_amount=points_discount
+        )
+        db.session.add(redemption)
+        db.session.flush()
+    else:
+        points_redeemed = 0
+        points_discount = 0
+
+    # -----------------------------
     # Create Order
     # -----------------------------
     neworder = Order(
@@ -698,8 +737,16 @@ def addorder():
         customer_phone=customer_phone,
         location_accuracy_m=location_accuracy,
         deliveryfee=delivery_fee,
-        location=drop_location
+        location=drop_location,
+        coupon_id=coupon_id,
+        coupon_discount=coupon_discount,
+        points_redeemed=points_redeemed,
+        points_discount=points_discount
     )
+
+    # Link redemption to order if created
+    if points_redeemed > 0:
+        redemption.order_id = neworder.id
 
     # -----------------------------
     # Payment Screenshot
@@ -1198,6 +1245,10 @@ def store_details(store_id):
     formpharm.store.choices = [(-1, "Select a Store")] + [
         (p.id, p.name) for p in Store.query.all()
     ]
+    open_now = request.args.get('open_now', '').strip()
+
+    if open_now == '1':
+        stores = [s for s in stores if is_store_open(s.openinghours)]
 
     # Cart summary (if user already browsing this store)
     cart = Cart.query.filter_by(
@@ -1229,7 +1280,9 @@ def store_details(store_id):
         formpharm=formpharm,
         registered_for=registered_for,
         seo_defaults=seo_defaults,
-        breadcrumbs=breadcrumbs
+        breadcrumbs=breadcrumbs,
+        is_store_open=is_store_open,
+        open_now=open_now
     )
 
 # ---------------- VIEW PRODUCT ----------------
@@ -1437,6 +1490,211 @@ def decrement_cart_item(item_id):
         'new_quantity': item.quantity,
         'cart_total': cart_total
     })
+
+# ================ COUPON & LOYALTY POINTS ================
+
+# --------------------- APPLY COUPON ---------------------
+@main.route('/api/apply-coupon', methods=['POST'])
+@login_required
+def apply_coupon():
+    """Apply a coupon code to the current cart."""
+    data = request.get_json() or {}
+    code = data.get('code', '').strip().upper()
+
+    if not code:
+        return jsonify({'success': False, 'message': 'Please enter a coupon code.'}), 400
+
+    store_id = session.get('store_id')
+    if not store_id:
+        return jsonify({'success': False, 'message': 'No store selected.'}), 400
+
+    # Find the coupon for this store
+    coupon = Coupon.query.filter_by(code=code, store_id=store_id).first()
+    if not coupon:
+        return jsonify({'success': False, 'message': 'Invalid coupon code.'}), 404
+
+    # Get the cart
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
+    if not cart or not cart.cart_items:
+        return jsonify({'success': False, 'message': 'Your cart is empty.'}), 400
+
+    order_amount = cart.total_amount()
+
+    # Check validity
+    if not coupon.is_valid(order_amount):
+        if coupon.max_uses > 0 and coupon.current_uses >= coupon.max_uses:
+            return jsonify({'success': False, 'message': 'This coupon has reached its usage limit.'}), 400
+        if coupon.valid_until and dt_datetime.utcnow() > coupon.valid_until:
+            return jsonify({'success': False, 'message': 'This coupon has expired.'}), 400
+        if order_amount < (coupon.min_order_amount or 0):
+            return jsonify({'success': False, 'message': f'Minimum order amount of M{coupon.min_order_amount:.2f} required.'}), 400
+        return jsonify({'success': False, 'message': 'This coupon is not valid.'}), 400
+
+    # Apply coupon to cart
+    cart.coupon_id = coupon.id
+    db.session.commit()
+
+    discount = coupon.calculate_discount(order_amount)
+    total_after_discount = order_amount - discount
+
+    return jsonify({
+        'success': True,
+        'message': f'Coupon "{coupon.code}" applied! You saved M{discount:.2f}.',
+        'discount': discount,
+        'total_after_discount': total_after_discount,
+        'coupon_code': coupon.code
+    })
+
+
+# --------------------- REMOVE COUPON ---------------------
+@main.route('/api/remove-coupon', methods=['POST'])
+@login_required
+def remove_coupon():
+    """Remove the applied coupon from the cart."""
+    store_id = session.get('store_id')
+    if not store_id:
+        return jsonify({'success': False, 'message': 'No store selected.'}), 400
+
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
+    if cart:
+        cart.coupon_id = None
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Coupon removed.',
+        'total_after_discount': cart.total_amount() if cart else 0
+    })
+
+
+# --------------------- CHECK COUPON STATUS ---------------------
+@main.route('/api/coupon-status', methods=['GET'])
+@login_required
+def coupon_status():
+    """Get the currently applied coupon and discount for the cart."""
+    store_id = session.get('store_id')
+    if not store_id:
+        return jsonify({'coupon': None}), 200
+
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
+    if not cart or not cart.coupon_id:
+        return jsonify({'coupon': None}), 200
+
+    coupon = cart.coupon
+    if not coupon:
+        cart.coupon_id = None
+        db.session.commit()
+        return jsonify({'coupon': None}), 200
+
+    order_amount = cart.total_amount()
+    discount = coupon.calculate_discount(order_amount)
+
+    return jsonify({
+        'coupon': {
+            'code': coupon.code,
+            'discount': discount,
+            'discount_type': coupon.discount_type,
+            'discount_value': coupon.discount_value,
+            'total_after_discount': order_amount - discount
+        }
+    })
+
+
+# --------------------- REDEEM POINTS ---------------------
+@main.route('/api/redeem-points', methods=['POST'])
+@login_required
+def redeem_points():
+    """Redeem loyalty points for a discount on the current order."""
+    data = request.get_json() or {}
+    points_to_redeem = int(data.get('points', 0))
+
+    if points_to_redeem <= 0:
+        return jsonify({'success': False, 'message': 'Invalid points amount.'}), 400
+
+    store_id = session.get('store_id')
+    if not store_id:
+        return jsonify({'success': False, 'message': 'No store selected.'}), 400
+
+    cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
+    if not cart or not cart.cart_items:
+        return jsonify({'success': False, 'message': 'Your cart is empty.'}), 400
+
+    user = current_user
+    available_points = user.loyalty_points or 0
+
+    if points_to_redeem > available_points:
+        return jsonify({'success': False, 'message': f'You only have {available_points} points available.'}), 400
+
+    # Must redeem in multiples of 100
+    if points_to_redeem % 100 != 0:
+        return jsonify({'success': False, 'message': 'Points must be redeemed in multiples of 100.'}), 400
+
+    discount = PointsRedemption.points_to_discount(points_to_redeem)
+    order_amount = cart.total_amount()
+
+    # Can't discount more than the order amount
+    coupon_discount = cart.get_discount()
+    effective_total = order_amount - coupon_discount
+
+    if discount > effective_total:
+        max_discount = (effective_total // 10) * 10  # nearest M10
+        max_points = PointsRedemption.discount_to_points(max_discount) if max_discount > 0 else 0
+        max_points = min(max_points, (available_points // 100) * 100)
+        return jsonify({
+            'success': False,
+            'message': f'Discount exceeds order total. You can redeem up to {max_points} points for M{max_discount:.2f} off.'
+        }), 400
+
+    return jsonify({
+        'success': True,
+        'message': f'Redeem {points_to_redeem} points for M{discount:.2f} off?',
+        'points': points_to_redeem,
+        'discount': discount,
+        'total_after_discount': effective_total - discount,
+        'available_points': available_points - points_to_redeem
+    })
+
+
+# --------------------- CHECK POINTS BALANCE ---------------------
+@main.route('/api/points-balance', methods=['GET'])
+@login_required
+def points_balance():
+    """Get the current user's loyalty points balance."""
+    user = current_user
+    points = user.loyalty_points or 0
+
+    # Calculate how much discount they could get
+    max_discount = PointsRedemption.points_to_discount(points)
+
+    return jsonify({
+        'points': points,
+        'max_discount': max_discount,
+        'redemption_rate': '100 points = M10 off'
+    })
+
+
+# --------------------- EARN POINTS ON ORDER COMPLETE ---------------------
+def award_loyalty_points(user, order, amount_spent):
+    """Award loyalty points when an order is completed/delivered."""
+    # 1 point for every M10 spent
+    points_earned = int(amount_spent // 10)
+    if points_earned > 0:
+        user.loyalty_points = (user.loyalty_points or 0) + points_earned
+        db.session.commit()
+
+        # Create a notification
+        try:
+            from application.notification import create_notification
+            create_notification(
+                user_id=user.id,
+                user_type='customer',
+                message=f'🎉 You earned {points_earned} loyalty points from order #{order.order_id}!'
+            )
+        except Exception:
+            pass
+
+    return points_earned
+
 
 # ---------------- CONTACT / ABOUT / HEALTH ----------------
 @main.route("/about")

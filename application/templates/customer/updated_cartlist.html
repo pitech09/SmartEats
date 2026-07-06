@@ -136,6 +136,76 @@
     color: var(--color-text-secondary);
     font-style: italic;
   }
+
+  /* ===== Coupon & Points Styles ===== */
+  .coupon-applied {
+    background: #E8F5E9;
+    border: 1px solid #C8E6C9;
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    margin: var(--space-md) 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-size: 0.8125rem;
+  }
+  .coupon-applied .coupon-code {
+    font-weight: 600;
+    color: #2E7D32;
+  }
+  .coupon-applied .coupon-remove {
+    background: none;
+    border: none;
+    color: #D32F2F;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+  }
+  .coupon-applied .coupon-remove:hover {
+    background: rgba(211,47,47,0.08);
+  }
+
+  .points-section {
+    margin: var(--space-md) 0;
+    padding: var(--space-md);
+    background: #F3E5F5;
+    border: 1px solid #CE93D8;
+    border-radius: var(--radius-md);
+  }
+  .points-section .points-header {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6A1B9A;
+    margin-bottom: var(--space-sm);
+  }
+  .points-balance {
+    font-size: 0.9375rem;
+    color: #4A148C;
+  }
+  .points-balance strong {
+    font-size: 1.125rem;
+  }
+  .points-redeem-btn {
+    background: #7B1FA2;
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+  }
+  .points-redeem-btn:hover {
+    background: #6A1B9A;
+  }
+  
+  .discount-row {
+    color: var(--color-success);
+    font-weight: 600;
+  }
 </style>
 
 <div class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
@@ -209,13 +279,68 @@
           </span>
         </div>
         
-        <!-- Coupon -->
-        <form id="couponForm" style="margin:var(--space-md) 0;">
-          <div class="apple-input-group">
-            <input type="text" placeholder="Coupon code" aria-label="Coupon code">
-            <button type="submit" class="apple-btn apple-btn-secondary apple-btn-sm">Apply</button>
+        <!-- Coupon Section -->
+        <div id="coupon-section">
+          <!-- Coupon Form (shown when no coupon applied) -->
+          <form id="couponForm" style="margin:var(--space-md) 0;">
+            <div class="apple-input-group">
+              <input type="text" id="couponInput" placeholder="Coupon code" aria-label="Coupon code">
+              <button type="submit" class="apple-btn apple-btn-secondary apple-btn-sm">Apply</button>
+            </div>
+            <div id="couponError" style="color:var(--color-danger);font-size:0.75rem;margin-top:4px;display:none;"></div>
+          </form>
+          
+          <!-- Coupon Applied Display (shown when coupon is applied) -->
+          <div id="couponApplied" class="coupon-applied" style="display:none;">
+            <div>
+              <i class="fas fa-tag" style="color:#2E7D32;"></i>
+              <span class="coupon-code" id="couponAppliedCode"></span>
+              <span id="couponAppliedDiscount" style="color:#2E7D32;"></span>
+            </div>
+            <button type="button" class="coupon-remove" id="removeCouponBtn">
+              <i class="fas fa-times"></i> Remove
+            </button>
           </div>
-        </form>
+          
+          <!-- Discount row (shown when coupon applied) -->
+          <div class="price-row discount-row" id="couponDiscountRow" style="display:none;">
+            <span class="price-row-label">Coupon Discount</span>
+            <span class="price-row-value" id="couponDiscountAmount">-M0.00</span>
+          </div>
+        </div>
+
+        <!-- Loyalty Points Section -->
+        <div class="points-section" id="pointsSection">
+          <div class="points-header">
+            <i class="fas fa-star"></i> Your Loyalty Points
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-sm);flex-wrap:wrap;">
+            <div>
+              <div class="points-balance">
+                <strong id="pointsBalance">0</strong> points
+              </div>
+              <div style="font-size:0.6875rem;color:var(--color-text-secondary);" id="pointsMaxDiscount"></div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <select id="pointsToRedeem" style="padding:6px 8px;border:1px solid #CE93D8;border-radius:var(--radius-md);font-size:0.75rem;background:white;">
+                <option value="0">0 pts</option>
+                <option value="100">100 pts (M10)</option>
+                <option value="200">200 pts (M20)</option>
+                <option value="300">300 pts (M30)</option>
+                <option value="400">400 pts (M40)</option>
+                <option value="500">500 pts (M50)</option>
+              </select>
+              <button type="button" class="points-redeem-btn" id="redeemPointsBtn">Redeem</button>
+            </div>
+          </div>
+          <div id="pointsMessage" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
+        </div>
+
+        <!-- Points Discount Row -->
+        <div class="price-row discount-row" id="pointsDiscountRow" style="display:none;">
+          <span class="price-row-label">Points Discount</span>
+          <span class="price-row-value" id="pointsDiscountAmount">-M0.00</span>
+        </div>
 
         <hr class="apple-divider">
         
@@ -241,6 +366,12 @@
           {{ form3.drop_address.label(class='apple-label') }}
           {{ form3.drop_address(class='apple-input', placeholder='Enter delivery address') }}
         </div>
+
+        <!-- Hidden fields for coupon and points -->
+        <input type="hidden" name="coupon_id" id="checkout_coupon_id" value="">
+        <input type="hidden" name="coupon_discount" id="checkout_coupon_discount" value="0">
+        <input type="hidden" name="points_redeemed" id="checkout_points_redeemed" value="0">
+        <input type="hidden" name="points_discount" id="checkout_points_discount" value="0">
 
         <!-- Delivery Method -->
         <div style="margin-bottom:var(--space-md);">
@@ -342,6 +473,8 @@
     var customerLat = null;
     var customerLng = null;
     var currentDeliveryMethod = 'agent'; // 'agent' = delivery, 'pickup' = pickup
+    var appliedCouponDiscount = 0;
+    var appliedPointsDiscount = 0;
 
     // ===== Auto-save notes on typing (debounced) =====
     var notesTimers = {};
@@ -609,9 +742,180 @@
     }
 
     function updateTotal() {
-      var total = subtotal + deliveryFee;
+      var total = subtotal + deliveryFee - appliedCouponDiscount - appliedPointsDiscount;
+      if (total < 0) total = 0;
       document.getElementById('cart-total-amount').textContent = 'M' + total.toFixed(2);
       document.getElementById('subtotal-amount').textContent = 'M' + subtotal.toFixed(2);
+    }
+
+    // ========================
+    // COUPON FUNCTIONALITY
+    // ========================
+
+    // Check for existing coupon on page load
+    function checkCouponStatus() {
+      fetch('/api/coupon-status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.coupon) {
+            appliedCouponDiscount = data.coupon.discount;
+            showCouponApplied(data.coupon);
+            updateTotal();
+          }
+        })
+        .catch(function(err) { console.debug('coupon status error', err); });
+    }
+
+    function showCouponApplied(coupon) {
+      document.getElementById('couponForm').style.display = 'none';
+      document.getElementById('couponApplied').style.display = 'flex';
+      document.getElementById('couponAppliedCode').textContent = coupon.code;
+      document.getElementById('couponAppliedDiscount').textContent = ' (-M' + coupon.discount.toFixed(2) + ')';
+      document.getElementById('couponDiscountRow').style.display = 'flex';
+      document.getElementById('couponDiscountAmount').textContent = '-M' + coupon.discount.toFixed(2);
+      document.getElementById('checkout_coupon_id').value = coupon.id || '';
+      document.getElementById('checkout_coupon_discount').value = coupon.discount;
+    }
+
+    function hideCouponApplied() {
+      document.getElementById('couponForm').style.display = '';
+      document.getElementById('couponApplied').style.display = 'none';
+      document.getElementById('couponDiscountRow').style.display = 'none';
+      document.getElementById('checkout_coupon_id').value = '';
+      document.getElementById('checkout_coupon_discount').value = '0';
+    }
+
+    document.getElementById('couponForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var code = document.getElementById('couponInput').value.trim();
+      if (!code) return;
+
+      fetch('/api/apply-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ code: code })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var errorEl = document.getElementById('couponError');
+        if (data.success) {
+          errorEl.style.display = 'none';
+          appliedCouponDiscount = data.discount;
+          showCouponApplied({ code: data.coupon_code, discount: data.discount, id: data.coupon_id });
+          updateTotal();
+          flashMessage(data.message, 'success');
+        } else {
+          errorEl.textContent = data.message;
+          errorEl.style.display = 'block';
+        }
+      })
+      .catch(function(err) {
+        console.debug('coupon apply error', err);
+      });
+    });
+
+    document.getElementById('removeCouponBtn').addEventListener('click', function() {
+      fetch('/api/remove-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          appliedCouponDiscount = 0;
+          hideCouponApplied();
+          updateTotal();
+          flashMessage('Coupon removed.', 'info');
+        }
+      })
+      .catch(function(err) { console.debug('coupon remove error', err); });
+    });
+
+    // ========================
+    // LOYALTY POINTS
+    // ========================
+
+    function loadPointsBalance() {
+      fetch('/api/points-balance')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.points !== undefined) {
+            document.getElementById('pointsBalance').textContent = data.points;
+            document.getElementById('pointsMaxDiscount').textContent = 
+              'Up to M' + data.max_discount.toFixed(2) + ' off with points';
+            
+            // Populate dropdown
+            var select = document.getElementById('pointsToRedeem');
+            select.innerHTML = '<option value="0">0 pts</option>';
+            var maxPoints = Math.min(data.points, 500);
+            for (var p = 100; p <= maxPoints; p += 100) {
+              var discount = (p / 100) * 10;
+              var option = document.createElement('option');
+              option.value = p;
+              option.textContent = p + ' pts (M' + discount.toFixed(2) + ')';
+              select.appendChild(option);
+            }
+          }
+        })
+        .catch(function(err) { console.debug('points balance error', err); });
+    }
+
+    document.getElementById('redeemPointsBtn').addEventListener('click', function() {
+      var points = parseInt(document.getElementById('pointsToRedeem').value) || 0;
+      if (points <= 0) {
+        flashMessage('Please select points to redeem.', 'warning');
+        return;
+      }
+
+      fetch('/api/redeem-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ points: points })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var msgEl = document.getElementById('pointsMessage');
+        if (data.success) {
+          appliedPointsDiscount = data.discount;
+          document.getElementById('pointsDiscountRow').style.display = 'flex';
+          document.getElementById('pointsDiscountAmount').textContent = '-M' + data.discount.toFixed(2);
+          document.getElementById('checkout_points_redeemed').value = data.points;
+          document.getElementById('checkout_points_discount').value = data.discount;
+          document.getElementById('pointsBalance').textContent = data.available_points;
+          msgEl.style.display = 'block';
+          msgEl.style.color = '#2E7D32';
+          msgEl.textContent = '✅ ' + data.message;
+          updateTotal();
+        } else {
+          msgEl.style.display = 'block';
+          msgEl.style.color = '#D32F2F';
+          msgEl.textContent = '❌ ' + data.message;
+        }
+      })
+      .catch(function(err) { console.debug('redeem points error', err); });
+    });
+
+    // ========================
+    // UTILITY
+    // ========================
+
+    function flashMessage(message, type) {
+      var flashContainer = document.querySelector('.apple-flash-container');
+      if (!flashContainer) {
+        // Create flash container if it doesn't exist
+        var container = document.createElement('div');
+        container.className = 'apple-flash-container';
+        container.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;max-width:400px;width:90%;';
+        document.body.appendChild(container);
+        flashContainer = container;
+      }
+      var flash = document.createElement('div');
+      flash.className = 'apple-flash ' + (type === 'success' ? 'apple-flash-success' : type === 'warning' ? 'apple-flash-warning' : 'apple-flash-info');
+      flash.textContent = message;
+      flash.style.cssText = 'padding:12px 16px;border-radius:12px;margin-bottom:8px;font-size:0.875rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);animation:fadeIn 0.3s;background:' + 
+        (type === 'success' ? '#E8F5E9' : type === 'warning' ? '#FFF8E1' : '#E3F2FD') + ';';
+      flashContainer.appendChild(flash);
+      setTimeout(function() { flash.remove(); }, 3500);
     }
 
     // --- Quantity Increase/Decrease Handlers ---
@@ -750,6 +1054,10 @@
         toggleDeliveryMethod('agent');
       }
     }
+
+    // Initialize coupon and points
+    checkCouponStatus();
+    loadPointsBalance();
   });
 </script>
 {% endblock %}
