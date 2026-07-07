@@ -1,156 +1,542 @@
 {% extends "adminslayout.html" %}
-{% block title %}Admin DashBoard - SmartEats {% endblock %}
+{% block title %}Admin Dashboard - SmartEats{% endblock %}
+
 {% block content %}
+<style>
+  .admin-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #134e4a 55%, #2da350 100%);
+    color: #fff;
+    border-radius: 28px;
+    padding: 28px;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
+    position: relative;
+    overflow: hidden;
+  }
+  .admin-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -80px -80px auto;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.10);
+    filter: blur(10px);
+  }
+  .metric-card {
+    border: 0;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    height: 100%;
+  }
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .section-card {
+    border: 0;
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    height: 100%;
+  }
+  .trend-bar {
+    height: 12px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2da350, #0ea5e9);
+  }
+  .quick-action-card {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    background: #fff;
+  }
+  .quick-action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.10);
+    border-color: #cbd5e1 !important;
+  }
+  .quick-action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+  }
+  .soft-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-size: 0.875rem;
+  }
+</style>
 
-        <!-- Content Wrapper -->
-        <div id="content-wrapper" class="d-flex flex-column">
-
-            <!-- Main Content -->
-            <div id="content">
-                <!-- Topbar -->
-                <!-- Begin Page Content -->
-                <div class="container-fluid pb-5">
-
-                    <!-- Content Row -->
-                    <div class="row">
-                        <!-- Earnings (Monthly) Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
-                                                Earnings (Monthly)</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">M{{total_monthly_sales}}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                Total Earnings </div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">M{{total_sales}}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-coins fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Earnings (Monthly) Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                Earnings (Annual)</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">M{{total_annual_sales}}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                Earnings (Daily)</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">M{{today_sales}}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Earnings (Monthly) Card Example -->
-
-                        <!-- Pending Requests Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                Pending Store Requests</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{count}}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-clock fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                Number Of Users</div>
-                                            <div class="h5 mb-0 text-gray-800"> Customers: {{num_of_users}}</div>
-
-                                            <div class="h5 mb-0 text-gray-800">Delivery Partners: {{num_of_delivery}}</div>
-                                            <div class="h5 mb-0 text-gray-800">Vendors : {{num_of_stores}}</div>
-                                      
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>                        
-                    </div>
-
-
-                </div>
-
-            </div>
-                <!-- /.container-fluid -->
-
+<div class="container-fluid pb-5">
+  <div class="admin-hero mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 position-relative" style="z-index:1;">
+      <div>
+        <div class="soft-pill mb-3">
+          <i class="fas fa-shield-alt"></i>
+          Live admin monitoring
         </div>
-            <!-- End of Main Content -->
+        <h1 class="display-6 mb-2" style="font-weight:800;">SmartEats control center</h1>
+        <p class="mb-0" style="max-width:760px;opacity:0.9;">
+          Real-time totals, referral performance, system alerts, and activity snapshots in one clean view.
+        </p>
+      </div>
+      <div class="text-end">
+        <div class="small text-uppercase" style="letter-spacing:.08em;opacity:.8;">Today</div>
+        <div class="h3 mb-0" style="font-weight:800;">M{{ '%.2f'|format(today_sales or 0) }}</div>
+        <div class="small" style="opacity:.85;">Orders: {{ total_orders }} | Ambassadors: {{ num_of_ambassadors }}</div>
+      </div>
+    </div>
+  </div>
 
-<!-- Mobile Bottom Navigation -->
-<nav class="dash-bottom-nav">
-  <a href="{{ url_for('admin.admindash') }}" class="dash-bottom-nav-item active">
-    <i class="fas fa-tachometer-alt"></i>
-    <span>Dashboard</span>
-  </a>
-  <a href="{{ url_for('admin.pending_verification') }}" class="dash-bottom-nav-item">
-    <i class="fas fa-spinner"></i>
-    <span>Requests</span>
-  </a>
-  <a href="{{ url_for('admin.registered_stores') }}" class="dash-bottom-nav-item">
-    <i class="fa fa-bars"></i>
-    <span>Stores</span>
-  </a>
-  <a href="{{ url_for('admin.reg_users') }}" class="dash-bottom-nav-item">
-    <i class="fas fa-user"></i>
-    <span>Users</span>
-  </a>
-  <a href="{{ url_for('main.logout') }}" class="dash-bottom-nav-item">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Logout</span>
-  </a>
-</nav>
-{%endblock%}
+  <div class="row g-4 mb-4">
+    <div class="col-6 col-xl-3">
+      <div class="metric-card p-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase small">Total Earnings</div>
+            <div class="metric-value">M{{ '%.2f'|format(total_sales or 0) }}</div>
+          </div>
+          <i class="fas fa-coins fa-2x text-success"></i>
+        </div>
+        <div class="small text-muted mt-3">Month: M{{ '%.2f'|format(total_monthly_sales or 0) }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="metric-card p-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase small">Active Orders</div>
+            <div class="metric-value">{{ active_orders }}</div>
+          </div>
+          <i class="fas fa-truck-loading fa-2x text-primary"></i>
+        </div>
+        <div class="small text-muted mt-3">Pending store requests: {{ count }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="metric-card p-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase small">Referral Earnings</div>
+            <div class="metric-value">M{{ '%.2f'|format(total_referral_earnings or 0) }}</div>
+          </div>
+          <i class="fas fa-user-friends fa-2x text-info"></i>
+        </div>
+        <div class="small text-muted mt-3">Referred users: {{ total_referrals }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="metric-card p-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase small">Unread Alerts</div>
+            <div class="metric-value">{{ unread_notifications_count }}</div>
+          </div>
+          <i class="fas fa-bell fa-2x text-warning"></i>
+        </div>
+        <div class="small text-muted mt-3">Total notifications: {{ total_notifications }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+      <div class="section-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-1">Revenue trend</h5>
+            <div class="text-muted small">Last 7 tracked days from actual sales data</div>
+          </div>
+          <div class="text-muted small">Annual: M{{ '%.2f'|format(total_annual_sales or 0) }}</div>
+        </div>
+        {% if revenue_timeline %}
+          <div class="d-grid gap-3">
+            {% for point in revenue_timeline %}
+              {% set pct = (point.amount / revenue_timeline_max * 100) if revenue_timeline_max else 0 %}
+              <div>
+                <div class="d-flex justify-content-between small mb-1">
+                  <span>{{ point.date }}</span>
+                  <span>M{{ '%.2f'|format(point.amount or 0) }}</span>
+                </div>
+                <div style="background:#eef2f7;border-radius:999px;overflow:hidden;">
+                  <div class="trend-bar" style="width:{{ pct }}%;"></div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No sales trend data available yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="section-card p-4">
+        <h5 class="mb-3">System Snapshot</h5>
+        <div class="d-grid gap-3">
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Users</span>
+            <strong>{{ num_of_users }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Delivery partners</span>
+            <strong>{{ num_of_delivery }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Vendors</span>
+            <strong>{{ num_of_stores }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Ambassadors</span>
+            <strong>{{ num_of_ambassadors }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Coupons</span>
+            <strong>{{ total_coupons }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Active coupons</span>
+            <strong>{{ active_coupons }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Completed orders</span>
+            <strong>{{ completed_orders }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Cancelled orders</span>
+            <strong>{{ cancelled_orders }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h5 class="mb-1">Quick Actions</h5>
+        <div class="text-muted small">Direct access to the most used admin areas</div>
+      </div>
+    </div>
+    <div class="row g-3">
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('admin.admindash') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-success" style="background:rgba(45,163,80,0.12);">
+                <i class="fas fa-tachometer-alt"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Dashboard</div>
+                <div class="text-muted small">Overview and stats</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('admin.pending_verification') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-warning" style="background:rgba(255,193,7,0.16);">
+                <i class="fas fa-spinner"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Pending Stores</div>
+                <div class="text-muted small">Verify new stores</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('admin.registered_stores') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-primary" style="background:rgba(13,110,253,0.12);">
+                <i class="fas fa-store"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Registered Stores</div>
+                <div class="text-muted small">See all vendors</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('admin.register_store') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-info" style="background:rgba(13,202,240,0.14);">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Manual Store</div>
+                <div class="text-muted small">Create a store account</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('admin.reg_users') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-secondary" style="background:rgba(108,117,125,0.12);">
+                <i class="fas fa-users"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Registered Users</div>
+                <div class="text-muted small">View customers</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('admin.manage_ambassadors') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-danger" style="background:rgba(220,53,69,0.12);">
+                <i class="fas fa-user-friends"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Ambassadors</div>
+                <div class="text-muted small">Manage referrals</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('admin.manage_ads') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-dark" style="background:rgba(33,37,41,0.10);">
+                <i class="fas fa-bullhorn"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Manage Ads</div>
+                <div class="text-muted small">Control promotions</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-lg-3">
+        <a href="{{ url_for('main.logout') }}" class="text-decoration-none">
+          <div class="border rounded-4 p-3 h-100 quick-action-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="quick-action-icon text-danger" style="background:rgba(220,53,69,0.12);">
+                <i class="fas fa-sign-out-alt"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Logout</div>
+                <div class="text-muted small">End admin session</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-1">Top Stores</h5>
+            <div class="text-muted small">Revenue by store from recorded sales</div>
+          </div>
+        </div>
+        {% if top_stores %}
+          <div class="d-grid gap-3">
+            {% for store in top_stores %}
+              <div>
+                <div class="d-flex justify-content-between small mb-1">
+                  <span>{{ store.name }}</span>
+                  <span>M{{ '%.2f'|format(store.revenue or 0) }}</span>
+                </div>
+                <div style="background:#eef2f7;border-radius:999px;overflow:hidden;height:10px;">
+                  <div class="trend-bar" style="width:{{ ((store.revenue or 0) / (top_stores[0].revenue or 1) * 100) if top_stores else 0 }}%;"></div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No store sales have been recorded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-1">Top Ambassadors</h5>
+            <div class="text-muted small">Referrals and earnings by ambassador</div>
+          </div>
+        </div>
+        {% if top_ambassadors %}
+          <div class="d-grid gap-3">
+            {% for ambassador in top_ambassadors %}
+              <div class="border rounded-4 p-3">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <strong>{{ ambassador[0].names }}</strong>
+                    <div class="text-muted small">{{ ambassador.referrals }} referrals</div>
+                  </div>
+                  <div class="text-end">
+                    <div class="small text-muted">Earnings</div>
+                    <strong>M{{ '%.2f'|format(ambassador.earnings or 0) }}</strong>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No ambassadors yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <h5 class="mb-3">Recent Orders</h5>
+        {% if recent_orders %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>User</th>
+                  <th>Store</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                  <td>{{ order.order_id }}</td>
+                  <td>{{ order.user.email if order.user else 'Unknown' }}</td>
+                  <td>{{ order.store.name if order.store else 'Unknown' }}</td>
+                  <td><span class="badge badge-light">{{ order.status }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No recent orders found.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <h5 class="mb-3">Recent Referrals</h5>
+        {% if recent_referrals %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Ambassador</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in recent_referrals %}
+                <tr>
+                  <td>{{ user.username }} {{ user.lastname }}</td>
+                  <td>{{ user.referred_by_ambassador.names if user.referred_by_ambassador else 'Unknown' }}</td>
+                  <td>{{ user.referred_at.strftime('%d %b %Y %H:%M') if user.referred_at else 'Unknown' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No referral activity yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <h5 class="mb-3">Recent Referral Commissions</h5>
+        {% if recent_commissions %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Ambassador</th>
+                  <th>User</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for commission in recent_commissions %}
+                <tr>
+                  <td>{{ commission.ambassador.names if commission.ambassador else 'Unknown' }}</td>
+                  <td>{{ commission.user.email if commission.user else 'Unknown' }}</td>
+                  <td>M{{ '%.2f'|format(commission.commission_amount or 0) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No commission records yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <h5 class="mb-3">Recent Notifications</h5>
+        {% if recent_notifications %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for notification in recent_notifications %}
+                <tr>
+                  <td>{{ notification.user_type }}</td>
+                  <td>{{ notification.message }}</td>
+                  <td>{{ 'Read' if notification.is_read else 'Unread' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No notifications recorded.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

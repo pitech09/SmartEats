@@ -156,22 +156,22 @@
           <div class="dashboard-card-icon" style="background:rgba(0,113,227,0.1);color:var(--color-accent);">
             <i class="fas fa-box"></i>
           </div>
-          <div class="dashboard-card-value">{{ current_user.orders|length if current_user.orders else 0 }}</div>
+          <div class="dashboard-card-value">{{ active_orders_count or 0 }}</div>
           <div class="dashboard-card-label">Active Orders</div>
         </a>
         <a href="{{ url_for('main.order_history') }}" class="dashboard-card">
           <div class="dashboard-card-icon" style="background:rgba(52,199,89,0.1);color:var(--color-success);">
             <i class="fas fa-check-circle"></i>
           </div>
-          <div class="dashboard-card-value">{{ current_user.orders|selectattr('status', 'equalto', 'Completed')|list|length if current_user.orders else 0 }}</div>
+          <div class="dashboard-card-value">{{ completed_orders_count or 0 }}</div>
           <div class="dashboard-card-label">Completed</div>
         </a>
-        <a href="#" class="dashboard-card">
+        <a href="{{ url_for('main.order_history') }}" class="dashboard-card">
           <div class="dashboard-card-icon" style="background:rgba(255,159,10,0.1);color:var(--color-warning);">
-            <i class="fas fa-heart"></i>
+            <i class="fas fa-receipt"></i>
           </div>
-          <div class="dashboard-card-value">0</div>
-          <div class="dashboard-card-label">Favorites</div>
+          <div class="dashboard-card-value">{{ total_orders_count or 0 }}</div>
+          <div class="dashboard-card-label">Total Orders</div>
         </a>
         <a href="#" class="dashboard-card">
           <div class="dashboard-card-icon" style="background:rgba(0,113,227,0.1);color:var(--color-accent);">

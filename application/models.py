@@ -101,6 +101,8 @@ class User(UserMixin, db.Model):
     loyalty_points = db.Column(db.Integer, default=0)
 
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
+    referred_by_ambassador_id = db.Column(db.Integer, db.ForeignKey("ambassador.id"), nullable=True)
+    referred_at = db.Column(db.DateTime, nullable=True)
 
     district = db.Column(db.String(60), default="None")
     town = db.Column(db.String(60), default="None")
@@ -109,6 +111,11 @@ class User(UserMixin, db.Model):
     carts = db.relationship("Cart", backref="user", lazy="select")
     orders = db.relationship("Order", back_populates="user", lazy="select")
     redemptions = db.relationship("PointsRedemption", back_populates="user", lazy="select")
+    referred_by_ambassador = db.relationship(
+        "Ambassador",
+        back_populates="referred_users",
+        foreign_keys=[referred_by_ambassador_id],
+    )
 
     def generate_confirmation_token(self, expiration=3600):
         s = TimedSerializer(current_app.config["SECRET_KEY"], expiration)
@@ -140,6 +147,8 @@ class Cart(db.Model):
     # Applied coupon (nullable, cleared on order completion)
     coupon_id = db.Column(db.Integer, db.ForeignKey("coupon.id"), nullable=True)
     coupon = db.relationship("Coupon", backref="carts_using")
+    ambassador_coupon_id = db.Column(db.Integer, db.ForeignKey("ambassador_coupon.id"), nullable=True)
+    ambassador_coupon = db.relationship("AmbassadorCoupon", backref="ambassador_carts_using")
 
     def total_items(self):
         return sum(item.quantity for item in self.cart_items)
@@ -155,6 +164,8 @@ class Cart(db.Model):
 
     def get_discount(self):
         """Return discount amount from applied coupon, or 0."""
+        if self.ambassador_coupon_id and self.ambassador_coupon:
+            return self.ambassador_coupon.calculate_discount(self.total_amount())
         if not self.coupon_id or not self.coupon:
             return 0
         return self.coupon.calculate_discount(self.total_amount())
@@ -227,6 +238,9 @@ class Order(db.Model):
     coupon_id = db.Column(db.Integer, db.ForeignKey("coupon.id"), nullable=True)
     coupon = db.relationship("Coupon", backref="orders_using")
     coupon_discount = db.Column(db.Float, default=0.0)
+    ambassador_coupon_id = db.Column(db.Integer, db.ForeignKey("ambassador_coupon.id"), nullable=True)
+    ambassador_coupon = db.relationship("AmbassadorCoupon", backref="ambassador_orders_using")
+    ambassador_discount = db.Column(db.Float, default=0.0)
 
     # Points redeemed on this order
     points_redeemed = db.Column(db.Integer, default=0)
@@ -239,6 +253,17 @@ class Order(db.Model):
 
     def local_time(self):
         return self.create_at.astimezone(ZoneInfo("Africa/Johannesburg"))
+
+    def subtotal_amount(self):
+        item_total = sum((item.product_price or 0) * (item.quantity or 0) for item in self.order_items)
+        meal_total = sum((meal.total_price or 0) for meal in self.custom_meals)
+        return item_total + meal_total
+
+    def discount_amount(self):
+        return (self.coupon_discount or 0) + (self.ambassador_discount or 0) + (self.points_discount or 0)
+
+    def grand_total(self):
+        return max((self.subtotal_amount() + (self.deliveryfee or 0)) - self.discount_amount(), 0)
 
 
 class OrderItem(db.Model):
@@ -477,6 +502,101 @@ class Coupon(db.Model):
 
     def use(self):
         """Increment usage counter."""
+        self.current_uses = (self.current_uses or 0) + 1
+        db.session.commit()
+
+
+# ----------------- Ambassador -----------------
+class Ambassador(UserMixin, db.Model):
+    __tablename__ = "ambassador"
+
+    id = db.Column(db.Integer, primary_key=True)
+    names = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    referral_code = db.Column(db.String(50), unique=True, nullable=False)
+    commission_rate = db.Column(db.Float, default=0.05)
+    confirmed = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    coupons = db.relationship("AmbassadorCoupon", back_populates="ambassador", lazy="select")
+    referred_users = db.relationship(
+        "User",
+        back_populates="referred_by_ambassador",
+        foreign_keys=[User.referred_by_ambassador_id],
+        lazy="select",
+    )
+    commissions = db.relationship(
+        "AmbassadorReferralCommission",
+        back_populates="ambassador",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+
+    @property
+    def name(self):
+        return self.names
+
+
+class AmbassadorReferralCommission(db.Model):
+    __tablename__ = "ambassador_referral_commission"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ambassador_id = db.Column(db.Integer, db.ForeignKey("ambassador.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False, unique=True)
+
+    order_amount = db.Column(db.Float, nullable=False)
+    commission_rate = db.Column(db.Float, nullable=False, default=0.05)
+    commission_amount = db.Column(db.Float, nullable=False)
+    minimum_order_amount = db.Column(db.Float, nullable=False, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    ambassador = db.relationship("Ambassador", back_populates="commissions")
+    user = db.relationship("User", backref="referral_commissions", lazy="select")
+    order = db.relationship("Order", backref=db.backref("referral_commission_record", uselist=False), lazy="select")
+
+
+# ----------------- Ambassador Coupon -----------------
+class AmbassadorCoupon(db.Model):
+    __tablename__ = "ambassador_coupon"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(50), nullable=False, index=True, unique=True)
+    discount_type = db.Column(db.String(20), nullable=False, default='fixed')
+    discount_value = db.Column(db.Float, nullable=False, default=0)
+    min_order_amount = db.Column(db.Float, default=0)
+    max_uses = db.Column(db.Integer, default=0)
+    current_uses = db.Column(db.Integer, default=0)
+    valid_from = db.Column(db.DateTime, default=datetime.utcnow)
+    valid_until = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    ambassador_id = db.Column(db.Integer, db.ForeignKey("ambassador.id"), nullable=False)
+    ambassador = db.relationship("Ambassador", back_populates="coupons")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def is_valid(self, order_amount=0):
+        now = datetime.utcnow()
+        if not self.is_active:
+            return False
+        if self.valid_until and now > self.valid_until:
+            return False
+        if now < self.valid_from:
+            return False
+        if self.max_uses > 0 and self.current_uses >= self.max_uses:
+            return False
+        if order_amount < (self.min_order_amount or 0):
+            return False
+        return True
+
+    def calculate_discount(self, order_amount):
+        if self.discount_type == 'percentage':
+            return round(order_amount * (self.discount_value / 100), 2)
+        return min(self.discount_value, order_amount)
+
+    def use(self):
         self.current_uses = (self.current_uses or 0) + 1
         db.session.commit()
 

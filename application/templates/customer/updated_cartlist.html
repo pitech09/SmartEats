@@ -370,6 +370,8 @@
         <!-- Hidden fields for coupon and points -->
         <input type="hidden" name="coupon_id" id="checkout_coupon_id" value="">
         <input type="hidden" name="coupon_discount" id="checkout_coupon_discount" value="0">
+        <input type="hidden" name="ambassador_coupon_id" id="checkout_ambassador_coupon_id" value="">
+        <input type="hidden" name="ambassador_coupon_discount" id="checkout_ambassador_coupon_discount" value="0">
         <input type="hidden" name="points_redeemed" id="checkout_points_redeemed" value="0">
         <input type="hidden" name="points_discount" id="checkout_points_discount" value="0">
 
@@ -773,8 +775,17 @@
       document.getElementById('couponAppliedDiscount').textContent = ' (-M' + coupon.discount.toFixed(2) + ')';
       document.getElementById('couponDiscountRow').style.display = 'flex';
       document.getElementById('couponDiscountAmount').textContent = '-M' + coupon.discount.toFixed(2);
-      document.getElementById('checkout_coupon_id').value = coupon.id || '';
-      document.getElementById('checkout_coupon_discount').value = coupon.discount;
+      if (coupon.source === 'ambassador') {
+        document.getElementById('checkout_ambassador_coupon_id').value = coupon.id || '';
+        document.getElementById('checkout_ambassador_coupon_discount').value = coupon.discount;
+        document.getElementById('checkout_coupon_id').value = '';
+        document.getElementById('checkout_coupon_discount').value = '0';
+      } else {
+        document.getElementById('checkout_coupon_id').value = coupon.id || '';
+        document.getElementById('checkout_coupon_discount').value = coupon.discount;
+        document.getElementById('checkout_ambassador_coupon_id').value = '';
+        document.getElementById('checkout_ambassador_coupon_discount').value = '0';
+      }
     }
 
     function hideCouponApplied() {
@@ -783,6 +794,8 @@
       document.getElementById('couponDiscountRow').style.display = 'none';
       document.getElementById('checkout_coupon_id').value = '';
       document.getElementById('checkout_coupon_discount').value = '0';
+      document.getElementById('checkout_ambassador_coupon_id').value = '';
+      document.getElementById('checkout_ambassador_coupon_discount').value = '0';
     }
 
     document.getElementById('couponForm').addEventListener('submit', function(e) {
@@ -801,7 +814,12 @@
         if (data.success) {
           errorEl.style.display = 'none';
           appliedCouponDiscount = data.discount;
-          showCouponApplied({ code: data.coupon_code, discount: data.discount, id: data.coupon_id });
+          showCouponApplied({
+            code: data.coupon_code,
+            discount: data.discount,
+            id: data.coupon_id,
+            source: data.coupon_source || 'store'
+          });
           updateTotal();
           flashMessage(data.message, 'success');
         } else {

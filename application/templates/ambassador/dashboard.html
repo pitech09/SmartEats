@@ -1,0 +1,197 @@
+{% extends "layout.html" %}
+{% block title %}Ambassador Dashboard{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:var(--space-2xl) 0;">
+  <div style="display:flex;justify-content:space-between;gap:var(--space-md);align-items:flex-start;flex-wrap:wrap;margin-bottom:var(--space-xl);">
+    <div>
+      <h1 style="margin:0 0 8px 0;">Ambassador Dashboard</h1>
+      <p style="margin:0;color:var(--color-text-secondary);">Share your invite link and monitor referred users and earnings.</p>
+    </div>
+    <a href="{{ url_for('ambassador.logout') }}" class="apple-btn apple-btn-secondary">Logout</a>
+  </div>
+
+  <div class="apple-card" style="padding:var(--space-lg);margin-bottom:var(--space-xl);border-left:4px solid var(--color-accent);" id="invite-link">
+    <div style="display:flex;justify-content:space-between;gap:var(--space-md);flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div style="font-size:0.8125rem;color:var(--color-text-secondary);text-transform:uppercase;margin-bottom:6px;">Your Referral Link</div>
+        <div style="font-size:0.95rem;color:var(--color-text-secondary);margin-bottom:10px;">Copy and share this link. It is tied to your ambassador code.</div>
+      </div>
+      <button
+        type="button"
+        class="apple-btn apple-btn-secondary"
+        id="copyInviteLinkTop"
+        data-copy-value="{{ invite_link }}"
+      >
+        Copy Link
+      </button>
+    </div>
+    <div style="margin-top:12px;word-break:break-all;font-weight:600;">
+      <a id="inviteLinkTop" href="{{ invite_link }}" target="_blank" rel="noopener">{{ invite_link }}</a>
+    </div>
+    <div style="margin-top:8px;font-size:0.875rem;color:var(--color-text-secondary);">
+      Code: <code>{{ ambassador.referral_code }}</code>
+    </div>
+  </div>
+
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-md);margin-bottom:var(--space-xl);">
+    <div class="apple-card" style="padding:var(--space-lg);">
+      <div style="font-size:0.8125rem;color:var(--color-text-secondary);text-transform:uppercase;">Orders</div>
+      <div style="font-size:1.75rem;font-weight:700;">{{ total_orders }}</div>
+    </div>
+    <div class="apple-card" style="padding:var(--space-lg);">
+      <div style="font-size:0.8125rem;color:var(--color-text-secondary);text-transform:uppercase;">Discount Given</div>
+      <div style="font-size:1.75rem;font-weight:700;">M{{ '%.2f'|format(total_discount or 0) }}</div>
+    </div>
+    <div class="apple-card" style="padding:var(--space-lg);">
+      <div style="font-size:0.8125rem;color:var(--color-text-secondary);text-transform:uppercase;">Invited Users</div>
+      <div style="font-size:1.75rem;font-weight:700;">{{ total_referrals }}</div>
+    </div>
+    <div class="apple-card" style="padding:var(--space-lg);">
+      <div style="font-size:0.8125rem;color:var(--color-text-secondary);text-transform:uppercase;">Active Referrals</div>
+      <div style="font-size:1.75rem;font-weight:700;">{{ active_referrals }}</div>
+    </div>
+    <div class="apple-card" style="padding:var(--space-lg);">
+      <div style="font-size:0.8125rem;color:var(--color-text-secondary);text-transform:uppercase;">Referral Earnings</div>
+      <div style="font-size:1.75rem;font-weight:700;">M{{ '%.2f'|format(total_referral_earnings or 0) }}</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--space-xl);align-items:start;">
+    <div class="apple-card" style="padding:var(--space-lg);">
+      <h2 style="margin-top:0;">Invite Terms</h2>
+      <p style="margin-top:0;color:var(--color-text-secondary);">
+        When a referred user places a qualifying order above M{{ '%.2f'|format(referral_min_amount|default(100.0)) }}, you earn {{ '%.0f'|format((referral_rate|default(0.05)) * 100) }}% of the order amount.
+      </p>
+    </div>
+  </div>
+
+  <div class="apple-card" style="padding:var(--space-lg);margin-top:var(--space-xl);">
+    <h2 style="margin-top:0;">Referred Users</h2>
+    {% if referred_users %}
+      <div style="overflow-x:auto;">
+        <table class="table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Joined</th>
+              <th>Status</th>
+              <th>Orders</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in referred_users %}
+              <tr>
+                <td>{{ user.username }} {{ user.lastname }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.referred_at.strftime('%d %b %Y %H:%M') if user.referred_at else 'Unknown' }}</td>
+                <td>{{ 'Confirmed' if user.confirmed else 'Pending' }}</td>
+                <td>{{ user.orders|length }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color:var(--color-text-secondary);">No users have signed up through your invite link yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="apple-card" style="padding:var(--space-lg);margin-top:var(--space-xl);">
+    <h2 style="margin-top:0;">Recent Referral Earnings</h2>
+    {% if referral_commissions %}
+      <div style="overflow-x:auto;">
+        <table class="table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>User</th>
+              <th>Order Amount</th>
+              <th>Commission</th>
+              <th>Placed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for commission in referral_commissions %}
+              <tr>
+                <td>{{ commission.order.order_id if commission.order else commission.order_id }}</td>
+                <td>{{ commission.user.email if commission.user else 'Unknown' }}</td>
+                <td>M{{ '%.2f'|format(commission.order_amount or 0) }}</td>
+                <td>M{{ '%.2f'|format(commission.commission_amount or 0) }}</td>
+                <td>{{ commission.created_at.strftime('%d %b %Y %H:%M') if commission.created_at else '' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color:var(--color-text-secondary);">No referral earnings yet. Share your invite link to start earning.</p>
+    {% endif %}
+  </div>
+
+  <div class="apple-card" style="padding:var(--space-lg);margin-top:var(--space-xl);">
+    <h2 style="margin-top:0;">Recent Orders From Referrals</h2>
+    {% if recent_orders %}
+      <div style="overflow-x:auto;">
+        <table class="table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Status</th>
+              <th>Commission</th>
+              <th>Placed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in recent_orders %}
+              <tr>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.status }}</td>
+                <td>
+                  {% if order.referral_commission_record %}
+                    M{{ '%.2f'|format(order.referral_commission_record.commission_amount or 0) }}
+                  {% else %}
+                    M0.00
+                  {% endif %}
+                </td>
+                <td>{{ order.create_at.strftime('%d %b %Y %H:%M') if order.create_at else '' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color:var(--color-text-secondary);">No referred orders yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const copyButtons = [
+      { button: document.getElementById('copyInviteLinkTop'), target: document.getElementById('inviteLinkTop') },
+    ];
+    copyButtons.forEach(({ button, target }) => {
+      if (!button || !target) return;
+      button.addEventListener('click', async function () {
+        const copyValue = button.dataset.copyValue || target.getAttribute('href') || target.textContent || '';
+        try {
+          await navigator.clipboard.writeText(copyValue);
+          button.textContent = 'Copied';
+          setTimeout(() => {
+            button.textContent = 'Copy Link';
+          }, 1500);
+        } catch (error) {
+          const tempInput = document.createElement('input');
+          tempInput.value = copyValue;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -98,7 +98,7 @@
 
       <!-- Desktop Nav Links -->
       <div class="apple-navbar-links">
-        {% if current_user.is_authenticated %}
+      {% if current_user.is_authenticated and session.get('user_type') != 'ambassador' %}
         <a href="{{ url_for('main.home') }}" class="apple-nav-link" aria-label="Home">
           <i class="fas fa-home"></i>
           <span class="d-none d-md-inline">Home</span>
@@ -116,9 +116,22 @@
           <span class="d-none d-md-inline">Cart</span>
           <span id="cart-count" class="apple-cart-count {% if not total_count %}d-none{% endif %}">{{ total_count or 0 }}</span>
         </a>
-        <a href="{{ url_for('main.account') }}" class="apple-nav-link" aria-label="Profile">
+        <a href="{% if session.get('user_type') == 'ambassador' %}{{ url_for('ambassador.dashboard') }}{% else %}{{ url_for('main.account') }}{% endif %}" class="apple-nav-link" aria-label="Profile">
           <i class="fas fa-user-circle"></i>
           <span class="d-none d-md-inline">{{ current_user.username }}</span>
+        </a>
+        <a href="{{ url_for('main.logout') }}" class="apple-nav-link" aria-label="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="d-none d-md-inline">Sign Out</span>
+        </a>
+        {% elif current_user.is_authenticated and session.get('user_type') == 'ambassador' %}
+        <a href="{{ url_for('ambassador.dashboard') }}" class="apple-nav-link" aria-label="Ambassador Dashboard">
+          <i class="fas fa-bullhorn"></i>
+          <span class="d-none d-md-inline">Ambassador</span>
+        </a>
+        <a href="{{ url_for('auth.register', ref=current_user.referral_code) }}" class="apple-nav-link" aria-label="Invite Link">
+          <i class="fas fa-link"></i>
+          <span class="d-none d-md-inline">Invite Link</span>
         </a>
         <a href="{{ url_for('main.logout') }}" class="apple-nav-link" aria-label="Logout">
           <i class="fas fa-sign-out-alt"></i>
@@ -165,7 +178,7 @@
       </button>
     </div>
     <nav class="apple-drawer-nav" aria-label="Mobile navigation">
-      {% if current_user.is_authenticated %}
+      {% if current_user.is_authenticated and session.get('user_type') != 'ambassador' %}
       <a href="{{ url_for('main.home') }}" class="apple-drawer-nav-item">
         <i class="fas fa-home"></i> Home
       </a>
@@ -184,10 +197,25 @@
       <a href="{{ url_for('main.order_history') }}" class="apple-drawer-nav-item">
         <i class="fas fa-check-circle"></i> Order History
       </a>
-      <a href="{{ url_for('main.account') }}" class="apple-drawer-nav-item">
+      <a href="{% if session.get('user_type') == 'ambassador' %}{{ url_for('ambassador.dashboard') }}{% else %}{{ url_for('main.account') }}{% endif %}" class="apple-drawer-nav-item">
         <i class="fas fa-user-circle"></i> Profile
       </a>
+      {% if session.get('user_type') == 'ambassador' %}
+      <a href="{{ url_for('ambassador.dashboard') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-bullhorn"></i> Ambassador Dashboard
+      </a>
+      {% endif %}
       <hr class="apple-divider">
+      <a href="{{ url_for('main.logout') }}" class="apple-drawer-nav-item" style="color:var(--color-danger);">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
+      </a>
+      {% elif current_user.is_authenticated and session.get('user_type') == 'ambassador' %}
+      <a href="{{ url_for('ambassador.dashboard') }}" class="apple-drawer-nav-item">
+        <i class="fas fa-bullhorn"></i> Ambassador Dashboard
+      </a>
+      <a href="{{ url_for('auth.register', ref=current_user.referral_code) }}" class="apple-drawer-nav-item">
+        <i class="fas fa-link"></i> Invite Link
+      </a>
       <a href="{{ url_for('main.logout') }}" class="apple-drawer-nav-item" style="color:var(--color-danger);">
         <i class="fas fa-sign-out-alt"></i> Sign Out
       </a>
@@ -283,7 +311,7 @@
       <i class="fas fa-box"></i>
       <span>Orders</span>
     </a>
-    <a href="{{ url_for('main.account') }}" class="apple-bottom-nav-item" aria-label="Profile">
+    <a href="{% if session.get('user_type') == 'ambassador' %}{{ url_for('ambassador.dashboard') }}{% else %}{{ url_for('main.account') }}{% endif %}" class="apple-bottom-nav-item" aria-label="Profile">
       <i class="fas fa-user-circle"></i>
       <span>Profile</span>
     </a>

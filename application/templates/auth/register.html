@@ -14,6 +14,15 @@
       </p>
     </div>
 
+    {% if session.get('pending_referral_code') %}
+      <div class="apple-card" style="padding:var(--space-md);margin-bottom:var(--space-lg);border-left:4px solid var(--color-success);">
+        <strong>Invite link applied.</strong>
+        <div style="color:var(--color-text-secondary);font-size:0.875rem;margin-top:4px;">
+          You joined through ambassador code <code>{{ session.get('pending_referral_code') }}</code>.
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Registration Card -->
     <div class="apple-card" style="padding:var(--space-xl);">
       <form action="{{ url_for('auth.register') }}" method="POST" style="display:flex;flex-direction:column;gap:var(--space-lg);">

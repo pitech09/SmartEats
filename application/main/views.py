@@ -26,6 +26,45 @@ from application import socketio, db
 from flask_socketio import join_room
 PRODUCTS_PER_PAGE = 9
 
+ACTIVE_ORDER_STATUSES = [
+    "Pending",
+    "Processing",
+    "Accepted",
+    "Approved",
+    "Ready",
+    "Out for Delivery",
+]
+
+COMPLETED_ORDER_STATUSES = [
+    "Completed",
+    "Delivered",
+    "Collected",
+]
+
+FINAL_ORDER_STATUSES = COMPLETED_ORDER_STATUSES + ["Cancelled"]
+
+
+def active_stores_query():
+    return Store.query.filter(Store.is_active.is_(True))
+
+
+def active_store_choices():
+    return [(-1, "Select a Store")] + [
+        (store.id, store.name)
+        for store in active_stores_query().order_by(Store.name.asc()).all()
+    ]
+
+
+def active_meals_query():
+    return (
+        Product.query
+        .join(Store, Product.store_id == Store.id)
+        .filter(
+            Product.is_active.is_(True),
+            Store.is_active.is_(True),
+        )
+    )
+
 # --------------------- USER LOADER ---------------------
 def init_login_manager(login_manager):
     @login_manager.user_loader
@@ -39,6 +78,8 @@ def init_login_manager(login_manager):
             return DeliveryGuy.query.get(int(user_id))
         elif user_type == 'administrator':
             return Administrater.query.get(int(user_id))
+        elif user_type == 'ambassador':
+            return Ambassador.query.get(int(user_id))
         return None
 # --------------------- UTILITIES ---------------------
 
@@ -56,6 +97,35 @@ def calculate_loyalty_points(user, sale_amount):
     user.loyalty_points = points_earned + int(user.loyalty_points or 0)
     db.session.commit()
     return points_earned
+
+
+def award_referral_commission(order, qualifying_amount):
+    ambassador = current_user.referred_by_ambassador
+    if not ambassador or not ambassador.is_active:
+        return None
+
+    min_amount = current_app.config.get("AMBASSADOR_REFERRAL_MIN_ORDER_AMOUNT", 100.0)
+    rate = current_app.config.get("AMBASSADOR_REFERRAL_COMMISSION_RATE", 0.05)
+
+    if qualifying_amount < min_amount:
+        return None
+
+    existing = AmbassadorReferralCommission.query.filter_by(order_id=order.id).first()
+    if existing:
+        return existing
+
+    commission_amount = round(qualifying_amount * rate, 2)
+    commission = AmbassadorReferralCommission(
+        ambassador_id=ambassador.id,
+        user_id=current_user.id,
+        order_id=order.id,
+        order_amount=qualifying_amount,
+        commission_rate=rate,
+        commission_amount=commission_amount,
+        minimum_order_amount=min_amount,
+    )
+    db.session.add(commission)
+    return commission
 
 
 from math import radians, sin, cos, sqrt, atan2
@@ -219,7 +289,8 @@ def save_update_profile_picture(form_picture):
 def handle_join(data):
     join_room(data["room"])
     print(f"User joined room: {data['room']}")
-# --------------------- ROUTES ---------------------
+
+"""# --------------------- ROUTES ---------------------
 @main.route('/subscribe', methods=['POST'])
 @login_required
 def subscribe():
@@ -240,7 +311,7 @@ def unsubscribe():
     if sub:
         db.session.delete(sub)
         db.session.commit()
-    return jsonify({"success": True})
+    return jsonify({"success": True})"""
 
 
 # ---------------- HOME ----------------
@@ -248,15 +319,17 @@ def unsubscribe():
 @login_required
 def home():
     formpharm = Set_StoreForm()
-    pharmacies = Store.query.all()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in pharmacies]
+    pharmacies = active_stores_query().order_by(Store.name.asc()).all()
+    formpharm.store.choices = active_store_choices()
     store_id = session.get('store_id')
     cart = Cart.query.filter(Cart.user_id==current_user.id, Cart.store_id == store_id).first()
     total_amount = cart.total_amount() if cart else 0.0
     total_count = cart.total_items() if cart else 0
+    orders_count = Order.query.filter_by(user_id=current_user.id).count()
     ads = Ad.query.all()
     return render_template("customer/home.html", user=current_user, total_count=total_count,
-                           total_amount=total_amount, ads=ads, pharmacies=pharmacies, formpharm=formpharm)
+                           total_amount=total_amount, ads=ads, pharmacies=pharmacies,
+                           formpharm=formpharm, orders_count=orders_count)
 
 @main.route("/api/search")
 def api_search():
@@ -275,8 +348,7 @@ def api_search():
     ).limit(5).all()
 
     # Search meals
-    meals = Product.query.filter(
-        Product.is_active == True,
+    meals = active_meals_query().filter(
         or_(
             Product.productname.ilike(f"%{q}%"),
             Product.description.ilike(f"%{q}%")
@@ -371,7 +443,7 @@ def sitemap_xml():
         })
     
     # Active meals
-    meals = Product.query.filter_by(is_active=True).all()
+    meals = active_meals_query().all()
     for meal in meals:
         pages.append({
             'loc': url_for('main.viewproduct', product_id=meal.id, _external=True),
@@ -440,7 +512,7 @@ def cart():
     form2 = removefromcart()
     form3 = confirmpurchase()
     formpharm = Set_StoreForm()
-    formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+    formpharm.store.choices = active_store_choices()
 
     user = current_user
     cart = Cart.query.filter_by(user_id=user.id, store_id=store_id).first()
@@ -452,10 +524,11 @@ def cart():
         total_count = sum(item.quantity for item in cart.cart_items)
 
     return render_template('customer/updated_cartlist.html', form=form, form2=form2, form3=form3,
-                           cart=cart, user=user, formpharm=formpharm, store=Store.query.get(store_id),
+                           cart=cart, user=user, formpharm=formpharm, store=Store.query.filter_by(id=store_id, is_active=True).first_or_404(),
                            total_amount=total_amount, total_count=total_count, is_store_open=is_store_open)
 @main.route("/go-to-store/<int:store_id>")
 def go_to_store(store_id):
+    Store.query.filter_by(id=store_id, is_active=True).first_or_404()
     session["store_id"] = store_id
     return redirect(url_for("main.menu", page_num=1))
 
@@ -470,10 +543,10 @@ def menu(page_num=1):
         flash("Please select a store first", "warning")
         return redirect(url_for("main.restuarants"))
 
-    mystore = Store.query.get_or_404(store_id)
+    mystore = Store.query.filter_by(id=store_id, is_active=True).first_or_404()
 
     # Populate store choices
-    formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+    formpharm.store.choices = active_store_choices()
 
     # Forms
     form = CartlistForm()
@@ -521,7 +594,7 @@ def menu(page_num=1):
 @main.route("/custom_meal/<int:store_id>", methods=["GET", "POST"])
 @login_required
 def custom_meal(store_id):
-    store = Store.query.get_or_404(store_id)
+    store = Store.query.filter_by(id=store_id, is_active=True).first_or_404()
     ingredients = Ingredient.query.filter_by(store_id=store_id).all()
 
     if request.method == "POST":
@@ -607,7 +680,7 @@ def addorder():
     form = confirmpurchase()
 
     store_id = session.get('store_id')
-    store = Store.query.get_or_404(store_id)
+    store = Store.query.filter_by(id=store_id, is_active=True).first_or_404()
 
     # Get cart
     cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
@@ -690,11 +763,23 @@ def addorder():
     # -----------------------------
     coupon_id = request.form.get('coupon_id', type=int)
     coupon_discount = float(request.form.get('coupon_discount', 0))
+    ambassador_coupon_id = request.form.get('ambassador_coupon_id', type=int)
+    ambassador_discount = float(request.form.get('ambassador_coupon_discount', 0))
     points_redeemed = int(request.form.get('points_redeemed', 0))
     points_discount = float(request.form.get('points_discount', 0))
 
     # Validate and process coupon
-    if cart.coupon_id and cart.coupon:
+    if cart.ambassador_coupon_id and cart.ambassador_coupon:
+        coupon = cart.ambassador_coupon
+        if coupon.is_valid(cart.total_amount()):
+            ambassador_discount = coupon.calculate_discount(cart.total_amount())
+            ambassador_coupon_id = coupon.id
+            coupon.use()
+        else:
+            ambassador_discount = 0
+            ambassador_coupon_id = None
+            cart.ambassador_coupon_id = None
+    elif cart.coupon_id and cart.coupon:
         coupon = cart.coupon
         if coupon.is_valid(cart.total_amount()):
             coupon_discount = coupon.calculate_discount(cart.total_amount())
@@ -740,6 +825,8 @@ def addorder():
         location=drop_location,
         coupon_id=coupon_id,
         coupon_discount=coupon_discount,
+        ambassador_coupon_id=ambassador_coupon_id,
+        ambassador_discount=ambassador_discount,
         points_redeemed=points_redeemed,
         points_discount=points_discount
     )
@@ -812,6 +899,13 @@ def addorder():
     print(f"[DEBUG] Calculated delivery fee: {delivery_fee}")
     print(f"[DEBUG] Stored delivery fee on order: {neworder.deliveryfee}")
 
+    referral_commission = award_referral_commission(neworder, total_amount - delivery_fee)
+    if referral_commission:
+        print(
+            f"[DEBUG] Referral commission created | Ambassador:{referral_commission.ambassador_id} "
+            f"Order:{neworder.id} Amount:M{referral_commission.commission_amount:.2f}"
+        )
+
     # -----------------------------
     # Clear Cart
     # -----------------------------
@@ -850,16 +944,11 @@ def addorder():
 @login_required
 def myorders():
     # Show ALL active orders for this customer (across any store)
-    ACTIVE_STATUSES = [
-        "Pending", "Processing", "Accepted",
-        "Approved", "Ready", "Out for Delivery"
-    ]
-
     orders = (
         Order.query
         .filter_by(user_id=current_user.id)
-        .filter(Order.status.in_(ACTIVE_STATUSES))
-        .options(joinedload(Order.order_items))
+        .filter(Order.status.in_(ACTIVE_ORDER_STATUSES))
+        .options(joinedload(Order.order_items), joinedload(Order.custom_meals), joinedload(Order.store))
         .order_by(Order.create_at.desc())
         .all()
     )
@@ -870,15 +959,11 @@ def myorders():
 @login_required
 def order_history():
     # Show ALL past orders (completed, delivered, collected, cancelled)
-    FINAL_STATUSES = [
-        "Completed", "Delivered", "Collected", "Cancelled"
-    ]
-
     past_orders = (
         Order.query
         .filter_by(user_id=current_user.id)
-        .filter(Order.status.in_(FINAL_STATUSES))
-        .options(joinedload(Order.order_items))
+        .filter(Order.status.in_(FINAL_ORDER_STATUSES))
+        .options(joinedload(Order.order_items), joinedload(Order.custom_meals), joinedload(Order.store))
         .order_by(Order.create_at.desc())
         .all()
     )
@@ -893,7 +978,12 @@ def order_history():
 @login_required
 def track_order(order_id):
     """Customer live tracking page — shows progress bar and live map for Out for Delivery."""
-    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first_or_404()
+    order = (
+        Order.query
+        .filter_by(id=order_id, user_id=current_user.id)
+        .options(joinedload(Order.order_items), joinedload(Order.custom_meals), joinedload(Order.store))
+        .first_or_404()
+    )
     return render_template('customer/track_order.html', order=order)
 
 
@@ -910,6 +1000,7 @@ def api_delivery_public(order_id):
 @login_required
 def cancelled_orders():
     cancelled_orders = Order.query.filter_by(user_id=current_user.id, status='Cancelled')\
+                                  .options(joinedload(Order.order_items), joinedload(Order.custom_meals), joinedload(Order.store))\
                                   .order_by(Order.create_at.desc()).all()
     return render_template(
         'customer/updated_cancelled.html',
@@ -1044,6 +1135,19 @@ def account():
     form = UpdateForm()
 
     user = current_user
+    total_orders_count = Order.query.filter_by(user_id=current_user.id).count()
+    active_orders_count = (
+        Order.query
+        .filter_by(user_id=current_user.id)
+        .filter(Order.status.in_(ACTIVE_ORDER_STATUSES))
+        .count()
+    )
+    completed_orders_count = (
+        Order.query
+        .filter_by(user_id=current_user.id)
+        .filter(Order.status.in_(COMPLETED_ORDER_STATUSES))
+        .count()
+    )
 
     if form.validate_on_submit():
         print(request.form)
@@ -1071,7 +1175,10 @@ def account():
         user=user,
         store=session.get('store_id'),
         image_file=image_file,
-        form=form
+        form=form,
+        total_orders_count=total_orders_count,
+        active_orders_count=active_orders_count,
+        completed_orders_count=completed_orders_count
     )
 
 # ---------------- LOGOUT ----------------
@@ -1104,6 +1211,12 @@ def update_cart_item_notes():
 @login_required
 def logout():
     logout_user()
+    session.pop('user_type', None)
+    session.pop('email', None)
+    session.pop('admin_id', None)
+    session.pop('store_id', None)
+    session.pop('delivery_guy_id', None)
+    session.pop('ambassador_id', None)
     flash('You have successfully logged out.', 'success')
     return redirect(url_for('main.landing'))
 
@@ -1128,8 +1241,11 @@ def deactivate_Account(user_id):
 @login_required
 def set_store():
     formpharm = Set_StoreForm()
-    formpharm.store.choices=[(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+    formpharm.store.choices = active_store_choices()
     if formpharm.validate_on_submit():
+        if formpharm.store.data == -1:
+            flash("Please select an active store.", "warning")
+            return redirect(url_for('main.home'))
         session['store_id'] = formpharm.store.data
         return redirect(url_for('main.home', store_id=formpharm.store.data))
     flash(f'{current_user.id} had a problem selecting your store, please try again later')
@@ -1138,7 +1254,7 @@ def set_store():
 @main.route('/set_store/<int:store_id>', methods=['POST', 'GET'])
 @login_required
 def set_storee(store_id):
-    store = Store.query.get_or_404(store_id)
+    store = Store.query.filter_by(id=store_id, is_active=True).first_or_404()
     session['store_id'] = store.id
     flash(f'You are now viewing {store.name}', 'success')
     return redirect(url_for('main.menu', page_num=1))
@@ -1151,7 +1267,7 @@ def api_delivery_fee():
     if not store_id:
         return jsonify({"error": "No store selected"}), 400
 
-    store = Store.query.get(store_id)
+    store = Store.query.filter_by(id=store_id, is_active=True).first()
     if not store:
         return jsonify({"error": "Store not found"}), 404
 
@@ -1184,7 +1300,7 @@ def restuarants():
             else_=2
         )
 
-        query = Store.query.filter(Store.is_active == True)
+        query = active_stores_query()
 
         # Filter by location (town or district)
         if selected_location:
@@ -1200,7 +1316,7 @@ def restuarants():
             Store.name.asc()
         ).all()
     else:
-        query = Store.query.filter(Store.is_active == True)
+        query = active_stores_query()
 
         # Filter by location (town or district)
         if selected_location:
@@ -1238,17 +1354,12 @@ def restuarants():
 @main.route("/store/<int:store_id>")
 @login_required
 def store_details(store_id):
-    restuarant = Store.query.get_or_404(store_id)
+    restuarant = Store.query.filter_by(id=store_id, is_active=True).first_or_404()
     registered_for = human_duration(restuarant.registered_on)
     # Forms used in navbar or page
     formpharm = Set_StoreForm()
-    formpharm.store.choices = [(-1, "Select a Store")] + [
-        (p.id, p.name) for p in Store.query.all()
-    ]
+    formpharm.store.choices = active_store_choices()
     open_now = request.args.get('open_now', '').strip()
-
-    if open_now == '1':
-        stores = [s for s in stores if is_store_open(s.openinghours)]
 
     # Cart summary (if user already browsing this store)
     cart = Cart.query.filter_by(
@@ -1290,12 +1401,14 @@ def store_details(store_id):
 @login_required
 def viewproduct(product_id):
     store_id = session.get('store_id')
-    store = Store.query.get_or_404(store_id)
-    if not store:
-        flash('Please select a store first.', 'warning')
-        return redirect(url_for('main.restuarants'))
-    
-    product = Product.query.get_or_404(product_id)
+    store = Store.query.filter_by(id=store_id, is_active=True).first_or_404()
+
+    product = Product.query.join(Store, Product.store_id == Store.id).filter(
+        Product.id == product_id,
+        Product.is_active.is_(True),
+        Store.is_active.is_(True),
+        Product.store_id == store.id
+    ).first_or_404()
     
     seo_defaults = {
         'title': f'{product.productname} – {store.name} | SmartEats Lesotho',
@@ -1326,7 +1439,7 @@ def search(page_num=1):
         flash("Please select a store first", "warning")
         return redirect(url_for("main.restuarants"))
 
-    mystore = Store.query.get_or_404(store_id)
+    mystore = Store.query.filter_by(id=store_id, is_active=True).first_or_404()
 
     if form2.validate_on_submit():
         search_term = form2.keyword.data.strip()
@@ -1359,7 +1472,7 @@ def search(page_num=1):
 
         # Populate store choices for the form
         formpharm = Set_StoreForm()
-        formpharm.store.choices = [(-1, "Select a Store")] + [(p.id, p.name) for p in Store.query.all()]
+        formpharm.store.choices = active_store_choices()
 
         return render_template(
             "customer/updated_menu.html",
@@ -1415,7 +1528,7 @@ def searcher(page_num=1):
         )
 
     # GET request or empty search: just show all stores
-    all_stores = Store.query.filter_by(is_active=True).all()
+    all_stores = active_stores_query().all()
     start = (page_num - 1) * PRODUCTS_PER_PAGE
     end = start + PRODUCTS_PER_PAGE
     current_stores = all_stores[start:end]
@@ -1508,8 +1621,9 @@ def apply_coupon():
     if not store_id:
         return jsonify({'success': False, 'message': 'No store selected.'}), 400
 
-    # Find the coupon for this store
-    coupon = Coupon.query.filter_by(code=code, store_id=store_id).first()
+    ambassador_coupon = AmbassadorCoupon.query.filter_by(code=code).first()
+    coupon_source = 'ambassador' if ambassador_coupon else 'store'
+    coupon = ambassador_coupon or Coupon.query.filter_by(code=code, store_id=store_id).first()
     if not coupon:
         return jsonify({'success': False, 'message': 'Invalid coupon code.'}), 404
 
@@ -1531,7 +1645,12 @@ def apply_coupon():
         return jsonify({'success': False, 'message': 'This coupon is not valid.'}), 400
 
     # Apply coupon to cart
-    cart.coupon_id = coupon.id
+    if coupon_source == 'ambassador':
+        cart.ambassador_coupon_id = coupon.id
+        cart.coupon_id = None
+    else:
+        cart.coupon_id = coupon.id
+        cart.ambassador_coupon_id = None
     db.session.commit()
 
     discount = coupon.calculate_discount(order_amount)
@@ -1542,7 +1661,8 @@ def apply_coupon():
         'message': f'Coupon "{coupon.code}" applied! You saved M{discount:.2f}.',
         'discount': discount,
         'total_after_discount': total_after_discount,
-        'coupon_code': coupon.code
+        'coupon_code': coupon.code,
+        'coupon_source': coupon_source
     })
 
 
@@ -1558,6 +1678,7 @@ def remove_coupon():
     cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
     if cart:
         cart.coupon_id = None
+        cart.ambassador_coupon_id = None
         db.session.commit()
 
     return jsonify({
@@ -1577,16 +1698,23 @@ def coupon_status():
         return jsonify({'coupon': None}), 200
 
     cart = Cart.query.filter_by(user_id=current_user.id, store_id=store_id).first()
-    if not cart or not cart.coupon_id:
+    if not cart or (not cart.coupon_id and not cart.ambassador_coupon_id):
         return jsonify({'coupon': None}), 200
 
-    coupon = cart.coupon
+    coupon = cart.ambassador_coupon if cart.ambassador_coupon_id else cart.coupon
     if not coupon:
         cart.coupon_id = None
+        cart.ambassador_coupon_id = None
         db.session.commit()
         return jsonify({'coupon': None}), 200
 
     order_amount = cart.total_amount()
+    if not coupon.is_valid(order_amount):
+        cart.coupon_id = None
+        cart.ambassador_coupon_id = None
+        db.session.commit()
+        return jsonify({'coupon': None}), 200
+
     discount = coupon.calculate_discount(order_amount)
 
     return jsonify({
@@ -1595,7 +1723,9 @@ def coupon_status():
             'discount': discount,
             'discount_type': coupon.discount_type,
             'discount_value': coupon.discount_value,
-            'total_after_discount': order_amount - discount
+            'total_after_discount': order_amount - discount,
+            'source': 'ambassador' if cart.ambassador_coupon_id else 'store',
+            'id': coupon.id
         }
     })
 

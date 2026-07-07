@@ -185,17 +185,35 @@
     
     <!-- Order Items Summary -->
     <div style="margin-top:var(--space-md);padding-top:var(--space-md);border-top:1px solid var(--color-border-light);">
-      {% if order.order_items %}
+      {% if order.order_items or order.custom_meals %}
       {% for item in order.order_items %}
       <div style="display:flex;justify-content:space-between;font-size:0.875rem;padding:2px 0;">
         <span>{{ item.quantity }}x {{ item.product_name }}</span>
         <span style="font-weight:600;">M{{ '%.2f'|format(item.product_price * item.quantity) }}</span>
       </div>
       {% endfor %}
+      {% for meal in order.custom_meals %}
+      <div style="display:flex;justify-content:space-between;font-size:0.875rem;padding:2px 0;">
+        <span>1x {{ meal.name }}</span>
+        <span style="font-weight:600;">M{{ '%.2f'|format(meal.total_price or 0) }}</span>
+      </div>
+      {% endfor %}
       {% endif %}
       <div style="display:flex;justify-content:space-between;font-size:0.875rem;padding:4px 0 0;border-top:1px solid var(--color-border-light);margin-top:4px;">
         <span>Delivery Fee</span>
         <span>M{{ '%.2f'|format(order.deliveryfee or 0) }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.875rem;padding:4px 0 0;margin-top:4px;font-weight:600;">
+        <span>Order Total</span>
+        {% set total_ns = namespace(subtotal=0) %}
+        {% for item in order.order_items %}
+          {% set total_ns.subtotal = total_ns.subtotal + (item.product_price or 0) * (item.quantity or 0) %}
+        {% endfor %}
+        {% for meal in order.custom_meals %}
+          {% set total_ns.subtotal = total_ns.subtotal + (meal.total_price or 0) %}
+        {% endfor %}
+        {% set total_ns.total = total_ns.subtotal + (order.deliveryfee or 0) - ((order.coupon_discount or 0) + (order.ambassador_discount or 0) + (order.points_discount or 0)) %}
+        <span>M{{ '%.2f'|format(total_ns.total if total_ns.total > 0 else 0) }}</span>
       </div>
     </div>
   </div>

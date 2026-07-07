@@ -24,10 +24,19 @@
         </div>
         <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:4px 0 0 0;">
           {{ o.create_at.strftime('%b %d, %Y at %I:%M %p') if o.create_at else 'N/A' }}
+          {% if o.store %} · {{ o.store.name }}{% endif %}
         </p>
       </div>
       <div style="text-align:right;">
-        <div style="font-weight:600;">M{{ '%.2f'|format(o.deliveryfee or 0) }}</div>
+        {% set total_ns = namespace(subtotal=0) %}
+        {% for item in o.order_items %}
+          {% set total_ns.subtotal = total_ns.subtotal + (item.product_price or 0) * (item.quantity or 0) %}
+        {% endfor %}
+        {% for meal in o.custom_meals %}
+          {% set total_ns.subtotal = total_ns.subtotal + (meal.total_price or 0) %}
+        {% endfor %}
+        {% set total_ns.total = total_ns.subtotal + (o.deliveryfee or 0) - ((o.coupon_discount or 0) + (o.ambassador_discount or 0) + (o.points_discount or 0)) %}
+        <div style="font-weight:600;">M{{ '%.2f'|format(total_ns.total if total_ns.total > 0 else 0) }}</div>
       </div>
     </div>
   </div>

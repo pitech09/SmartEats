@@ -1,7 +1,8 @@
 from threading import Thread
+from datetime import datetime
 
 from flask import (
-    session, flash, redirect,
+    session, flash, redirect, request,
     url_for, render_template, current_app
 )
 from flask_bcrypt import Bcrypt
@@ -14,7 +15,7 @@ from sendgrid.helpers.mail import Mail as SGMail
 
 from . import auth
 from .. import db, socketio
-from ..models import User, Store, DeliveryGuy, Staff, Administrater
+from ..models import User, Store, DeliveryGuy, Staff, Administrater, Ambassador
 from ..forms import (
     RegistrationForm, StoreRegistrationForm,
     LoginForm, emailform, resetpassword, Set_StoreForm
@@ -117,6 +118,15 @@ def send_sound(user_id, sound):
         pass
 
 
+def _resolve_referral_ambassador(referral_code):
+    if not referral_code:
+        return None
+    return Ambassador.query.filter_by(
+        referral_code=referral_code.strip().upper(),
+        is_active=True,
+    ).first()
+
+
 # --------------------------------------------------
 # REGISTER CUSTOMER
 # --------------------------------------------------
@@ -125,21 +135,36 @@ def register():
     form = RegistrationForm()
     formpharm = Set_StoreForm()
 
+    referral_code = request.args.get("ref", "").strip().upper()
+    if request.method == "GET" and referral_code:
+        ambassador = _resolve_referral_ambassador(referral_code)
+        if ambassador:
+            session["pending_referral_code"] = ambassador.referral_code
+        else:
+            session.pop("pending_referral_code", None)
+
     if form.validate_on_submit():
         if User.query.filter_by(email=form.Email.data).first():
             flash("Email already exists", "danger")
             return redirect(url_for("auth.register"))
 
+        referral_code = session.pop("pending_referral_code", None)
+        referred_by = _resolve_referral_ambassador(referral_code) if referral_code else None
+
         user = User(
             username=form.username.data,
             lastname=form.lastName.data,
             email=form.Email.data,
-            password=bcrypt.generate_password_hash(form.Password.data).decode("utf-8")
+            password=bcrypt.generate_password_hash(form.Password.data).decode("utf-8"),
+            referred_by_ambassador_id=referred_by.id if referred_by else None,
+            referred_at=datetime.utcnow() if referred_by else None,
         )
         user.confirmed = True
         db.session.add(user)
         try:
             db.session.commit()
+            if referred_by:
+                flash(f"Invite link applied from {referred_by.names}.", "success")
             send_confirmation_email(user.email)
             flash("Registration successful. Check your email to confirm.", "success")
             return redirect(url_for("auth.newlogin"))
@@ -148,6 +173,19 @@ def register():
             flash("Registration failed. Try again.", "danger")
 
     return render_template("auth/register.html", form=form, formpharm=formpharm)
+
+
+@auth.route("/r/<referral_code>")
+def referral_invite(referral_code):
+    ambassador = _resolve_referral_ambassador(referral_code)
+    if not ambassador:
+        session.pop("pending_referral_code", None)
+        flash("That invite link is invalid or expired.", "warning")
+        return redirect(url_for("auth.register"))
+
+    session["pending_referral_code"] = ambassador.referral_code
+    flash(f"You were invited by {ambassador.names}. Create your account to keep the referral active.", "success")
+    return redirect(url_for("auth.register"))
 
 
 # --------------------------------------------------
@@ -200,6 +238,7 @@ def newlogin():
         user_sets = [
             (User, "customer"),
             (Administrater, "administrator"),
+            (Ambassador, "ambassador"),
             (Store, "store"),
             (DeliveryGuy, "delivery_guy"),
             (Staff, "store")
@@ -245,6 +284,9 @@ def newlogin():
             session["delivery_guy_id"] = account.id
             session["store_id"] = account.store_id
             return redirect(url_for("delivery.ready_orders"))
+        elif role == "ambassador":
+            session["ambassador_id"] = account.id
+            return redirect(url_for("ambassador.dashboard"))
 
     return render_template("auth/newlogin.html", form=form, formpharm=formpharm)
 
@@ -259,7 +301,11 @@ def confirm_email(token):
         flash("Confirmation link invalid or expired.", "danger")
         return redirect(url_for("auth.newlogin"))
 
-    account = User.query.filter_by(email=email).first() or Store.query.filter_by(email=email).first()
+    account = (
+        User.query.filter_by(email=email).first()
+        or Store.query.filter_by(email=email).first()
+        or Ambassador.query.filter_by(email=email).first()
+    )
     if not account:
         flash("Account not found.", "danger")
         return redirect(url_for("auth.register"))

@@ -134,7 +134,7 @@
         <div class="quick-stat-icon" style="background:rgba(52,199,89,0.1);color:var(--color-success);">
           <i class="fas fa-box"></i>
         </div>
-        <div style="font-size:1.5rem;font-weight:700;">{{ current_user.orders|length if current_user.orders else 0 }}</div>
+        <div style="font-size:1.5rem;font-weight:700;">{{ orders_count or 0 }}</div>
         <div style="font-size:0.8125rem;color:var(--color-text-secondary);">Total Orders</div>
       </div>
     </div>
@@ -194,7 +194,12 @@
   <div class="row g-4 mb-4">
     {% for ad in ads %}
     <div class="col-md-6">
-      <a href="{% if ad.link_type == 'store' %}{{ url_for('main.set_storee', store_id=ad.store_id) }}{% else %}#{% endif %}" style="text-decoration:none;">
+      {% set ad_href = url_for('main.set_storee', store_id=ad.store_id) if ad.link_type == 'store' and ad.store_id else none %}
+      {% if ad_href %}
+      <a href="{{ ad_href }}" style="text-decoration:none;">
+      {% else %}
+      <div style="text-decoration:none;">
+      {% endif %}
         <div class="apple-card">
           <div class="promo-card-image">
             <img src="{{ ad.image }}" alt="{{ ad.title }}" loading="lazy">
@@ -202,9 +207,16 @@
           <div class="apple-card-body">
             <h3 class="apple-card-title">{{ ad.title }}</h3>
             <span class="apple-badge apple-badge-info">Featured</span>
+            {% if ad.link_type == 'store' and not ad.store_id %}
+              <span class="apple-badge apple-badge-secondary">Store link unavailable</span>
+            {% endif %}
           </div>
         </div>
+      {% if ad_href %}
       </a>
+      {% else %}
+      </div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>

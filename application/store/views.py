@@ -213,6 +213,8 @@ def load_user(user_id):
         return DeliveryGuy.query.get(int(user_id))
     elif user_type == 'administrator':
         return Administrater.query.get(int(user_id))
+    elif user_type == 'ambassador':
+        return Ambassador.query.get(int(user_id))
     return None
 
 

@@ -13,7 +13,7 @@ _project_root = str(Path(__file__).resolve().parent.parent)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
-from config import config
+from .config import config
 from flask_socketio import SocketIO, join_room
 
 db = SQLAlchemy()
@@ -65,6 +65,9 @@ def create_app(config_name):
 
     from .admin import admin as admin_blueprint
     app.register_blueprint(admin_blueprint, url_prefix='/admin')
+
+    from .ambassador import ambassador as ambassador_blueprint
+    app.register_blueprint(ambassador_blueprint, url_prefix='/ambassador')
 
     @socketio.on("connect")
     def handle_connect(auth):

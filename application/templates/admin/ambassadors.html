@@ -1,0 +1,193 @@
+{% extends "adminslayout.html" %}
+{% block title %}Ambassadors - SmartEats{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 mb-1">Ambassadors</h1>
+      <p class="text-muted mb-0">Create ambassadors, manage coupons, and review referral earnings.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Create Ambassador</h5>
+          <form method="post">
+            <div class="mb-3">
+              <label class="form-label">Names</label>
+              <input type="text" name="names" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" name="password" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Referral Code</label>
+              <input type="text" name="referral_code" class="form-control" placeholder="Auto-generate if blank">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Commission Rate</label>
+              <input type="number" step="0.01" min="0" max="1" name="commission_rate" class="form-control" value="0.05">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Create Ambassador</button>
+            <div class="small text-muted mt-3">
+              Referrals earn {{ '%.0f'|format((referral_rate or 0) * 100) }}% on qualifying orders above M{{ '%.2f'|format(referral_min_amount or 0) }}.
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Existing Ambassadors</h5>
+          {% if ambassadors %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Code</th>
+                  <th>Invite Link</th>
+                  <th>Commission</th>
+                  <th>Referrals</th>
+                  <th>Earnings</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ambassador in ambassadors %}
+                {% set referral_link = url_for('auth.register', ref=ambassador.referral_code, _external=True) %}
+                <tr>
+                  <td>{{ ambassador.names }}</td>
+                  <td>{{ ambassador.email }}</td>
+                  <td><code>{{ ambassador.referral_code }}</code></td>
+                  <td>
+                    <code style="display:inline-block;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ referral_link }}</code>
+                  </td>
+                  <td>{{ '%.0f'|format((ambassador.commission_rate or 0) * 100) }}%</td>
+                  <td>{{ ambassador.referred_users|length }}</td>
+                  <td>M{{ '%.2f'|format(ambassador.commissions|sum(attribute='commission_amount') or 0) }}</td>
+                  <td>{{ 'Active' if ambassador.is_active else 'Inactive' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-muted mb-0">No ambassadors created yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Create Ambassador Coupon</h5>
+          <form method="post" action="/admin/ambassador-coupons">
+            <div class="mb-3">
+              <label class="form-label">Ambassador</label>
+              <select name="ambassador_id" class="form-control" required>
+                <option value="">Select ambassador</option>
+                {% for ambassador in ambassadors %}
+                  <option value="{{ ambassador.id }}">{{ ambassador.names }} ({{ ambassador.referral_code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Coupon Code</label>
+              <input type="text" name="code" class="form-control" placeholder="Auto-generate if blank">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Discount Type</label>
+              <select name="discount_type" class="form-control">
+                <option value="fixed">Fixed Amount</option>
+                <option value="percentage">Percentage</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Discount Value</label>
+              <input type="number" step="0.01" min="1" name="discount_value" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Minimum Order</label>
+              <input type="number" step="0.01" min="0" name="min_order_amount" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Valid For Days</label>
+              <input type="number" min="0" name="valid_days" class="form-control" value="0">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Max Uses</label>
+              <input type="number" min="0" name="max_uses" class="form-control" value="0">
+            </div>
+            <button type="submit" class="btn btn-success w-100">Create Coupon</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-3">All Ambassador Coupons</h5>
+          {% if coupons %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Ambassador</th>
+                  <th>Discount</th>
+                  <th>Min Order</th>
+                  <th>Uses</th>
+                  <th>Status</th>
+                  <th>Ends</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for coupon in coupons %}
+                <tr>
+                  <td><code>{{ coupon.code }}</code></td>
+                  <td>{{ coupon.ambassador.names if coupon.ambassador else 'Unknown' }}</td>
+                  <td>
+                    {{ coupon.discount_value }}{% if coupon.discount_type == 'percentage' %}%{% else %} M{% endif %}
+                  </td>
+                  <td>M{{ '%.2f'|format(coupon.min_order_amount or 0) }}</td>
+                  <td>{{ coupon.current_uses or 0 }}{% if coupon.max_uses > 0 %}/{{ coupon.max_uses }}{% endif %}</td>
+                  <td>{{ 'Active' if coupon.is_active else 'Inactive' }}</td>
+                  <td>{{ coupon.valid_until.strftime('%d %b %Y') if coupon.valid_until else 'No expiry' }}</td>
+                  <td>
+                    <form method="post" action="/admin/ambassador-coupons/toggle/{{ coupon.id }}">
+                      <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        {{ 'Deactivate' if coupon.is_active else 'Activate' }}
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-muted mb-0">No ambassador coupons created yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

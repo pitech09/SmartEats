@@ -64,14 +64,25 @@
                 <h3>Order #{{ order.order_id }}</h3>
                 <p><strong>Restaurant:</strong> {{ order.store.name if order.store else 'N/A' }}</p>
                 <p><strong>Status:</strong> {{ order.status }}</p>
-                <p><strong>Total:</strong> M{{ '%.2f'|format(order.deliveryfee or 0) }}</p>
+                {% set total_ns = namespace(subtotal=0) %}
+                {% for item in order.order_items %}
+                  {% set total_ns.subtotal = total_ns.subtotal + (item.product_price or 0) * (item.quantity or 0) %}
+                {% endfor %}
+                {% for meal in order.custom_meals %}
+                  {% set total_ns.subtotal = total_ns.subtotal + (meal.total_price or 0) %}
+                {% endfor %}
+                {% set total_ns.total = total_ns.subtotal + (order.deliveryfee or 0) - ((order.coupon_discount or 0) + (order.ambassador_discount or 0) + (order.points_discount or 0)) %}
+                <p><strong>Total:</strong> M{{ '%.2f'|format(total_ns.total if total_ns.total > 0 else 0) }}</p>
                 <p><strong>Destination:</strong> {{ order.location }}</p>
                 <p><strong>Order Date:</strong> {{ order.create_at.strftime('%d %b %Y @ %H:%M') if order.create_at else 'N/A' }}</p>
-                {% if order.order_items %}
+                {% if order.order_items or order.custom_meals %}
                 <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee;">
                     <strong>Items:</strong>
                     {% for item in order.order_items %}
                     <p style="margin:2px 0 2px 15px;font-size:0.9rem;">{{ item.quantity }}x {{ item.product_name }} — M{{ '%.2f'|format(item.product_price * item.quantity) }}</p>
+                    {% endfor %}
+                    {% for meal in order.custom_meals %}
+                    <p style="margin:2px 0 2px 15px;font-size:0.9rem;">1x {{ meal.name }} — M{{ '%.2f'|format(meal.total_price or 0) }}</p>
                     {% endfor %}
                 </div>
                 {% endif %}

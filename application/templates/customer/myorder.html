@@ -128,12 +128,21 @@
         </div>
         <p style="font-size:0.8125rem;color:var(--color-text-secondary);margin:4px 0 0 0;">
           {{ o.create_at.strftime('%b %d, %Y at %I:%M %p') if o.create_at else 'Date not available' }}
+          {% if o.store %} · {{ o.store.name }}{% endif %}
         </p>
       </div>
       <div style="text-align:right;">
-        <div style="font-weight:600;font-size:1.125rem;color:var(--color-text-primary);">M{{ '%.2f'|format(o.deliveryfee or 0) }}</div>
+        {% set total_ns = namespace(subtotal=0) %}
+        {% for item in o.order_items %}
+          {% set total_ns.subtotal = total_ns.subtotal + (item.product_price or 0) * (item.quantity or 0) %}
+        {% endfor %}
+        {% for meal in o.custom_meals %}
+          {% set total_ns.subtotal = total_ns.subtotal + (meal.total_price or 0) %}
+        {% endfor %}
+        {% set total_ns.total = total_ns.subtotal + (o.deliveryfee or 0) - ((o.coupon_discount or 0) + (o.ambassador_discount or 0) + (o.points_discount or 0)) %}
+        <div style="font-weight:600;font-size:1.125rem;color:var(--color-text-primary);">M{{ '%.2f'|format(total_ns.total if total_ns.total > 0 else 0) }}</div>
         <div style="font-size:0.8125rem;color:var(--color-text-secondary);">
-          {% if o.location == 'pickup' %}Pickup{% else %}Delivery{% endif %}
+          Total{% if o.location == 'pickup' %} · Pickup{% else %} · Delivery{% endif %}
         </div>
       </div>
     </div>
@@ -142,13 +151,22 @@
       <!-- Order Items -->
       <div style="margin-bottom:var(--space-md);">
         <h4 style="font-family:var(--font-display);font-size:0.9375rem;font-weight:600;margin-bottom:var(--space-sm);color:var(--color-text-secondary);">ITEMS</h4>
-        {% if o.order_items %}
+        {% if o.order_items or o.custom_meals %}
         {% for item in o.order_items %}
         <div class="order-item-row">
           <div style="flex:1;">
             <div style="font-weight:500;">{{ item.quantity }}x {{ item.product_name }}</div>
           </div>
           <div style="font-weight:600;">M{{ '%.2f'|format(item.product_price * item.quantity) }}</div>
+        </div>
+        {% endfor %}
+        {% for meal in o.custom_meals %}
+        <div class="order-item-row">
+          <div style="flex:1;">
+            <div style="font-weight:500;">1x {{ meal.name }}</div>
+            <div style="font-size:0.8125rem;color:var(--color-text-secondary);">Custom meal</div>
+          </div>
+          <div style="font-weight:600;">M{{ '%.2f'|format(meal.total_price or 0) }}</div>
         </div>
         {% endfor %}
         {% else %}

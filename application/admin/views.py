@@ -1,7 +1,7 @@
 from itertools import product
 from flask import render_template, redirect, url_for, request, flash, current_app, jsonify,session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func, extract, or_
+from sqlalchemy import func, extract, or_, desc
 from ..models import *
 from datetime import datetime,timedelta
 import calendar
@@ -12,12 +12,31 @@ from ..models import db
 import os
 from application.auth import *
 import secrets
+from flask_bcrypt import Bcrypt
 from PIL import Image
 from flask import current_app
 import plotly.graph_objs as go # type: ignore
 import plotly.offline as plot # type: ignore
 import cloudinary
 from cloudinary.uploader import upload
+from sqlalchemy.orm import joinedload
+
+bcrypt = Bcrypt()
+
+ACTIVE_ORDER_STATUSES = [
+    "Pending",
+    "Processing",
+    "Accepted",
+    "Approved",
+    "Ready",
+    "Out for Delivery",
+]
+
+FINAL_ORDER_STATUSES = [
+    "Completed",
+    "Delivered",
+    "Collected",
+]
 
 
 
@@ -85,6 +104,8 @@ def load_user(user_id):
         return DeliveryGuy.query.get(int(user_id))
     elif user_type == 'administrator':
         return Administrater.query.get(int(user_id))
+    elif user_type == 'ambassador':
+        return Ambassador.query.get(int(user_id))
     return None
 
 
@@ -107,6 +128,30 @@ def admindash():
     num_of_users = User.query.count()
     num_of_delivery = DeliveryGuy.query.count()
     num_of_stores = Store.query.count()
+    num_of_ambassadors = Ambassador.query.count()
+
+    total_orders = Order.query.count()
+    active_orders = Order.query.filter(Order.status.in_(ACTIVE_ORDER_STATUSES)).count()
+    completed_orders = Order.query.filter(Order.status.in_(FINAL_ORDER_STATUSES)).count()
+    cancelled_orders = Order.query.filter_by(status="Cancelled").count()
+
+    total_coupons = AmbassadorCoupon.query.count()
+    active_coupons = AmbassadorCoupon.query.filter_by(is_active=True).count()
+    total_referrals = User.query.filter(User.referred_by_ambassador_id.isnot(None)).count()
+    total_referral_earnings = (
+        db.session.query(func.coalesce(func.sum(AmbassadorReferralCommission.commission_amount), 0.0))
+        .scalar()
+        or 0.0
+    )
+    total_notifications = Notification.query.count()
+    unread_notifications = (
+        Notification.query
+        .filter_by(is_read=False)
+        .order_by(Notification.timestamp.desc())
+        .limit(8)
+        .all()
+    )
+    unread_notifications_count = len(unread_notifications)
 
     # Date ranges
     start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -143,6 +188,86 @@ def admindash():
         func.sum(Sales.price * Sales.quantity * admin_commission)
     ).filter(func.date(Sales.date_) == today.date()).scalar() or 0.0
 
+    recent_orders = (
+        Order.query
+        .options(joinedload(Order.store), joinedload(Order.user))
+        .order_by(Order.create_at.desc())
+        .limit(10)
+        .all()
+    )
+    recent_referrals = (
+        User.query
+        .filter(User.referred_by_ambassador_id.isnot(None))
+        .order_by(User.referred_at.desc().nullslast(), User.id.desc())
+        .limit(10)
+        .all()
+    )
+    recent_commissions = (
+        AmbassadorReferralCommission.query
+        .options(joinedload(AmbassadorReferralCommission.ambassador), joinedload(AmbassadorReferralCommission.user), joinedload(AmbassadorReferralCommission.order))
+        .order_by(desc(AmbassadorReferralCommission.created_at))
+        .limit(10)
+        .all()
+    )
+    recent_notifications = (
+        Notification.query
+        .order_by(Notification.timestamp.desc())
+        .limit(10)
+        .all()
+    )
+
+    top_stores = (
+        db.session.query(
+            Store.id,
+            Store.name,
+            func.coalesce(func.sum(Sales.price * Sales.quantity), 0.0).label("revenue")
+        )
+        .join(Sales, Sales.store_id == Store.id)
+        .group_by(Store.id, Store.name)
+        .order_by(desc("revenue"))
+        .limit(5)
+        .all()
+    )
+
+    referral_counts = (
+        db.session.query(
+            User.referred_by_ambassador_id.label("ambassador_id"),
+            func.count(User.id).label("referrals"),
+        )
+        .filter(User.referred_by_ambassador_id.isnot(None))
+        .group_by(User.referred_by_ambassador_id)
+        .subquery()
+    )
+    ambassador_earnings = (
+        db.session.query(
+            AmbassadorReferralCommission.ambassador_id.label("ambassador_id"),
+            func.coalesce(func.sum(AmbassadorReferralCommission.commission_amount), 0.0).label("earnings"),
+        )
+        .group_by(AmbassadorReferralCommission.ambassador_id)
+        .subquery()
+    )
+    top_ambassadors = (
+        db.session.query(
+            Ambassador,
+            func.coalesce(referral_counts.c.referrals, 0).label("referrals"),
+            func.coalesce(ambassador_earnings.c.earnings, 0.0).label("earnings"),
+        )
+        .outerjoin(referral_counts, referral_counts.c.ambassador_id == Ambassador.id)
+        .outerjoin(ambassador_earnings, ambassador_earnings.c.ambassador_id == Ambassador.id)
+        .order_by(desc("earnings"))
+        .limit(5)
+        .all()
+    )
+
+    revenue_timeline = [
+        {
+            "date": str(row.date) if row.date else "",
+            "amount": float(row.total or 0),
+        }
+        for row in daily_sales[-7:]
+    ]
+    revenue_timeline_max = max((item["amount"] for item in revenue_timeline), default=0.0) or 1.0
+
     return render_template(
         'admin/admindash.html',
         count=count,
@@ -153,7 +278,27 @@ def admindash():
         total_sales=total_sales,
         num_of_delivery=num_of_delivery,
         num_of_users=num_of_users,
-        num_of_stores=num_of_stores
+        num_of_stores=num_of_stores,
+        num_of_ambassadors=num_of_ambassadors,
+        total_orders=total_orders,
+        active_orders=active_orders,
+        completed_orders=completed_orders,
+        cancelled_orders=cancelled_orders,
+        total_coupons=total_coupons,
+        active_coupons=active_coupons,
+        total_referrals=total_referrals,
+        total_referral_earnings=total_referral_earnings,
+        total_notifications=total_notifications,
+        unread_notifications=unread_notifications,
+        unread_notifications_count=unread_notifications_count,
+        recent_orders=recent_orders,
+        recent_referrals=recent_referrals,
+        recent_commissions=recent_commissions,
+        recent_notifications=recent_notifications,
+        top_stores=top_stores,
+        top_ambassadors=top_ambassadors,
+        revenue_timeline=revenue_timeline,
+        revenue_timeline_max=revenue_timeline_max,
     )
 
 @admin.route('/verify store/<int:pharmacy_id>', methods=["GET", "POST"])
@@ -207,6 +352,127 @@ def pending_verification():
     stores = Store.query.filter(Store.verified == False).all()
     return render_template('admin/pendingpharmacies.html', stores=stores)
 
+
+@admin.route("/ambassadors", methods=["GET", "POST"])
+@login_required
+def manage_ambassadors():
+    if session.get("user_type") != "administrator":
+        flash("You are not authorised to view ambassador management.", "danger")
+        return redirect(url_for("auth.newlogin"))
+
+    if request.method == "POST":
+        names = request.form.get("names", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "").strip()
+        referral_code = request.form.get("referral_code", "").strip().upper()
+        commission_rate = float(request.form.get("commission_rate", 0.05) or 0.05)
+
+        if not names or not email or not password:
+            flash("Name, email and password are required.", "danger")
+            return redirect(url_for("admin.manage_ambassadors"))
+
+        if not referral_code:
+            referral_code = f"AMB-{secrets.token_hex(3).upper()}"
+
+        if Ambassador.query.filter((Ambassador.email == email) | (Ambassador.referral_code == referral_code)).first():
+            flash("An ambassador with that email or code already exists.", "danger")
+            return redirect(url_for("admin.manage_ambassadors"))
+
+        ambassador = Ambassador(
+            names=names,
+            email=email,
+            password=bcrypt.generate_password_hash(password).decode("utf-8"),
+            referral_code=referral_code,
+            commission_rate=commission_rate,
+        )
+        db.session.add(ambassador)
+        db.session.commit()
+        flash(f'Ambassador "{names}" created.', "success")
+        return redirect(url_for("admin.manage_ambassadors"))
+
+    ambassadors = Ambassador.query.order_by(Ambassador.created_at.desc()).all()
+    return render_template(
+        "admin/ambassadors.html",
+        ambassadors=ambassadors,
+        coupons=(
+            AmbassadorCoupon.query
+            .options(joinedload(AmbassadorCoupon.ambassador))
+            .order_by(AmbassadorCoupon.created_at.desc())
+            .all()
+        ),
+        referral_min_amount=current_app.config.get("AMBASSADOR_REFERRAL_MIN_ORDER_AMOUNT", 100.0),
+        referral_rate=current_app.config.get("AMBASSADOR_REFERRAL_COMMISSION_RATE", 0.05),
+    )
+
+
+@admin.route("/ambassador-coupons", methods=["POST"])
+@login_required
+def create_ambassador_coupon():
+    if session.get("user_type") != "administrator":
+        flash("You are not authorised to manage ambassador coupons.", "danger")
+        return redirect(url_for("auth.newlogin"))
+
+    ambassador_id = request.form.get("ambassador_id", type=int)
+    code = request.form.get("code", "").strip().upper()
+    discount_type = request.form.get("discount_type", "fixed")
+    discount_value = float(request.form.get("discount_value", 0) or 0)
+    min_order_amount = float(request.form.get("min_order_amount", 0) or 0)
+    max_uses = int(request.form.get("max_uses", 0) or 0)
+    valid_days = int(request.form.get("valid_days", 0) or 0)
+
+    if not ambassador_id:
+        flash("Please choose an ambassador.", "danger")
+        return redirect(url_for("admin.manage_ambassadors"))
+
+    ambassador = Ambassador.query.get_or_404(ambassador_id)
+
+    if not code:
+        code = f"AMB-{ambassador.id}-{secrets.token_hex(3).upper()}"
+
+    if discount_value <= 0:
+        flash("Discount value must be greater than 0.", "danger")
+        return redirect(url_for("admin.manage_ambassadors"))
+
+    if discount_type == "percentage" and discount_value > 100:
+        flash("Percentage discount cannot exceed 100%.", "danger")
+        return redirect(url_for("admin.manage_ambassadors"))
+
+    if AmbassadorCoupon.query.filter_by(code=code).first():
+        flash("That coupon code already exists. Try another code.", "danger")
+        return redirect(url_for("admin.manage_ambassadors"))
+
+    valid_until = None
+    if valid_days > 0:
+        valid_until = datetime.utcnow() + timedelta(days=valid_days)
+
+    coupon = AmbassadorCoupon(
+        code=code,
+        discount_type=discount_type,
+        discount_value=discount_value,
+        min_order_amount=min_order_amount,
+        max_uses=max_uses,
+        valid_until=valid_until,
+        ambassador_id=ambassador.id,
+    )
+    db.session.add(coupon)
+    db.session.commit()
+    flash(f'Coupon "{code}" created for {ambassador.names}.', "success")
+    return redirect(url_for("admin.manage_ambassadors"))
+
+
+@admin.route("/ambassador-coupons/toggle/<int:coupon_id>", methods=["POST"])
+@login_required
+def toggle_ambassador_coupon(coupon_id):
+    if session.get("user_type") != "administrator":
+        flash("You are not authorised to manage ambassador coupons.", "danger")
+        return redirect(url_for("auth.newlogin"))
+
+    coupon = AmbassadorCoupon.query.get_or_404(coupon_id)
+    coupon.is_active = not coupon.is_active
+    db.session.commit()
+    flash(f'Coupon "{coupon.code}" {"activated" if coupon.is_active else "deactivated"}.', "success")
+    return redirect(url_for("admin.manage_ambassadors"))
+
 @admin.route("/ads", methods=["GET", "POST"])
 @login_required
 def manage_ads():
@@ -221,6 +487,13 @@ def manage_ads():
         product_id = form.product_id.data if form.link_type.data == "product" and form.product_id.data != 0 else None
         store_id = form.store_id.data if form.link_type.data == "store" and form.store_id.data != 0 else None
         external_url = form.external_url.data if form.link_type.data == "external" else None
+
+        if form.link_type.data == "store" and not store_id:
+            flash("Please select a store for store ads.", "danger")
+            return redirect(url_for("admin.manage_ads"))
+        if form.link_type.data == "product" and not product_id:
+            flash("Please select a product for product ads.", "danger")
+            return redirect(url_for("admin.manage_ads"))
 
         # Upload image
 

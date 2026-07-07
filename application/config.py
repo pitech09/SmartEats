@@ -22,6 +22,8 @@ class Config:
         "pool_size": 5,
         "max_overflow": 10,
     }
+    AMBASSADOR_REFERRAL_MIN_ORDER_AMOUNT = 100.0
+    AMBASSADOR_REFERRAL_COMMISSION_RATE = 0.05
 
     # Flask-Compress
     COMPRESS_ALGORITHM = 'gzip'
