@@ -30,8 +30,13 @@
     const amountPaidInput = document.getElementById('pos-amount-paid');
     const changeDueEl = document.getElementById('pos-change-due');
     const changeDueSection = document.getElementById('change-due-section');
+    const receiptContent = document.getElementById('posReceiptContent');
+    const btnDownloadPDF = document.getElementById('btnDownloadPDF');
+    const btnPrintReceipt = document.getElementById('btnPrintReceipt');
+    const btnDoneReceipt = document.getElementById('btnDoneReceipt');
 
     let cart = [];
+    let currentOrderId = null;
 
     // --- Helper: get cart total ---
     function getCartTotal() {
@@ -279,39 +284,138 @@
       payBtn.addEventListener('click', submitOrder);
     }
 
-    // --- Save receipt as PNG ---
-    function saveReceiptAsPNG(orderId) {
-      var receiptPaper = document.querySelector('.receipt-paper');
-      if (!receiptPaper) return;
+    // --- Print Receipt (only receipt, not entire page) ---
+    function printReceipt() {
+      var printContent = receiptContent.cloneNode(true);
+      var printWindow = window.open('', '_blank', 'width=350,height=600');
+      printWindow.document.write('<!DOCTYPE html><html><head><title>Receipt - SmartEats POS</title>');
+      printWindow.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">');
+      printWindow.document.write('<style>');
+      printWindow.document.write('body { font-family: "Courier New", monospace; padding: 15px; max-width: 320px; margin: 0 auto; }');
+      printWindow.document.write('h4 { margin: 5px 0; font-size: 16px; font-weight: bold; }');
+      printWindow.document.write('p { margin: 5px 0; font-size: 12px; }');
+      printWindow.document.write('table { width: 100%; border-collapse: collapse; margin: 10px 0; }');
+      printWindow.document.write('th, td { padding: 3px 5px; text-align: left; font-size: 11px; }');
+      printWindow.document.write('th { font-weight: bold; border-bottom: 1px solid #000; }');
+      printWindow.document.write('.text-end { text-align: right; }');
+      printWindow.document.write('hr { margin: 8px 0; border: none; border-top: 1px solid #000; }');
+      printWindow.document.write('.fw-bold { font-weight: bold; }');
+      printWindow.document.write('.small { font-size: 10px; }');
+      printWindow.document.write('.thank-you { text-align: center; margin-top: 10px; }');
+      printWindow.document.write('@media print { body { padding: 0; } }');
+      printWindow.document.write('</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write('<div style="font-family:monospace;max-width:320px;margin:0 auto;">');
+      printWindow.document.write(printContent.innerHTML);
+      printWindow.document.write('</div>');
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      
+      // Auto-print after a short delay for content to render
+      setTimeout(function() {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }
 
-      // Temporarily increase width for a clean capture
-      var origWidth = receiptPaper.style.width;
-      receiptPaper.style.width = '350px';
-      receiptPaper.style.backgroundColor = '#fff';
-      receiptPaper.style.padding = '20px';
+    // --- Download Receipt as PDF ---
+    function downloadPDF() {
+      if (!window.jspdf) {
+        alert('PDF library not loaded. Please try again.');
+        return;
+      }
 
-      html2canvas(receiptPaper, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false,
-        allowTaint: false,
-        useCORS: true
-      }).then(function(canvas) {
-        // Restore original styling
-        receiptPaper.style.width = origWidth || '';
-        receiptPaper.style.backgroundColor = '';
-        receiptPaper.style.padding = '';
+      var { jsPDF } = window.jspdf;
+      var pdf = new jsPDF('p', 'mm', [80, 200]); // Narrow receipt-style paper
+      
+      var storeName = receiptStoreName ? receiptStoreName.textContent : 'Store';
+      var orderId = receiptId ? receiptId.textContent : currentOrderId;
+      var date = receiptDate ? receiptDate.textContent : '';
+      var payment = receiptPayment ? receiptPayment.textContent : 'Cash';
+      var total = receiptTotal ? receiptTotal.textContent : '0.00';
+      var amountPaid = receiptAmountPaid ? receiptAmountPaid.textContent : '0.00';
+      var change = receiptChange ? receiptChange.textContent : '0.00';
 
-        // Create download link
-        var link = document.createElement('a');
-        link.download = 'receipt-' + orderId + '.png';
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }).catch(function(err) {
-        console.warn('Receipt PNG save failed:', err);
+      // Build styled receipt
+      var yPos = 10;
+      var lineHeight = 5;
+      
+      // Header
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(storeName, 40, yPos, { align: 'center' });
+      yPos += lineHeight + 2;
+      
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('SmartEats POS', 40, yPos, { align: 'center' });
+      yPos += lineHeight + 3;
+      
+      // Order info
+      pdf.setFontSize(8);
+      pdf.text('Order: ' + orderId, 10, yPos);
+      yPos += lineHeight;
+      pdf.text('Date: ' + date, 10, yPos);
+      yPos += lineHeight;
+      pdf.text('Payment: ' + payment, 10, yPos);
+      yPos += lineHeight + 2;
+      
+      // Items header
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Item', 10, yPos);
+      pdf.text('Qty', 35, yPos);
+      pdf.text('Total', 60, yPos);
+      yPos += lineHeight + 1;
+      
+      // Items
+      var rows = receiptBody.querySelectorAll('tr');
+      pdf.setFont('helvetica', 'normal');
+      rows.forEach(function(row) {
+        var cells = row.querySelectorAll('td');
+        if (cells.length >= 4) {
+          var itemName = cells[0].textContent;
+          var qty = cells[1].textContent;
+          var itemTotal = cells[3].textContent;
+          
+          // Truncate long item names
+          if (itemName.length > 20) {
+            itemName = itemName.substring(0, 17) + '...';
+          }
+          
+          pdf.text(itemName, 10, yPos);
+          pdf.text(qty, 35, yPos);
+          pdf.text(itemTotal, 60, yPos);
+          yPos += lineHeight;
+        }
       });
+      
+      yPos += 2;
+      pdf.line(5, yPos, 75, yPos); // Separator line
+      yPos += lineHeight;
+      
+      // Totals
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('TOTAL:', 10, yPos);
+      pdf.text('M' + total, 60, yPos, { align: 'right' });
+      yPos += lineHeight;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Amount Paid:', 10, yPos);
+      pdf.text('M' + amountPaid, 60, yPos, { align: 'right' });
+      yPos += lineHeight;
+      
+      pdf.text('Change:', 10, yPos);
+      pdf.text('M' + change, 60, yPos, { align: 'right' });
+      yPos += lineHeight + 3;
+      
+      // Footer
+      pdf.setFontSize(8);
+      pdf.text('Thank you for your purchase!', 40, yPos, { align: 'center' });
+      yPos += lineHeight;
+      
+      var fileName = 'receipt-' + (currentOrderId || 'unknown') + '.pdf';
+      pdf.save(fileName);
     }
 
     // --- Show Receipt Modal ---
@@ -321,10 +425,10 @@
       var modal = new bootstrap.Modal(receiptModalEl);
       var now = new Date();
       var dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-      var orderId = data.order_id || 'POS-' + Math.random().toString(36).substr(2, 8).toUpperCase();
+      currentOrderId = data.order_id || 'POS-' + Math.random().toString(36).substr(2, 8).toUpperCase();
 
       if (receiptStoreName) receiptStoreName.textContent = data.store_name || 'Store';
-      if (receiptId) receiptId.textContent = orderId;
+      if (receiptId) receiptId.textContent = currentOrderId;
       if (receiptDate) receiptDate.textContent = dateStr;
       if (receiptPayment) receiptPayment.textContent = paymentSelect ? paymentSelect.value : 'Cash';
       if (receiptTotal) receiptTotal.textContent = data.total ? data.total.toFixed(2) : '0.00';
@@ -345,15 +449,27 @@
       }
 
       modal.show();
+    }
 
-      // Auto-save receipt as PNG after modal is fully rendered
-      var modalEl = receiptModalEl;
-      modalEl.addEventListener('shown.bs.modal', function onShown() {
-        modalEl.removeEventListener('shown.bs.modal', onShown);
-        // Small delay to ensure rendering is complete
-        setTimeout(function() {
-          saveReceiptAsPNG(orderId);
-        }, 300);
+    // --- Event handlers for receipt modal buttons ---
+    if (btnPrintReceipt) {
+      btnPrintReceipt.addEventListener('click', function() {
+        printReceipt();
+      });
+    }
+
+    if (btnDownloadPDF) {
+      btnDownloadPDF.addEventListener('click', function() {
+        downloadPDF();
+      });
+    }
+
+    if (btnDoneReceipt) {
+      btnDoneReceipt.addEventListener('click', function() {
+        var modal = bootstrap.Modal.getInstance(receiptModalEl);
+        if (modal) {
+          modal.hide();
+        }
       });
     }
 

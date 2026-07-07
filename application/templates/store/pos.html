@@ -2,6 +2,27 @@
 {% block title %}POS - {{ store.name }}{% endblock %}
 
 {% block content %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #posReceiptContent, #posReceiptContent * {
+            visibility: visible;
+        }
+        #posReceiptContent {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+        }
+        #posReceiptContent .modal-footer {
+            display: none !important;
+        }
+    }
+</style>
+
 <div class="container-fluid" id="pos-app">
     <!-- Page Loading Spinner -->
     <div id="page-loader" class="text-center py-5" style="display:none;">
@@ -148,39 +169,46 @@
             </div>
             <div class="modal-body text-center">
                 <div class="receipt-paper" style="font-family:monospace;font-size:14px;">
-                    <h4 id="receiptStoreName" class="fw-bold">{{ store.name }}</h4>
-                    <p class="mb-1">SmartEats POS</p>
-                    <p class="text-muted small" id="receiptDate"></p>
-                    <hr>
-                    <p><strong>Order:</strong> <span id="receiptId"></span></p>
-                    <p><strong>Payment:</strong> <span id="receiptPayment"></span></p>
-                    <hr>
-                    <table class="table table-sm table-borderless text-start" style="font-family:monospace;">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Qty</th>
-                                <th>Price</th>
-                                <th class="text-end">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="receiptBody"></tbody>
-                    </table>
-                    <hr>
-                    <h4 class="fw-bold">Total: M<span id="receiptTotal">0.00</span></h4>
-                    <p><strong>Amount Paid:</strong> M<span id="receiptAmountPaid">0.00</span></p>
-                    <p><strong>Change:</strong> M<span id="receiptChange">0.00</span></p>
-                    <hr>
-                    <p class="small text-muted">Thank you for your purchase!</p>
+                    <div id="posReceiptContent" class="receipt-print-area">
+                        <h4 id="receiptStoreName" class="fw-bold">{{ store.name }}</h4>
+                        <p class="mb-1">SmartEats POS</p>
+                        <p class="text-muted small" id="receiptDate"></p>
+                        <hr>
+                        <p><strong>Order:</strong> <span id="receiptId"></span></p>
+                        <p><strong>Payment:</strong> <span id="receiptPayment"></span></p>
+                        <hr>
+                        <table class="table table-sm table-borderless text-start" style="font-family:monospace;">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="receiptBody"></tbody>
+                        </table>
+                        <hr>
+                        <h4 class="fw-bold">Total: M<span id="receiptTotal">0.00</span></h4>
+                        <p><strong>Amount Paid:</strong> M<span id="receiptAmountPaid">0.00</span></p>
+                        <p><strong>Change:</strong> M<span id="receiptChange">0.00</span></p>
+                        <hr>
+                        <p class="small text-muted">Thank you for your purchase!</p>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0 justify-content-center">
-                <button class="btn btn-outline-secondary" onclick="window.print()">
-                    <i class="fas fa-print me-1"></i> Print
-                </button>
-                <button class="btn btn-success" data-bs-dismiss="modal">
-                    <i class="fas fa-check me-1"></i> Done
-                </button>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="btnDownloadPDF">
+                        <i class="fas fa-file-pdf me-1"></i> Download PDF
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnPrintReceipt">
+                        <i class="fas fa-print me-1"></i> Print
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnDoneReceipt">
+                        <i class="fas fa-check me-1"></i> Done
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -188,7 +216,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
     window.POS_SUBMIT_URL = "{{ url_for('store.vendor_pos') }}";
     // CSRF token generated by server
